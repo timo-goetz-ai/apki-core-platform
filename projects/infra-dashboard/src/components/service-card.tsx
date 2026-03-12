@@ -89,7 +89,7 @@ export function ServiceCard({ service, status }: ServiceCardProps) {
         </div>
         <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
           {status?.protected && (
-            <Shield className="w-3 h-3 text-zinc-600" title="Authentik-geschützt" />
+            <Shield className="w-3 h-3 text-zinc-600" aria-label="Authentik-geschützt" />
           )}
           <div
             className={cn(
