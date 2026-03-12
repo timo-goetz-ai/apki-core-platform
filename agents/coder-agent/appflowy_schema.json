@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "database": {
+    "name": "Code Snippets",
+    "description": "Generierter Code vom CoderAgent – strukturiert & versioniert",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "RichText",
+        "required": true,
+        "description": "Feature-Name / Filename"
+      },
+      {
+        "name": "Content",
+        "type": "RichText",
+        "required": true,
+        "description": "Vollständiges Markdown inkl. Code-Blöcken"
+      },
+      {
+        "name": "Language",
+        "type": "SingleSelect",
+        "required": true,
+        "options": [
+          { "name": "JavaScript", "color": "LightYellow" },
+          { "name": "TypeScript", "color": "LightBlue" },
+          { "name": "Python",     "color": "LightGreen" },
+          { "name": "React",      "color": "Aqua" },
+          { "name": "Node.js",    "color": "LightPurple" },
+          { "name": "SQL",        "color": "LightPink" },
+          { "name": "Bash",       "color": "Orange" },
+          { "name": "Other",      "color": "Grey" }
+        ]
+      },
+      {
+        "name": "Status",
+        "type": "SingleSelect",
+        "required": true,
+        "options": [
+          { "name": "Ready for Review", "color": "Orange" },
+          { "name": "Reviewed",         "color": "LightGreen" },
+          { "name": "In-Use",           "color": "LightBlue" },
+          { "name": "Needs Fix",        "color": "LightPink" },
+          { "name": "Archived",         "color": "Grey" }
+        ]
+      },
+      {
+        "name": "GeneratedBy",
+        "type": "SingleSelect",
+        "options": [
+          { "name": "CoderAgent", "color": "LightPurple" },
+          { "name": "Manual",     "color": "LightYellow" },
+          { "name": "n8n",        "color": "Aqua" }
+        ]
+      },
+      {
+        "name": "Dependencies",
+        "type": "RichText",
+        "description": "npm/pip packages, kommagetrennt"
+      },
+      {
+        "name": "Tags",
+        "type": "RichText",
+        "description": "#generated #code #feature-name"
+      },
+      {
+        "name": "CreatedDate",
+        "type": "DateTime",
+        "includeTime": false
+      },
+      {
+        "name": "ReviewedDate",
+        "type": "DateTime",
+        "includeTime": false
+      },
+      {
+        "name": "QAScore",
+        "type": "Number",
+        "description": "0–100, gesetzt vom n8n QA-Workflow"
+      },
+      {
+        "name": "QANotes",
+        "type": "RichText",
+        "description": "Feedback vom Auto-Review"
+      }
+    ],
+    "views": [
+      {
+        "name": "Alle Records",
+        "type": "grid",
+        "filters": []
+      },
+      {
+        "name": "Ready for Review",
+        "type": "grid",
+        "filters": [
+          { "field": "Status", "value": "Ready for Review" }
+        ]
+      },
+      {
+        "name": "Nach Sprache",
+        "type": "board",
+        "groupBy": "Language"
+      },
+      {
+        "name": "In-Use Code",
+        "type": "grid",
+        "filters": [
+          { "field": "Status", "value": "In-Use" }
+        ]
+      }
+    ]
+  }
+}
