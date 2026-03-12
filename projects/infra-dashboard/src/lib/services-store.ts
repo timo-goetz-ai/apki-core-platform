@@ -1,13 +1,22 @@
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
-import type { ServiceConfig, ServicesData } from "./types";
+import type { CategoryConfig, ServiceConfig, ServicesData } from "./types";
 
 const DATA_PATH = path.join(process.cwd(), "data", "services.json");
 
-export async function getServices(): Promise<ServiceConfig[]> {
+export async function getServicesData(): Promise<ServicesData> {
   const raw = await readFile(DATA_PATH, "utf-8");
-  const data: ServicesData = JSON.parse(raw);
+  return JSON.parse(raw) as ServicesData;
+}
+
+export async function getServices(): Promise<ServiceConfig[]> {
+  const data = await getServicesData();
   return data.services;
+}
+
+export async function getCategories(): Promise<CategoryConfig[]> {
+  const data = await getServicesData();
+  return data.categories ?? [];
 }
 
 export async function getServiceById(

@@ -9,6 +9,17 @@ import {
   Database,
   ExternalLink,
   Globe,
+  Shield,
+  BarChart,
+  Cloud,
+  Key,
+  Zap,
+  FileText,
+  Bot,
+  Mic,
+  Cpu,
+  Home,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ServiceConfig, ServiceStatus } from "@/lib/types";
@@ -20,6 +31,17 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   activity: Activity,
   database: Database,
   globe: Globe,
+  shield: Shield,
+  "bar-chart": BarChart,
+  cloud: Cloud,
+  key: Key,
+  zap: Zap,
+  "file-text": FileText,
+  bot: Bot,
+  mic: Mic,
+  cpu: Cpu,
+  home: Home,
+  mail: Mail,
 };
 
 const statusColors = {
@@ -29,9 +51,9 @@ const statusColors = {
 };
 
 const statusGlow = {
-  online: "shadow-emerald-500/20",
-  offline: "shadow-red-500/20",
-  slow: "shadow-amber-500/20",
+  online: "shadow-emerald-500/10",
+  offline: "shadow-red-500/10",
+  slow: "shadow-amber-500/10",
 };
 
 interface ServiceCardProps {
@@ -40,14 +62,16 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, status }: ServiceCardProps) {
-  const Icon = iconMap[service.icon] || Globe;
+  const Icon = iconMap[service.icon] ?? Globe;
   const currentStatus = status?.status ?? "offline";
 
   return (
     <Link
-      href={`/services/${service.id}`}
+      href={service.url}
+      target="_blank"
+      rel="noopener noreferrer"
       className={cn(
-        "group block p-6 rounded-2xl bg-zinc-900 border border-zinc-800",
+        "group block p-5 rounded-2xl bg-zinc-900 border border-zinc-800",
         "hover:border-zinc-700 hover:bg-zinc-900/80 transition-all",
         "shadow-lg",
         statusGlow[currentStatus]
@@ -55,18 +79,21 @@ export function ServiceCard({ service, status }: ServiceCardProps) {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 transition-colors">
-            <Icon className="w-6 h-6 text-zinc-300" />
+          <div className="p-2 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 transition-colors">
+            <Icon className="w-5 h-5 text-zinc-300" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg">{service.name}</h3>
-            <p className="text-sm text-zinc-500">{service.description}</p>
+            <h3 className="font-semibold text-base leading-tight">{service.name}</h3>
+            <p className="text-xs text-zinc-500 mt-0.5">{service.description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+          {status?.protected && (
+            <Shield className="w-3 h-3 text-zinc-600" title="Authentik-geschützt" />
+          )}
           <div
             className={cn(
-              "w-3 h-3 rounded-full",
+              "w-2.5 h-2.5 rounded-full",
               statusColors[currentStatus],
               currentStatus === "online" && "animate-pulse"
             )}
@@ -74,18 +101,23 @@ export function ServiceCard({ service, status }: ServiceCardProps) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-          <ExternalLink className="w-3.5 h-3.5" />
-          <span className="truncate max-w-[200px]">
+      <div className="mt-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-1 text-xs text-zinc-600">
+          <ExternalLink className="w-3 h-3" />
+          <span className="truncate max-w-[180px]">
             {service.url.replace("https://", "")}
           </span>
         </div>
-        {status && (
-          <span className="text-xs text-zinc-600 font-mono">
-            {status.responseTime}ms
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {service.note && (
+            <span className="text-xs text-amber-600/80 truncate max-w-[80px]" title={service.note}>
+              {service.note.length > 12 ? service.note.slice(0, 12) + "…" : service.note}
+            </span>
+          )}
+          {status && (
+            <span className="text-xs text-zinc-700 font-mono">{status.responseTime}ms</span>
+          )}
+        </div>
       </div>
     </Link>
   );

@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ServiceCard } from "./service-card";
-import type { ServiceConfig, ServiceStatus } from "@/lib/types";
+import { CategorySection } from "./category-section";
+import type { CategoryConfig, ServiceConfig, ServiceStatus } from "@/lib/types";
 
 interface StatusGridProps {
   services: ServiceConfig[];
+  categories: CategoryConfig[];
 }
 
-export function StatusGrid({ services }: StatusGridProps) {
+export function StatusGrid({ services, categories }: StatusGridProps) {
   const [statuses, setStatuses] = useState<ServiceStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,28 +34,34 @@ export function StatusGrid({ services }: StatusGridProps) {
   const onlineCount = statuses.filter((s) => s.status === "online").length;
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <span className="flex items-center gap-2 text-sm text-zinc-500">
+    <div className="space-y-10">
+      <div className="flex items-center gap-4 text-sm text-zinc-500">
+        <span className="flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-          {loading ? "..." : `${onlineCount}/${services.length} online`}
+          {loading ? "prüfe…" : `${onlineCount}/${services.length} online`}
         </span>
         {!loading && (
-          <span className="text-xs text-zinc-600">
-            Auto-refresh 30s
-          </span>
+          <span className="text-zinc-700 text-xs">Auto-refresh 30s</span>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {services.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            status={statuses.find((s) => s.id === service.id)}
-          />
-        ))}
-      </div>
+      {categories.map((cat) => (
+        <CategorySection
+          key={cat.id}
+          label={cat.label}
+          services={services.filter((s) => s.category === cat.id)}
+          statuses={statuses}
+        />
+      ))}
+
+      {/* fallback: services ohne bekannte Kategorie */}
+      {(() => {
+        const knownCatIds = new Set(categories.map((c) => c.id));
+        const rest = services.filter((s) => !knownCatIds.has(s.category));
+        return rest.length > 0 ? (
+          <CategorySection label="Weitere Services" services={rest} statuses={statuses} />
+        ) : null;
+      })()}
     </div>
   );
 }

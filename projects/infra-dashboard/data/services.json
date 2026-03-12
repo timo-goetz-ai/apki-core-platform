@@ -7,7 +7,18 @@
       "icon": "server",
       "category": "infrastructure",
       "healthEndpoint": "https://coolify.automation-plus-ki.de",
-      "description": "Deployment Platform",
+      "description": "Container Management",
+      "note": "Tailscale only (100.124.39.4)",
+      "headers": {}
+    },
+    {
+      "id": "authentik",
+      "name": "Authentik",
+      "url": "https://auth.automation-plus-ki.de",
+      "icon": "shield",
+      "category": "infrastructure",
+      "healthEndpoint": "https://auth.automation-plus-ki.de/-/health/ready/",
+      "description": "SSO Identity Provider",
       "headers": {}
     },
     {
@@ -21,36 +32,272 @@
       "headers": {}
     },
     {
+      "id": "grafana",
+      "name": "Grafana",
+      "url": "https://grafana.automation-plus-ki.de",
+      "icon": "bar-chart",
+      "category": "monitoring",
+      "healthEndpoint": "https://grafana.automation-plus-ki.de/api/health",
+      "description": "Monitoring Dashboards",
+      "headers": {}
+    },
+    {
+      "id": "prometheus",
+      "name": "Prometheus",
+      "url": "https://prometheus.automation-plus-ki.de",
+      "icon": "activity",
+      "category": "monitoring",
+      "healthEndpoint": "https://prometheus.automation-plus-ki.de/-/healthy",
+      "description": "Metrics Collection",
+      "headers": {}
+    },
+    {
+      "id": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://nextcloud.automation-plus-ki.de",
+      "icon": "cloud",
+      "category": "homestack",
+      "healthEndpoint": "https://nextcloud.automation-plus-ki.de/status.php",
+      "description": "File Storage & Office",
+      "headers": {}
+    },
+    {
       "id": "nocodb",
       "name": "NocoDB",
       "url": "https://nocodb.automation-plus-ki.de",
       "icon": "table",
-      "category": "database",
+      "category": "homestack",
       "healthEndpoint": "https://nocodb.automation-plus-ki.de/api/v1/health",
-      "description": "Database UI",
+      "description": "No-Code Database",
       "headers": {}
     },
     {
-      "id": "uptime-kuma",
-      "name": "Uptime Kuma",
-      "url": "https://status.automation-plus-ki.de",
-      "icon": "activity",
-      "category": "monitoring",
-      "healthEndpoint": "https://status.automation-plus-ki.de",
-      "description": "Service Monitoring",
+      "id": "vaultwarden",
+      "name": "Vaultwarden",
+      "url": "https://vault.automation-plus-ki.de",
+      "icon": "key",
+      "category": "homestack",
+      "healthEndpoint": "https://vault.automation-plus-ki.de/alive",
+      "description": "Password Manager",
       "headers": {}
     },
     {
-      "id": "qdrant",
-      "name": "Qdrant",
-      "url": "https://qdrant.automation-plus-ki.de/dashboard",
-      "icon": "database",
-      "category": "database",
-      "healthEndpoint": "https://qdrant.automation-plus-ki.de/healthz",
-      "description": "Vector Database",
-      "headers": {
-        "api-key": "E3FI9RXU1INoSI6mK573TUOZcdV1q99csVlDQrjq"
-      }
+      "id": "hoppscotch",
+      "name": "Hoppscotch",
+      "url": "https://hoppscotch.automation-plus-ki.de",
+      "icon": "zap",
+      "category": "homestack",
+      "healthEndpoint": "https://hoppscotch.automation-plus-ki.de",
+      "description": "API Client",
+      "headers": {}
+    },
+    {
+      "id": "browserless",
+      "name": "Browserless",
+      "url": "https://browserless.automation-plus-ki.de",
+      "icon": "globe",
+      "category": "homestack",
+      "healthEndpoint": "https://browserless.automation-plus-ki.de/pressure",
+      "description": "Browser Automation",
+      "headers": {}
+    },
+    {
+      "id": "mailpit",
+      "name": "Mailpit",
+      "url": "https://mail.automation-plus-ki.de",
+      "icon": "mail",
+      "category": "homestack",
+      "healthEndpoint": "https://mail.automation-plus-ki.de",
+      "description": "SMTP Catcher",
+      "headers": {}
+    },
+    {
+      "id": "appflowy",
+      "name": "AppFlowy",
+      "url": "https://appflowy.automation-plus-ki.de",
+      "icon": "file-text",
+      "category": "homestack",
+      "healthEndpoint": "https://appflowy.automation-plus-ki.de",
+      "description": "Notes & Projects",
+      "headers": {}
+    },
+    {
+      "id": "agents-platform",
+      "name": "AI Agent Platform",
+      "url": "https://agents.automation-plus-ki.de",
+      "icon": "bot",
+      "category": "ai",
+      "healthEndpoint": "https://agents.automation-plus-ki.de",
+      "description": "Next.js + FastAPI",
+      "headers": {}
+    },
+    {
+      "id": "voice-platform",
+      "name": "AI Voice Platform",
+      "url": "https://voice.automation-plus-ki.de",
+      "icon": "mic",
+      "category": "ai",
+      "healthEndpoint": "https://voice.automation-plus-ki.de",
+      "description": "Voice AI Platform",
+      "headers": {}
+    },
+    {
+      "id": "mcp-grafana",
+      "name": "MCP Grafana",
+      "url": "https://mcp-grafana.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-grafana.automation-plus-ki.de/health",
+      "description": "Grafana MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-n8n",
+      "name": "MCP n8n",
+      "url": "https://mcp-n8n.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-n8n.automation-plus-ki.de/health",
+      "description": "n8n MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-coolify",
+      "name": "MCP Coolify",
+      "url": "https://mcp-coolify.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-coolify.automation-plus-ki.de/health",
+      "description": "Coolify MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-hetzner",
+      "name": "MCP Hetzner",
+      "url": "https://mcp-hetzner.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-hetzner.automation-plus-ki.de/health",
+      "description": "Hetzner MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-github",
+      "name": "MCP GitHub",
+      "url": "https://mcp-github.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-github.automation-plus-ki.de/health",
+      "description": "GitHub MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-cloudflare",
+      "name": "MCP Cloudflare",
+      "url": "https://mcp-cloudflare.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-cloudflare.automation-plus-ki.de/health",
+      "description": "Cloudflare MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-google",
+      "name": "MCP Google",
+      "url": "https://mcp-google.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-google.automation-plus-ki.de/health",
+      "description": "Google Workspace MCP",
+      "headers": {}
+    },
+    {
+      "id": "mcp-filesystem",
+      "name": "MCP Filesystem",
+      "url": "https://mcp-filesystem.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-filesystem.automation-plus-ki.de/health",
+      "description": "Filesystem MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-postgres",
+      "name": "MCP Postgres",
+      "url": "https://mcp-postgres.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-postgres.automation-plus-ki.de/health",
+      "description": "PostgreSQL MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-prometheus",
+      "name": "MCP Prometheus",
+      "url": "https://mcp-prometheus.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-prometheus.automation-plus-ki.de/health",
+      "description": "Prometheus MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-authentik",
+      "name": "MCP Authentik",
+      "url": "https://mcp-authentik.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-authentik.automation-plus-ki.de/health",
+      "description": "Authentik MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-qdrant",
+      "name": "MCP Qdrant",
+      "url": "https://mcp-qdrant.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-qdrant.automation-plus-ki.de/health",
+      "description": "Qdrant MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-nocodb",
+      "name": "MCP NocoDB",
+      "url": "https://mcp-nocodb.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-nocodb.automation-plus-ki.de/health",
+      "description": "NocoDB MCP Server",
+      "headers": {}
+    },
+    {
+      "id": "mcp-nextcloud",
+      "name": "MCP Nextcloud",
+      "url": "https://mcp-nextcloud.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-nextcloud.automation-plus-ki.de/health",
+      "description": "Nextcloud MCP Server ⚠️",
+      "headers": {}
+    },
+    {
+      "id": "mcp-vaultwarden",
+      "name": "MCP Vaultwarden",
+      "url": "https://mcp-vaultwarden.automation-plus-ki.de",
+      "icon": "cpu",
+      "category": "mcp",
+      "healthEndpoint": "https://mcp-vaultwarden.automation-plus-ki.de/health",
+      "description": "Vaultwarden MCP Server ⚠️",
+      "headers": {}
     }
+  ],
+  "categories": [
+    { "id": "infrastructure", "label": "Infrastruktur", "icon": "server" },
+    { "id": "monitoring", "label": "Monitoring", "icon": "activity" },
+    { "id": "automation", "label": "Automation", "icon": "workflow" },
+    { "id": "ai", "label": "AI Projects", "icon": "bot" },
+    { "id": "homestack", "label": "Homestack", "icon": "home" },
+    { "id": "mcp", "label": "MCP Server", "icon": "cpu" }
   ]
 }

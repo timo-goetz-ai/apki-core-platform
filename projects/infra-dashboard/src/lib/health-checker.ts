@@ -3,18 +3,36 @@ import type { ServiceConfig, ServiceStatus } from "./types";
 const SLOW_THRESHOLD_MS = 2000;
 const TIMEOUT_MS = 5000;
 
+// Authentik login redirect = service IS running, just SSO-protected
+const AUTHENTIK_INDICATORS = [
+  "auth.automation-plus-ki.de",
+  "/flows/",
+  "authentik",
+];
+
+function isAuthentikRedirect(response: Response): boolean {
+  const location = response.headers.get("location") ?? "";
+  return AUTHENTIK_INDICATORS.some((s) => location.includes(s));
+}
+
 function buildResult(
   id: string,
   statusCode: number,
-  responseTime: number
+  responseTime: number,
+  protected_ = false
 ): ServiceStatus {
   const isUp = statusCode >= 200 && statusCode < 400;
   return {
     id,
-    status: !isUp ? "offline" : responseTime > SLOW_THRESHOLD_MS ? "slow" : "online",
+    status: !isUp
+      ? "offline"
+      : responseTime > SLOW_THRESHOLD_MS
+        ? "slow"
+        : "online",
     responseTime,
     lastChecked: new Date().toISOString(),
     statusCode,
+    protected: protected_,
   };
 }
 
@@ -23,7 +41,6 @@ export async function checkService(
 ): Promise<ServiceStatus> {
   const start = Date.now();
 
-  // Use GET directly - more reliable across different services
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -32,14 +49,25 @@ export async function checkService(
       method: "GET",
       headers: service.headers,
       signal: controller.signal,
-      redirect: "follow",
+      redirect: "manual", // Don't follow – detect Authentik redirects ourselves
     });
 
     clearTimeout(timeout);
-    // Consume body to avoid memory leaks
     await response.text().catch(() => {});
 
-    return buildResult(service.id, response.status, Date.now() - start);
+    const elapsed = Date.now() - start;
+
+    // 302 to Authentik = service is alive, just protected
+    if (response.status === 302 && isAuthentikRedirect(response)) {
+      return buildResult(service.id, 200, elapsed, true);
+    }
+
+    // 3xx in general = service responded, treat as up
+    if (response.status >= 301 && response.status < 400) {
+      return buildResult(service.id, 200, elapsed, false);
+    }
+
+    return buildResult(service.id, response.status, elapsed);
   } catch {
     return {
       id: service.id,

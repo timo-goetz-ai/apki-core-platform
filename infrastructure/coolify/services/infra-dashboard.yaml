@@ -1,0 +1,70 @@
+# Coolify Deployment – infra-dashboard
+# URL: https://dashboard.automation-plus-ki.de
+# Authentik-Proxy: JA (hinter SSO absichern)
+# Build-Context: /projects/infra-dashboard (aus aios Monorepo)
+
+name: infra-dashboard
+version: "1.0"
+
+build:
+  context: projects/infra-dashboard
+  dockerfile: projects/infra-dashboard/Dockerfile
+
+environment:
+  NODE_ENV: production
+  NEXT_TELEMETRY_DISABLED: "1"
+  # API Keys – in Coolify unter Secrets/Variables setzen:
+  N8N_API_KEY: "${N8N_API_KEY}"
+  N8N_BASE_URL: "https://n8n.automation-plus-ki.de"
+  NOCODB_API_KEY: "${NOCODB_API_KEY}"
+  NOCODB_BASE_URL: "https://nocodb.automation-plus-ki.de"
+  GRAFANA_API_KEY: "${GRAFANA_API_KEY}"
+  GRAFANA_BASE_URL: "https://grafana.automation-plus-ki.de"
+
+ports:
+  - internal: 3000
+    external: 3000
+
+networks:
+  - aios-internal
+
+healthCheck:
+  test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/status"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  startPeriod: 20s
+
+resources:
+  limits:
+    cpus: "0.5"
+    memory: 512M
+  requests:
+    cpus: "0.1"
+    memory: 256M
+
+restart_policy: unless-stopped
+
+logging:
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.infra-dashboard.rule=Host(`dashboard.automation-plus-ki.de`)"
+  - "traefik.http.routers.infra-dashboard.tls=true"
+  - "traefik.http.routers.infra-dashboard.tls.certresolver=letsencrypt"
+  # Authentik SSO Middleware:
+  - "traefik.http.routers.infra-dashboard.middlewares=authentik@docker"
+
+notes: |
+  Deployment-Schritte in Coolify:
+  1. Neues Projekt: "infra-dashboard"
+  2. Source: GitHub (TimoGoetz1988/aios), Branch: main
+  3. Build-Pfad: projects/infra-dashboard
+  4. Domain: dashboard.automation-plus-ki.de
+  5. Authentik SSO Middleware aktivieren
+  6. Secrets setzen: N8N_API_KEY, NOCODB_API_KEY, GRAFANA_API_KEY
+  7. Deploy
