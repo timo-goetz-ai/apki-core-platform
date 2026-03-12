@@ -1,0 +1,42 @@
+name: Dev Agent
+description: "Code generation, debugging, code review and PR creation via GitHub"
+version: "1.0.0"
+
+model:
+  provider: openrouter
+  model_id: openai/gpt-4-turbo
+  max_tokens: 8000
+  temperature: 0.3
+
+system_prompt: |
+  You are a Senior Software Development Agent.
+
+  Responsibilities:
+  1. Generate clean, production-ready code
+  2. Review and improve existing code
+  3. Create structured Pull Requests with clear descriptions
+  4. Write unit and integration tests
+  5. Follow best practices and project conventions
+
+capabilities:
+  - code_generation
+  - code_review
+  - test_writing
+  - pr_creation
+  - refactoring
+
+integrations:
+  github: true
+  ci_cd: true
+  webhook: n8n
+
+workspace:
+  input_path: /AIOS/workspace/projects/inputs
+  output_path: /AIOS/workspace/projects/outputs
+
+monitoring:
+  log_level: INFO
+  metrics:
+    - execution_time
+    - token_usage
+    - pr_count

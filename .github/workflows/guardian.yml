@@ -1,0 +1,68 @@
+name: Infra Guardian – Drift Detection
+
+on:
+  schedule:
+    - cron: "0 6 * * *"     # täglich 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    name: "Setup.yaml vs. Realzustand prüfen"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secrets für Guardian laden
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          HETZNER_API_TOKEN:    op://DevOps-Center/Hetzner/api-token
+          COOLIFY_API_TOKEN:    op://DevOps-Center/Coolify/api-token
+          COOLIFY_URL:          op://DevOps-Center/Coolify/url
+
+      - name: Services-Health prüfen
+        id: health
+        run: |
+          FAILED=()
+          check_url() {
+            local name=$1 url=$2
+            if ! curl -sf --max-time 10 "$url" > /dev/null 2>&1; then
+              FAILED+=("$name: $url")
+              echo "FAIL  $name"
+            else
+              echo "OK    $name"
+            fi
+          }
+
+          check_url "n8n"           "https://n8n.automation-plus-ki.de/healthz"
+          check_url "Grafana"       "https://grafana.automation-plus-ki.de/api/health"
+          check_url "NocoDB"        "https://nocodb.automation-plus-ki.de/api/v1/health"
+          check_url "Agents"        "https://agents.automation-plus-ki.de/health"
+          check_url "Browserless"   "https://browserless.automation-plus-ki.de/pressure"
+
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            echo "drift=true" >> $GITHUB_OUTPUT
+            printf '%s\n' "${FAILED[@]}" > /tmp/failed-services.txt
+            cat /tmp/failed-services.txt
+          else
+            echo "drift=false" >> $GITHUB_OUTPUT
+            echo "Alle Services gesund."
+          fi
+
+      - name: GitHub Issue erstellen bei Drift
+        if: steps.health.outputs.drift == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const failed = fs.readFileSync('/tmp/failed-services.txt', 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Guardian] Service-Drift erkannt – ${new Date().toISOString().split('T')[0]}`,
+              body: `## Infra Guardian – Drift Report\n\n**Zeitpunkt:** ${new Date().toISOString()}\n\n**Ausgefallene Services:**\n\`\`\`\n${failed}\n\`\`\`\n\nBitte prüfen und Coolify-Deployments ggf. neu starten.`,
+              labels: ['guardian', 'infra', 'alert']
+            });

@@ -1,0 +1,26 @@
+{
+  "name": "coolify-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Coolify - Manage applications, deployments, backups and more via Model Context Protocol",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:http": "node dist/http-server.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["mcp", "coolify", "deployment", "model-context-protocol"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

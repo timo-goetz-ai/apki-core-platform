@@ -1,0 +1,64 @@
+services:
+  nocodb:
+    image: nocodb/nocodb:latest
+    restart: unless-stopped
+    environment:
+      - NC_DB=pg://saas-postgres:5432?u=postgres&p=${NOCODB_DB_PASSWORD}&d=nocodb
+      - NC_PUBLIC_URL=https://nocodb.automation-plus-ki.de
+      - NC_DISABLE_TELE=true
+      - PORT=8080
+    depends_on:
+      saas-postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nocodb.rule=Host(`nocodb.automation-plus-ki.de`)
+      - traefik.http.routers.nocodb.entrypoints=https
+      - traefik.http.routers.nocodb.tls.certresolver=letsencrypt
+      - traefik.http.services.nocodb.loadbalancer.server.port=8080
+      - traefik.http.middlewares.nocodb-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.nocodb-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.nocodb-headers.headers.stsSeconds=31536000
+      - traefik.http.routers.nocodb.middlewares=nocodb-headers
+    networks:
+      - coolify
+
+  saas-postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=${NOCODB_DB_PASSWORD}
+      - POSTGRES_DB=saas_production
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - saas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coolify
+
+  saas-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - saas_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coolify
+
+volumes:
+  saas_postgres_data:
+    external: true
+  saas_redis_data:
+    external: true
+
+networks:
+  coolify:
+    external: true

@@ -1,0 +1,94 @@
+access_control:
+
+  research-agent:
+    read:
+      - workspace/research
+      - workspace/knowledge
+      - browserless
+      - nocodb_views
+    write:
+      - workspace/research/outputs
+    execute:
+      - browserless_api
+      - ai_model_openrouter
+      - github_read
+    forbidden:
+      - postgres_write
+      - hetzner_api
+      - coolify_api
+      - vault_secrets
+
+  dev-agent:
+    read:
+      - github_repos
+      - workspace/projects
+      - nocodb_views
+    write:
+      - github_repos_prs_only
+      - workspace/projects/outputs
+    execute:
+      - github_actions
+      - ci_cd_pipeline
+      - ai_model_openrouter
+    forbidden:
+      - delete_operations
+      - production_deployments_direct
+      - vault_secrets
+
+  docs-agent:
+    read:
+      - github_repos
+      - workspace
+      - nocodb_views
+    write:
+      - workspace/outputs/docs
+      - github_repos_prs_only
+    execute:
+      - ai_model_openrouter
+    forbidden:
+      - coolify_api
+      - hetzner_api
+      - vault_secrets
+
+  infra-agent:
+    read:
+      - all_infrastructure
+      - prometheus_metrics
+      - logs
+      - system_map_yaml
+    write:
+      - docker_configs
+      - infrastructure_blueprints
+    execute:
+      - coolify_api
+      - hetzner_api
+      - ai_model_openrouter
+    forbidden:
+      - delete_databases
+      - backup_delete
+      - vault_secrets
+
+  storage-guardian:
+    read:
+      - input_global
+      - local_workhorse
+      - nas_storage
+    write:
+      - devops_center_docs
+      - hetzner_s3
+      - google_drive_collab
+    execute:
+      - git_commit_push
+      - s3_cli
+      - gdrive_cli
+    forbidden:
+      - coolify_api
+      - hetzner_api
+      - postgres_write
+      - vault_secrets
+
+  claude-cursor:
+    read: "*"
+    write: "*"
+    execute: "*"
+    forbidden: []

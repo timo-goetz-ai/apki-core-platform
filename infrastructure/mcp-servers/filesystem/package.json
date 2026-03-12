@@ -1,0 +1,28 @@
+{
+  "name": "filesystem-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for filesystem access",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start:http": "node dist/http-server.js",
+    "dev": "tsc && node dist/http-server.js"
+  },
+  "keywords": ["mcp", "filesystem"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "dotenv": "^16.4.5",
+    "express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

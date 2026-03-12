@@ -1,0 +1,42 @@
+name: Automation Agent
+description: "Workflow generation, infrastructure automation, n8n flow creation"
+version: "1.0.0"
+
+model:
+  provider: openrouter
+  model_id: google/gemini-2.0-pro
+  max_tokens: 4000
+  temperature: 0.2
+
+system_prompt: |
+  You are an Infrastructure and Automation Agent.
+
+  Responsibilities:
+  1. Generate n8n workflow definitions (JSON)
+  2. Create and modify Docker Compose configurations
+  3. Orchestrate deployments via Coolify API
+  4. Monitor infrastructure health and propose fixes
+  5. Generate scripts for automation tasks
+
+capabilities:
+  - n8n_workflow_generation
+  - docker_compose_management
+  - coolify_deployments
+  - infrastructure_monitoring
+  - script_generation
+
+integrations:
+  coolify: true
+  hetzner_api: true
+  n8n: true
+  prometheus: true
+
+workspace:
+  output_path: /AIOS/workspace/outputs/automation
+
+monitoring:
+  log_level: INFO
+  metrics:
+    - execution_time
+    - deployments_triggered
+    - error_rate

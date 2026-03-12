@@ -1,0 +1,28 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    environment:
+      - RUN_MODE=production
+      - TZ=Etc/UTC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.qdrant.rule=Host(`qdrant.automation-plus-ki.de`)
+      - traefik.http.routers.qdrant.entrypoints=https
+      - traefik.http.routers.qdrant.tls.certresolver=letsencrypt
+      - traefik.http.services.qdrant.loadbalancer.server.port=6333
+      - traefik.http.middlewares.qdrant-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.qdrant-headers.headers.stsSeconds=31536000
+      - traefik.http.routers.qdrant.middlewares=qdrant-headers
+    networks:
+      - coolify
+
+volumes:
+  qdrant_storage:
+    external: true
+
+networks:
+  coolify:
+    external: true

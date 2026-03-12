@@ -1,0 +1,148 @@
+services:
+  mcp-coolify:
+    image: ghcr.io/timogoetz1988/mcp-coolify:latest
+    container_name: mcp-coolify
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - COOLIFY_URL=${COOLIFY_URL}
+      - COOLIFY_TOKEN=${COOLIFY_TOKEN}
+      - MCP_API_KEY=${MCP_COOLIFY_API_KEY}
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp-coolify.rule=Host(`mcp-coolify.automation-plus-ki.de`)"
+      - "traefik.http.routers.mcp-coolify.entrypoints=https"
+      - "traefik.http.routers.mcp-coolify.tls=true"
+      - "traefik.http.routers.mcp-coolify.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mcp-coolify.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp-hetzner:
+    image: ghcr.io/timogoetz1988/mcp-hetzner:latest
+    container_name: mcp-hetzner
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - HETZNER_TOKEN=${HETZNER_TOKEN}
+      - MCP_API_KEY=${MCP_HETZNER_API_KEY}
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp-hetzner.rule=Host(`mcp-hetzner.automation-plus-ki.de`)"
+      - "traefik.http.routers.mcp-hetzner.entrypoints=https"
+      - "traefik.http.routers.mcp-hetzner.tls=true"
+      - "traefik.http.routers.mcp-hetzner.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mcp-hetzner.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp-cloudflare:
+    image: ghcr.io/timogoetz1988/mcp-cloudflare:latest
+    container_name: mcp-cloudflare
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
+      - MCP_API_KEY=${MCP_CLOUDFLARE_API_KEY}
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp-cloudflare.rule=Host(`mcp-cloudflare.automation-plus-ki.de`)"
+      - "traefik.http.routers.mcp-cloudflare.entrypoints=https"
+      - "traefik.http.routers.mcp-cloudflare.tls=true"
+      - "traefik.http.routers.mcp-cloudflare.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mcp-cloudflare.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp-github:
+    image: ghcr.io/timogoetz1988/mcp-github:latest
+    container_name: mcp-github
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+      - MCP_API_KEY=${MCP_GITHUB_API_KEY}
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp-github.rule=Host(`mcp-github.automation-plus-ki.de`)"
+      - "traefik.http.routers.mcp-github.entrypoints=https"
+      - "traefik.http.routers.mcp-github.tls=true"
+      - "traefik.http.routers.mcp-github.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mcp-github.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # mcp-google ist auskommentiert bis Google-Konto-Probleme geloest sind.
+  # Benoetigt: service-account.json als Volume-Mount (GOOGLE_CREDENTIALS_PATH)
+  # mcp-google:
+  #   image: ghcr.io/timogoetz1988/mcp-google:latest
+  #   container_name: mcp-google
+  #   restart: unless-stopped
+  #   environment:
+  #     - PORT=3000
+  #     - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account.json
+  #     - GOOGLE_DELEGATED_USER=${GOOGLE_DELEGATED_USER}
+  #     - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+  #     - MCP_API_KEY=${MCP_GOOGLE_API_KEY}
+  #   volumes:
+  #     - ${GOOGLE_CREDENTIALS_PATH}:/app/credentials:ro
+  #   networks:
+  #     - coolify
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.mcp-google.rule=Host(`mcp-google.automation-plus-ki.de`)"
+  #     - "traefik.http.routers.mcp-google.entrypoints=https"
+  #     - "traefik.http.routers.mcp-google.tls=true"
+  #     - "traefik.http.routers.mcp-google.tls.certresolver=letsencrypt"
+  #     - "traefik.http.services.mcp-google.loadbalancer.server.port=3000"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 512M
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+
+networks:
+  coolify:
+    external: true

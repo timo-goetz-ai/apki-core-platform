@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+.nuxt/
+dist/
+*.log
+npm-debug.log*
+
+# Docker
+.docker/
+
+# Environments (KRITISCH: niemals committen!)
+.env
+.env.local
+.env.dev
+.env.staging
+.env.prod
+*.env
+!*.env.example
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.p12
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Backups
+*.bak
+*.backup

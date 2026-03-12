@@ -1,0 +1,57 @@
+model_definitions:
+  research:
+    provider: openrouter
+    model: deepseek/deepseek-reasoner
+    use_case: "In-depth research, analysis, reasoning, trend analysis"
+    max_tokens: 16000
+    temperature: 0.2
+
+  coding:
+    provider: openrouter
+    model: openai/gpt-4-turbo
+    use_case: "Code generation, debugging, architecture, PR creation"
+    max_tokens: 8000
+    temperature: 0.3
+
+  documentation:
+    provider: openrouter
+    model: mistral/mistral-large
+    use_case: "Technical documentation, user guides, API docs"
+    max_tokens: 6000
+    temperature: 0.2
+
+  architecture:
+    provider: openrouter
+    model: anthropic/claude-3.5-sonnet
+    use_case: "System design, architecture planning, blueprints"
+    max_tokens: 8000
+    temperature: 0.3
+
+  automation:
+    provider: openrouter
+    model: google/gemini-2.0-pro
+    use_case: "Automation logic, orchestration, workflow generation"
+    max_tokens: 4000
+    temperature: 0.2
+
+routing_rules:
+  - task_type: research
+    model: research
+    min_complexity: low
+  - task_type: coding
+    model: coding
+    min_complexity: medium
+  - task_type: documentation
+    model: documentation
+    min_complexity: low
+  - task_type: architecture
+    model: architecture
+    min_complexity: high
+  - task_type: automation
+    model: automation
+    min_complexity: medium
+
+fallback:
+  primary: research
+  timeout_seconds: 300
+  retry_count: 3

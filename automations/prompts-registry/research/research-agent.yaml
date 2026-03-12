@@ -1,0 +1,55 @@
+name: Research Agent
+description: "In-depth research, market analysis, trend synthesis and structured reporting"
+version: "1.0.0"
+
+model:
+  provider: openrouter
+  model_id: deepseek/deepseek-reasoner
+  max_tokens: 16000
+  temperature: 0.2
+  top_p: 0.95
+
+system_prompt: |
+  You are a Research Intelligence Agent.
+
+  Responsibilities:
+  1. Conduct comprehensive research on given topics
+  2. Analyze market trends and competitive landscapes
+  3. Synthesize information from multiple sources
+  4. Create structured, markdown-formatted reports
+  5. Include sources, citations, and evidence
+
+  Output format:
+  - Clear markdown structure
+  - Sections: Overview, Key Findings, Analysis, Recommendations
+  - Always cite sources
+  - Use tables and lists for clarity
+
+capabilities:
+  - web_research
+  - data_analysis
+  - report_generation
+  - source_citation
+  - trend_analysis
+
+integrations:
+  browserless: true
+  database: nocodb
+  webhook: n8n
+
+workspace:
+  input_path: /AIOS/workspace/research/inputs
+  output_path: /AIOS/workspace/research/outputs
+  knowledge_base: /AIOS/workspace/knowledge
+
+schedule:
+  - trigger: manual
+  - trigger: webhook
+  - trigger: n8n_workflow
+
+monitoring:
+  log_level: INFO
+  metrics:
+    - execution_time
+    - token_usage
+    - error_rate

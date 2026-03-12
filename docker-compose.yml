@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+
+  # ─────────────────────────────────────────────────────
+  # NEXUS-CORE (FastAPI Backend)
+  # Hot-reload: spiegelt ~/AIOS direkt in den Container
+  # ─────────────────────────────────────────────────────
+  nexus-core:
+    build:
+      context: ../../apps/nexus-core
+      dockerfile: Dockerfile
+    container_name: aios-nexus-core
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://aios_user:${DB_PASSWORD:-aios_pass}@aios-db:5432/aios_db
+      - REDIS_URL=redis://aios-redis:6379/0
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - BROWSERLESS_URL=http://aios-browserless:3000
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      - ../../:/AIOS                                    # Hot-reload: vollständige AIOS-Spiegelung
+      - /var/run/docker.sock:/var/run/docker.sock       # Lab: Nexus kann Container steuern
+    networks:
+      - aios-network
+    depends_on:
+      - aios-db
+      - aios-redis
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://aios-loki:3100/loki/api/v1/push"
+        labels: "service=nexus-core"
+
+  # ─────────────────────────────────────────────────────
+  # ADMIN-DASHBOARD (Next.js)
+  # ─────────────────────────────────────────────────────
+  admin-dashboard:
+    build:
+      context: ../../apps/admin-dashboard
+      dockerfile: Dockerfile
+    container_name: aios-admin-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_NEXUS_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+    networks:
+      - aios-network
+    depends_on:
+      - nexus-core
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://aios-loki:3100/loki/api/v1/push"
+        labels: "service=admin-dashboard"
+
+  # ─────────────────────────────────────────────────────
+  # POSTGRESQL – Metadaten & Task-Queue-Persistenz
+  # ─────────────────────────────────────────────────────
+  aios-db:
+    image: postgres:15-alpine
+    container_name: aios-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=aios_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-aios_pass}
+      - POSTGRES_DB=aios_db
+    volumes:
+      - aios-db-data:/var/lib/postgresql/data
+    networks:
+      - aios-network
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://aios-loki:3100/loki/api/v1/push"
+        labels: "service=aios-db"
+
+  # ─────────────────────────────────────────────────────
+  # REDIS – Background-Tasks & Real-time Hooks
+  # ─────────────────────────────────────────────────────
+  aios-redis:
+    image: redis:7-alpine
+    container_name: aios-redis
+    restart: unless-stopped
+    networks:
+      - aios-network
+
+  # ─────────────────────────────────────────────────────
+  # BROWSERLESS – Browser-Automatisierung für Agents
+  # Eigene Instanz: kein öffentlicher Dienst nötig
+  # Erreichbar intern: http://aios-browserless:3000
+  # ─────────────────────────────────────────────────────
+  aios-browserless:
+    image: browserless/chrome:latest
+    container_name: aios-browserless
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - CONNECTION_TIMEOUT=60000
+      - MAX_CONCURRENT_SESSIONS=5
+      - MAX_QUEUE_LENGTH=10
+      - TOKEN=${BROWSERLESS_TOKEN:-local-dev-token}
+    networks:
+      - aios-network
+    shm_size: 1gb
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://aios-loki:3100/loki/api/v1/push"
+        labels: "service=browserless"
+
+  # ─────────────────────────────────────────────────────
+  # LOKI – Log-Aggregation für alle Container
+  # Logs aller Services landen hier zentral
+  # Grafana greift darauf zu für Log-Dashboards
+  # ─────────────────────────────────────────────────────
+  aios-loki:
+    image: grafana/loki:2.9.0
+    container_name: aios-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../../monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - aios-network
+
+  # ─────────────────────────────────────────────────────
+  # PROMTAIL – Loki Log-Forwarder (für Dateisystem-Logs)
+  # Sendet lokale Logfiles an Loki
+  # ─────────────────────────────────────────────────────
+  aios-promtail:
+    image: grafana/promtail:2.9.0
+    container_name: aios-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/log:/var/log:ro
+      - ../../monitoring/loki/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - aios-network
+    depends_on:
+      - aios-loki
+
+networks:
+  aios-network:
+    driver: bridge
+
+volumes:
+  aios-db-data:
+  loki-data:

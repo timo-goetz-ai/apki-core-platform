@@ -1,0 +1,236 @@
+name: Deploy AIOS to Hetzner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Ziel-Umgebung"
+        required: true
+        default: "production"
+        type: choice
+        options: [production, staging]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # JOB 1: Secrets aus 1Password laden & validieren
+  # ─────────────────────────────────────────────────────────────
+  load-and-validate-secrets:
+    name: "Secrets laden & validieren"
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-ok: ${{ steps.validate.outputs.ok }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Secrets aus 1Password laden
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          # Dieser eine Token kommt aus GitHub Secrets (einmalig hinterlegt)
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+          # ── AI & APIs ─────────────────────────────────────────────
+          OPENROUTER_API_KEY:      op://DevOps-Center/OpenRouter/credential
+          ANTHROPIC_API_KEY:       op://DevOps-Center/Anthropic/api-key
+
+          # ── Infrastruktur ─────────────────────────────────────────
+          HETZNER_API_TOKEN:       op://DevOps-Center/Hetzner/api-token
+          HETZNER_S3_ACCESS_KEY:   op://DevOps-Center/HetznerS3/access-key
+          HETZNER_S3_SECRET_KEY:   op://DevOps-Center/HetznerS3/secret-key
+          HETZNER_S3_ENDPOINT:     op://DevOps-Center/HetznerS3/endpoint
+
+          # ── Coolify (Deployment-Engine) ────────────────────────────
+          COOLIFY_URL:             op://DevOps-Center/Coolify/url
+          COOLIFY_API_TOKEN:       op://DevOps-Center/Coolify/api-token
+
+          # ── Datenbank ─────────────────────────────────────────────
+          DB_PASSWORD:             op://DevOps-Center/AIOS-DB/password
+
+          # ── Services ──────────────────────────────────────────────
+          BROWSERLESS_TOKEN:       op://DevOps-Center/Browserless/token
+
+          # ── GitHub ────────────────────────────────────────────────
+          GITHUB_TOKEN_DEPLOY:     op://DevOps-Center/GitHub/deploy-token
+
+          # ── Cloudflare ────────────────────────────────────────────
+          CLOUDFLARE_API_TOKEN:    op://DevOps-Center/Cloudflare/api-token
+          CLOUDFLARE_ZONE_ID:      op://DevOps-Center/Cloudflare/zone-id
+
+          # ── Authentik (SSO) ───────────────────────────────────────
+          AUTHENTIK_TOKEN:         op://DevOps-Center/Authentik/api-token
+
+      - name: Secrets validieren
+        id: validate
+        run: |
+          MISSING=()
+          check() { [ -z "${!1}" ] && MISSING+=("$1"); }
+
+          check OPENROUTER_API_KEY
+          check HETZNER_API_TOKEN
+          check COOLIFY_API_TOKEN
+          check DB_PASSWORD
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "FEHLER: Folgende Secrets fehlen in 1Password:"
+            printf '  - %s\n' "${MISSING[@]}"
+            exit 1
+          fi
+
+          echo "Alle Pflicht-Secrets vorhanden."
+          echo "ok=true" >> $GITHUB_OUTPUT
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 2: Tests & Linting
+  # ─────────────────────────────────────────────────────────────
+  test:
+    name: "Tests & Linting"
+    runs-on: ubuntu-latest
+    needs: load-and-validate-secrets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          OPENROUTER_API_KEY: op://DevOps-Center/OpenRouter/credential
+
+      - name: Python Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhängigkeiten installieren
+        run: |
+          cd AIOS/ai-control-center
+          pip install -r requirements.txt
+
+      - name: Linting (ruff)
+        run: |
+          pip install ruff
+          ruff check AIOS/ai-control-center/app/
+
+      - name: API Health-Check (dry-run)
+        run: |
+          echo "Health-Check: Modulstruktur prüfen"
+          python -c "
+          import sys
+          sys.path.insert(0, 'AIOS/ai-control-center')
+          from app.config.settings import settings
+          print('Settings geladen:', settings.environment)
+          "
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 3: Docker-Image bauen & pushen
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: "Docker Build & Push"
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          GITHUB_TOKEN_DEPLOY: op://DevOps-Center/GitHub/deploy-token
+
+      - name: Docker Login (GitHub Container Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: TimoGoetz1988
+          password: ${{ env.GITHUB_TOKEN_DEPLOY }}
+
+      - name: Nexus-Core Image bauen
+        uses: docker/build-push-action@v5
+        with:
+          context: ./AIOS/apps/nexus-core
+          push: true
+          tags: |
+            ghcr.io/timogoetz1988/aios-nexus-core:latest
+            ghcr.io/timogoetz1988/aios-nexus-core:${{ github.sha }}
+
+      - name: AI Control Center Image bauen
+        uses: docker/build-push-action@v5
+        with:
+          context: ./AIOS/ai-control-center
+          push: true
+          tags: |
+            ghcr.io/timogoetz1988/aios-control-center:latest
+            ghcr.io/timogoetz1988/aios-control-center:${{ github.sha }}
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 4: Deployment auf Hetzner via Coolify
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: "Deploy via Coolify"
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Alle Deploy-Secrets aus 1Password laden
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          COOLIFY_URL:           op://DevOps-Center/Coolify/url
+          COOLIFY_API_TOKEN:     op://DevOps-Center/Coolify/api-token
+          HETZNER_API_TOKEN:     op://DevOps-Center/Hetzner/api-token
+          OPENROUTER_API_KEY:    op://DevOps-Center/OpenRouter/credential
+          DB_PASSWORD:           op://DevOps-Center/AIOS-DB/password
+          BROWSERLESS_TOKEN:     op://DevOps-Center/Browserless/token
+
+      - name: Coolify – Nexus-Core deployen
+        run: |
+          echo "Deploying nexus-core via Coolify API..."
+          curl -s -X POST \
+            "$COOLIFY_URL/api/v1/deploy" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"service": "nexus-core", "image_tag": "${{ github.sha }}"}'
+
+      - name: Coolify – AI Control Center deployen
+        run: |
+          echo "Deploying ai-control-center via Coolify API..."
+          curl -s -X POST \
+            "$COOLIFY_URL/api/v1/deploy" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"service": "ai-control-center", "image_tag": "${{ github.sha }}"}'
+
+      - name: Health-Check nach Deployment
+        run: |
+          echo "Warte 30 Sekunden auf Container-Start..."
+          sleep 30
+          curl -f https://agents.automation-plus-ki.de/health || \
+            (echo "Health-Check fehlgeschlagen!" && exit 1)
+
+      - name: Deployment-Ergebnis in NocoDB loggen
+        if: always()
+        run: |
+          STATUS=${{ job.status }}
+          curl -s -X POST \
+            "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/deployments" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"commit\": \"${{ github.sha }}\",
+              \"branch\": \"${{ github.ref_name }}\",
+              \"status\": \"$STATUS\",
+              \"deployed_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+              \"deployed_by\": \"${{ github.actor }}\"
+            }" || true
