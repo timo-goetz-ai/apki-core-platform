@@ -1,21 +1,30 @@
-name: Build & Push Images
+name: Build & Push – Docker Images
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      service:
+        description: "Welcher Service?"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, nexus-core, admin-dashboard, coder-agent, crew-api]
 
 env:
   REGISTRY: ghcr.io
   OWNER: timogoetz1988
 
 jobs:
-  nexus-core:
+  build-nexus-core:
     name: Build nexus-core
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,22 +36,32 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - uses: docker/build-push-action@v5
         with:
-          context: ./apps/nexus-core
+          context: services/nexus-core
           push: true
-          tags: |
-            ghcr.io/${{ env.OWNER }}/nexus-core:latest
-            ghcr.io/${{ env.OWNER }}/nexus-core:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  admin-dashboard:
+  build-admin-dashboard:
     name: Build admin-dashboard
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -54,15 +73,85 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
+
       - uses: docker/build-push-action@v5
         with:
-          context: ./apps/admin-dashboard
+          context: services/admin-dashboard
           push: true
-          tags: |
-            ghcr.io/${{ env.OWNER }}/aios-admin-dashboard:latest
-            ghcr.io/${{ env.OWNER }}/aios-admin-dashboard:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             NEXT_PUBLIC_NEXUS_API_URL=https://api.aios.automation-plus-ki.de
             NEXT_PUBLIC_WS_URL=wss://api.aios.automation-plus-ki.de
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-coder-agent:
+    name: Build coder-agent
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'coder-agent' || github.event_name == 'push' }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/coder-agent
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: agents/coder-agent
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-crew-api:
+    name: Build crew-api
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'crew-api' || github.event_name == 'push' }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/crew-api
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: services/crew-api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

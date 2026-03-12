@@ -1,0 +1,193 @@
+name: Deploy – Production (Hetzner via Coolify)
+
+on:
+  push:
+    tags:
+      - "v*"  # Trigger: git tag v1.2.3 && git push origin v1.2.3
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service deployen"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, nexus-core, admin-dashboard, coder-agent]
+      confirm:
+        description: "BESTÄTIGUNG: 'deploy' eingeben"
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: timogoetz1988
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Sicherheits-Check (Manual Deploy)
+  # ──────────────────────────────────────────────
+  safety-check:
+    name: Safety Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Bestätigung prüfen
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "deploy" ]]; then
+            echo "Falsche Bestätigung. Erwartet: 'deploy'"
+            exit 1
+          fi
+
+  # ──────────────────────────────────────────────
+  # Database Migration (vor Deploy)
+  # ──────────────────────────────────────────────
+  db-migration:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    needs: [safety-check]
+    if: always() && (needs.safety-check.result == 'success' || needs.safety-check.result == 'skipped')
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: DB Migration via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_IP }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/aios
+
+            echo "Starte Alembic Migration..."
+            docker exec aios-nexus-core alembic upgrade head
+
+            echo "Migration erfolgreich"
+
+  # ──────────────────────────────────────────────
+  # Deploy via Coolify API
+  # ──────────────────────────────────────────────
+  deploy:
+    name: Deploy zu Hetzner
+    runs-on: ubuntu-latest
+    needs: [db-migration]
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy nexus-core
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"uuid": "${{ secrets.COOLIFY_NEXUS_CORE_UUID }}", "force": true}'
+
+      - name: Deploy admin-dashboard
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"uuid": "${{ secrets.COOLIFY_DASHBOARD_UUID }}", "force": true}'
+
+      - name: Deploy coder-agent
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'coder-agent' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"uuid": "${{ secrets.COOLIFY_CODER_AGENT_UUID }}", "force": true}'
+
+      - name: Warte auf Deploy (60s)
+        run: sleep 60
+
+  # ──────────────────────────────────────────────
+  # Health Checks nach Deploy
+  # ──────────────────────────────────────────────
+  health-check:
+    name: Post-Deploy Health Checks
+    runs-on: ubuntu-latest
+    needs: [deploy]
+
+    steps:
+      - name: Check nexus-core
+        run: |
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.aios.automation-plus-ki.de/health)
+            if [[ "$STATUS" == "200" ]]; then
+              echo "nexus-core: OK (HTTP $STATUS)"
+              break
+            fi
+            echo "Versuch $i/5 fehlgeschlagen (HTTP $STATUS) – warte 15s..."
+            sleep 15
+          done
+          if [[ "$STATUS" != "200" ]]; then
+            echo "Health Check fehlgeschlagen!"
+            exit 1
+          fi
+
+      - name: Check admin-dashboard
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.aios.automation-plus-ki.de)
+          if [[ "$STATUS" != "200" ]]; then
+            echo "Dashboard Health Check fehlgeschlagen! HTTP $STATUS"
+            exit 1
+          fi
+          echo "admin-dashboard: OK"
+
+  # ──────────────────────────────────────────────
+  # Rollback bei Fehler
+  # ──────────────────────────────────────────────
+  rollback-on-failure:
+    name: Rollback (bei Fehler)
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: failure()
+    environment: production
+
+    steps:
+      - name: Rollback via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_IP }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "ROLLBACK GESTARTET..."
+            cd /opt/aios
+
+            # Vorherige Container-Version wiederherstellen
+            docker service update --rollback nexus-core 2>/dev/null || \
+              docker-compose up -d --no-deps --scale nexus-core=1
+
+            echo "Rollback abgeschlossen"
+
+      - name: Sende Failure-Notification
+        run: |
+          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "🚨 AIOS Deploy FEHLGESCHLAGEN – Rollback durchgeführt\nRef: ${{ github.ref }}\nActor: ${{ github.actor }}"
+            }'
+
+  # ──────────────────────────────────────────────
+  # Erfolgs-Notification
+  # ──────────────────────────────────────────────
+  notify-success:
+    name: Erfolgs-Notification
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: success()
+
+    steps:
+      - name: Sende Success-Notification
+        run: |
+          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de"
+            }'
