@@ -1,0 +1,126 @@
+{
+  "name": "File-Sort Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "file-sort",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Dateien reinschicken",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "file-sort"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JSON-Body parsen: { files: [{ filename, path?, url?, category?, target_folder? }] }\nconst input = $input.first().json;\nconst body = typeof input.body === 'string' ? JSON.parse(input.body) : (input.body || input);\nconst files = Array.isArray(body.files) ? body.files : [body];\n\nreturn files.map(f => ({\n  json: {\n    filename: f.filename || f.name || 'unknown',\n    path: f.path,\n    url: f.url,\n    category: f.category || 'Unsortiert',\n    target_folder: f.target_folder || 'INPUT/' + (f.category || 'Unsortiert'),\n    source: body.source || 'webhook'\n  }\n}));"
+      },
+      "id": "parse-json",
+      "name": "JSON parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "Rechnung",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "Rechnung",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "Dokument",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "Dokument",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "switch-category",
+      "name": "Nach Kategorie sortieren",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "content": "## File-Sort Webhook\n\n**Eingabe:** POST JSON mit `files`-Array\n**Beispiel:**\n```json\n{\n  \"files\": [\n    {\"filename\": \"rechnung.pdf\", \"category\": \"Rechnung\"},\n    {\"filename\": \"notiz.md\", \"category\": \"Dokument\"}\n  ]\n}\n```\n\n**Nächster Schritt:** NocoDB-Create oder Nextcloud-Upload einbinden",
+        "height": 220,
+        "width": 400
+      },
+      "id": "sticky-note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 80]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'ok', processed: $input.all().length } }}"
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Dateien reinschicken": {
+      "main": [
+        [{ "node": "JSON parsen", "type": "main", "index": 0 }]
+      ]
+    },
+    "JSON parsen": {
+      "main": [
+        [{ "node": "Nach Kategorie sortieren", "type": "main", "index": 0 }]
+      ]
+    },
+    "Nach Kategorie sortieren": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

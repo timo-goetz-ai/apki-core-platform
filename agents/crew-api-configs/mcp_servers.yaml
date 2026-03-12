@@ -1,0 +1,9 @@
+servers:
+  - id: mcp-n8n
+    name: "n8n"
+    url: "https://mcp-n8n.automation-plus-ki.de"
+    transport: streamable-http
+  - id: mcp-grafana
+    name: "Grafana"
+    url: "https://mcp-grafana.automation-plus-ki.de"
+    transport: streamable-http

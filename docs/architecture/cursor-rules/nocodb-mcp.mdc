@@ -1,0 +1,23 @@
+---
+description: NocoDB MCP für Bewerbungs-Automation (Teil von automation-mcps)
+globs: 
+alwaysApply: true
+---
+
+# NocoDB MCP – Bewerbungs-Automation
+
+Siehe auch: [automation-mcps.mdc](automation-mcps.mdc) für alle MCP-Server.
+
+## Regel
+
+Wenn **mcp-nocodb** verfügbar ist, nutze ihn für NocoDB-Operationen.
+
+## Tools
+
+- `nocodb_list_bases`, `nocodb_list_tables`
+- `nocodb_create_record`, `nocodb_update_record`, `nocodb_delete_record`
+- `nocodb_get_records`, `nocodb_search_records`
+
+## Einschränkung
+
+Schema nur in NocoDB-UI – Records per MCP.

@@ -1,0 +1,68 @@
+metadata:
+  name: "Personal DevOps Center"
+  version: "1.0.0"
+  owner: "zuhause_mit_ideen"
+
+infrastructure:
+  orchestrator_root: "~/devops-center"
+
+storage:
+  local_workhorse:
+    type: "filesystem"
+    path: "/Volumes/2TB"            # TODO: anpassen an dein echtes Volume
+    role: ["work", "cache"]
+
+  input_global:
+    type: "filesystem"
+    path: "~/Library/Mobile Documents/com~apple~CloudDocs/AGOC_INPUT_GLOBAL"
+    devices: ["mac", "iphone", "ipad"]
+    role: ["inbox", "shared"]
+
+  nas_storage:
+    type: "filesystem"
+    path: "/Volumes/NAS"            # TODO: anpassen, wenn NAS gemountet ist
+    role: ["archive", "team_share"]
+
+  hetzner_s3:
+    type: "s3"
+    endpoint: "https://your-s3-endpoint.hetzner.de"   # TODO: echten Endpoint setzen
+    bucket_main: "devops-center-main"
+    bucket_archive: "devops-center-archive"
+    access_key_env: "HETZNER_S3_ACCESS_KEY"
+    secret_key_env: "HETZNER_S3_SECRET_KEY"
+    role: ["backup", "archive"]
+
+  google_drive:
+    type: "google_drive"
+    root_folder_id: "FOLDER_ID_PLACEHOLDER"           # TODO: echte Folder-ID setzen
+    role: ["collaboration"]
+
+agents:
+  - name: "storage-guardian"
+    repo: "~/devops-center/agents/storage-guardian"
+    description: "Scannt AGOC_INPUT_GLOBAL, führt Inventar, spiegelt nach S3/Drive"
+    input_root: "storage.input_global"
+    config:
+      inventar_file: "~/devops-center/docs/INVENTAR_INPUT.md"
+      semantic_file: "~/devops-center/docs/SEMANTISCHE_ZUORDNUNG.md"
+      cluster_file: "~/devops-center/docs/THEMEN_CLUSTER.md"
+      anchor_file: "~/devops-center/docs/WISSENSANKER_VORSCHLAG.md"
+      relevance_file: "~/devops-center/docs/RELEVANZ_PRUEFUNG_BUSINESS.md"
+      structure_file: "~/devops-center/docs/STRUKTUR_EMPFEHLUNG.md"
+
+  - name: "infra-guardian"
+    repo: "~/devops-center/agents/INFRA_AS_CODE"
+    github: "https://github.com/TimoGoetz1988/INFRA_AS_CODE"
+    description: "Vergleicht setup.yaml mit realer Hetzner/Coolify/MCP-Infra, Terraform-Module, Stack-Deployments"
+
+  - name: "service-agent"
+    repo: "~/devops-center/agents/SERVICE_AGENTS"
+    github: "https://github.com/TimoGoetz1988/SERVICE_AGENTS"
+    description: "Business-Prozesse, FAQs, Policies, CRM-Workflows, Salon-Stack"
+
+  - name: "ai-agent-platform"
+    repo: "~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/03_ai-agent-platform"
+    github: "https://github.com/TimoGoetz1988/ai-agent-platform"
+    description: "Produktiv-Backend auf agents.automation-plus-ki.de (FastAPI + Next.js). AIOS/ai-control-center ergänzt dieses Repo mit Model-Router, Prompts-Registry und Access-Matrix."
+    note: "Kein Merge nötig – ai-control-center liefert fehlende Schichten (model-router, prompts, access-matrix), ai-agent-platform ist das laufende Prod-System"
+

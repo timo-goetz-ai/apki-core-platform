@@ -1,0 +1,15 @@
+{
+  "name": "appflowy-workspace-setup",
+  "version": "1.0.0",
+  "description": "Skript zum Erstellen der AppFlowy Workspace-Struktur",
+  "type": "module",
+  "scripts": {
+    "postinstall": "npx playwright install chromium",
+    "create": "node create-structure.mjs",
+    "create:headed": "node create-structure.mjs --headed",
+    "create:slow": "node create-structure.mjs --headed --slow"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ project_name | default('chatbot') }}-streamlit"
+  namespace: "{{ project_name | default('chatbot') }}"
+  labels:
+    app: "{{ project_name | default('chatbot') }}"
+    version: "1.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "{{ project_name | default('chatbot') }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ project_name | default('chatbot') }}"
+    spec:
+      containers:
+      - name: streamlit
+        image: "docker.io/library/{{ project_name | default('chatbot') }}:latest"
+        ports:
+        - containerPort: 8501
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 5
+          periodSeconds: 5

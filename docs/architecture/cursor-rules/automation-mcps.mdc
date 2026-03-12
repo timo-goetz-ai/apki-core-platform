@@ -1,0 +1,56 @@
+---
+description: Automation-Plus MCP-Server für Bewerbungs-Automation (N8n, NocoDB, Docker, Infra)
+globs: 
+alwaysApply: true
+---
+
+# Automation-Plus MCP-Server – Bewerbungs-Automation
+
+## Relevante MCP-Server (Cursor Settings → MCP aktivieren)
+
+| Server | Zweck | Typische Nutzung |
+|--------|-------|------------------|
+| **mcp-nocodb** | Tabellen, Records | Seed-Daten, Jobs, Matches, CRUD |
+| **mcp-infra** | Infrastruktur | N8n-Workflows, Trigger, Status |
+| **mcp-docker** | Container | N8n, NocoDB, Coolify-Container |
+| **mcp-database** | PostgreSQL | NocoDB-Backend, direkte SQL-Abfragen |
+| **mcp-hetzner** | Cloud-Server | Server-Status, SSH, Ressourcen |
+| **mcp-grafana** | Dashboards | Metriken, Monitoring |
+| **mcp-nextcloud** | Dateien | Workflow-Exports, Reports speichern |
+| **mcp-gitops** | Repos | Workflow-JSON versionieren |
+| **mcp-coolify** | Deployment | deploy_application, trigger_backup |
+| **mcp-n8n** | Workflows | trigger_workflow, list_workflows |
+
+## mcp-nocodb
+
+- `nocodb_list_bases`, `nocodb_list_tables`
+- `nocodb_create_record`, `nocodb_update_record`, `nocodb_delete_record`
+- `nocodb_get_records`, `nocodb_search_records`
+- **Einschränkung:** Schema nur in NocoDB-UI, nicht per MCP
+
+## mcp-infra (inkl. N8n)
+
+- Workflow-Trigger, Workflow-Status
+- N8n-API-Operationen (falls verfügbar)
+- Infrastruktur-Checks
+
+## mcp-docker
+
+- Container-Status (homestack-n8n, homestack-nocodb)
+- Logs, Restart
+- Coolify-Integration
+
+## mcp-database
+
+- PostgreSQL-Queries (NocoDB nutzt ggf. Postgres)
+- Backup, Migrations
+
+## mcp-hetzner
+
+- Server 46.224.145.109 (hetzner)
+- Ressourcen, Firewall
+
+## Konfiguration
+
+MCP-Server: `Desktop/01_Command_Center/03_Agents/06_mcp-config/mcp.json`  
+Alle URLs: `https://mcp-*.automation-plus-ki.de/mcp`

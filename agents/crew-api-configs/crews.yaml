@@ -1,0 +1,22 @@
+crews:
+  research_crew:
+    name: "Research Crew"
+    agents:
+      - id: researcher
+        role: "Research Analyst"
+        goal: "Find information"
+        mcp_servers: []
+      - id: writer
+        role: "Content Writer"
+        goal: "Write content"
+    tasks:
+      - id: research
+        agent_id: researcher
+        description: "Research the topic"
+      - id: write
+        agent_id: writer
+        description: "Write article"
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""

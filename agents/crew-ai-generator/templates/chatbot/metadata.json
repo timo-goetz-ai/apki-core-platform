@@ -1,0 +1,35 @@
+{
+  "name": "chatbot",
+  "version": "1.0.0",
+  "description": "Streamlit chatbot with Crew AI, Terraform and Kubernetes",
+  "components": {
+    "streamlit": {
+      "enabled": true,
+      "version": "1.28.0",
+      "python_version": "3.11"
+    },
+    "terraform": {
+      "enabled": true,
+      "version": "1.5.0",
+      "cloud_providers": ["aws", "gcp", "azure"]
+    },
+    "kubernetes": {
+      "enabled": true,
+      "version": "1.27"
+    },
+    "docker": {
+      "enabled": true,
+      "registry": "docker.io"
+    },
+    "cicd": {
+      "enabled": true,
+      "provider": "github-actions"
+    }
+  },
+  "variables": {
+    "project_name": "string",
+    "environment": "enum:dev,staging,prod",
+    "aws_region": "string",
+    "enable_monitoring": "boolean"
+  }
+}

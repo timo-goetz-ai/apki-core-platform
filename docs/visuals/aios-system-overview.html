@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIOS – System Übersicht</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1628;
+    --bg3: #141d35;
+    --border: #1e2d55;
+    --accent: #3b82f6;
+    --accent2: #8b5cf6;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-bright: #f8fafc;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ── Tabs ────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--bg2);
+    padding: 4px;
+    border-radius: 10px;
+    width: fit-content;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 7px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .tab:hover { color: var(--text); background: var(--bg3); }
+  .tab.active { background: var(--accent); color: white; }
+
+  /* ── Panels ──────────────────────────────────────── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Grid ────────────────────────────────────────── */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  /* ── Card ────────────────────────────────────────── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+
+  .card.blue::before { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+  .card.purple::before { background: linear-gradient(90deg, var(--purple), var(--blue)); }
+  .card.green::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .card.orange::before { background: linear-gradient(90deg, var(--orange), var(--red)); }
+  .card.red::before { background: linear-gradient(90deg, var(--red), var(--orange)); }
+  .card.cyan::before { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Status Badge ────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-orange { background: rgba(245,158,11,0.15); color: var(--orange); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+  .badge-gray { background: rgba(100,116,139,0.15); color: var(--text-dim); border: 1px solid rgba(100,116,139,0.3); }
+
+  /* ── Row list ────────────────────────────────────── */
+  .row-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .row-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg3);
+    border-radius: 6px;
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  .row-item-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .row-item-name { color: var(--text); font-weight: 700; }
+  .row-item-desc { color: var(--text-dim); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Architecture ─────────────────────────────────── */
+  .arch-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .arch-layer {
+    position: relative;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+
+  .arch-layer-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .arch-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .arch-service {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .arch-service:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+  .arch-service .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .arch-service .dot-green { background: var(--green); }
+  .arch-service .dot-orange { background: var(--orange); }
+  .arch-service .dot-gray { background: var(--text-dim); }
+  .arch-service .dot-purple { background: var(--purple); }
+  .arch-service .dot-blue { background: var(--blue); }
+  .arch-service .dot-red { background: var(--red); }
+
+  .arrow-down {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 18px;
+    line-height: 1;
+    margin: -4px 0;
+  }
+
+  /* ── Problem list ─────────────────────────────────── */
+  .problem-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .problem-item.critical { border-left-color: var(--red); }
+  .problem-item.warn { border-left-color: var(--orange); }
+  .problem-item.info { border-left-color: var(--blue); }
+
+  .problem-icon { font-size: 16px; flex-shrink: 0; }
+  .problem-text h4 { font-size: 12px; color: var(--text-bright); margin-bottom: 4px; }
+  .problem-text p { color: var(--text-dim); line-height: 1.5; }
+
+  /* ── URL card ─────────────────────────────────────── */
+  .url-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .url-card:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+
+  .url-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .url-main { font-weight: 700; color: var(--text-bright); margin-bottom: 2px; }
+  .url-desc { color: var(--text-dim); font-size: 10px; }
+  .url-link { color: var(--accent); font-size: 10px; margin-left: auto; }
+
+  /* ── Stat boxes ──────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+
+  .stat-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── Scrollbar ──────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Section header ─────────────────────────────── */
+  .section-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .tooltip {
+    position: relative;
+  }
+  .tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ── Maint card ─────────────────────────────────── */
+  .maint-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .maint-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .maint-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .maint-item:last-child { border-bottom: none; }
+  .maint-item .freq { color: var(--text-dim); margin-left: auto; background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 9px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">AIOS System Map</div>
+    <div class="header-sub">automation-plus-ki.de · Hetzner · Coolify</div>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    DEPLOYED
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('overview')">Übersicht</button>
+  <button class="tab" onclick="showTab('deployed')">Live-Services</button>
+  <button class="tab" onclick="showTab('code')">Code-Struktur</button>
+  <button class="tab" onclick="showTab('problems')">Probleme</button>
+  <button class="tab" onclick="showTab('roadmap')">Roadmap</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 1: ÜBERSICHT                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-overview" class="panel active">
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--green)">2</div>
+      <div class="stat-label">Live-Domains</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--blue)">5</div>
+      <div class="stat-label">Git-Repos</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--orange)">4</div>
+      <div class="stat-label">Duplikate</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--purple)">9</div>
+      <div class="stat-label">MCP-Server</div>
+    </div>
+  </div>
+
+  <!-- Architektur-Fluss -->
+  <div class="section-header">Gesamte Architektur – von Internet bis DB</div>
+
+  <div class="arch-flow">
+
+    <div class="arch-layer" style="border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.03)">
+      <div class="arch-layer-title">🌐 Internet / DNS (Cloudflare)</div>
+      <div class="arch-services">
+        <div class="arch-service tooltip" data-tip="LIVE – Authentik SSO läuft hier">
+          <div class="dot dot-green"></div>
+          agents.automation-plus-ki.de
+          <span class="badge badge-green">LIVE</span>
+        </div>
+        <div class="arch-service tooltip" data-tip="Timeout – möglicherweise unter anderer Subdomain">
+          <div class="dot dot-orange"></div>
+          dashboard.automation-plus-ki.de
+          <span class="badge badge-orange">PRÜFEN</span>
+        </div>
+        <div class="arch-service" style="opacity:0.4">
+          <div class="dot dot-gray"></div>
+          api.aios.automation-plus-ki.de
+          <span class="badge badge-gray">GEPLANT</span>
+        </div>
+        <div class="arch-service" style="opacity:0.4">
+          <div class="dot dot-gray"></div>
+          monitoring.automation-plus-ki.de
+          <span class="badge badge-gray">GEPLANT</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="arch-layer" style="border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.03)">
+      <div class="arch-layer-title">🔐 Auth Layer (Authentik – agents.automation-plus-ki.de)</div>
+      <div class="arch-services">
+        <div class="arch-service">
+          <div class="dot dot-purple"></div>
+          <span style="color:var(--purple); font-weight:700">Authentik SSO</span>
+          <span class="badge badge-purple">LIVE</span>
+        </div>
+        <div class="arch-service" style="font-size:10px; color: var(--text-dim)">
+          → schützt alle Services mit Single Sign-On
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="arch-layer" style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.03)">
+      <div class="arch-layer-title">⚡ Coolify / Traefik (Hetzner Server)</div>
+      <div class="arch-services">
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          Coolify (Deployment Manager)
+          <span class="badge badge-green">AKTIV</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          Traefik (Reverse Proxy + SSL)
+          <span class="badge badge-green">AKTIV</span>
+        </div>
+        <div class="arch-service" style="font-size:10px; color: var(--text-dim)">
+          Registry: ghcr.io/timogoetz1988
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="arch-layer" style="border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.03)">
+      <div class="arch-layer-title">🚀 Application Layer (deployed Services)</div>
+      <div class="arch-services">
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          nexus-core (FastAPI :8000)
+          <span class="badge badge-green">DEPLOYED</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-orange"></div>
+          admin-dashboard (Next.js :3000)
+          <span class="badge badge-orange">PRÜFEN</span>
+        </div>
+        <div class="arch-service" style="opacity:0.5">
+          <div class="dot dot-gray"></div>
+          crew-api (FastAPI :8002)
+          <span class="badge badge-gray">LOKAL</span>
+        </div>
+        <div class="arch-service" style="opacity:0.5">
+          <div class="dot dot-gray"></div>
+          coder-agent (CrewAI :8001)
+          <span class="badge badge-gray">LOKAL</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="arch-layer" style="border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.03)">
+      <div class="arch-layer-title">🗄️ Data Layer</div>
+      <div class="arch-services">
+        <div class="arch-service">
+          <div class="dot dot-blue"></div>
+          PostgreSQL 15 (:5432)
+          <span class="badge badge-green">DEPLOYED</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-red"></div>
+          Redis 7 (:6379)
+          <span class="badge badge-green">DEPLOYED</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          NocoDB (:8080)
+          <span class="badge badge-blue">VIA STACK</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-purple"></div>
+          Qdrant (:6333)
+          <span class="badge badge-blue">VIA STACK</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="arch-layer" style="border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.03)">
+      <div class="arch-layer-title">🔧 Automation & Monitoring</div>
+      <div class="arch-services">
+        <div class="arch-service">
+          <div class="dot dot-blue"></div>
+          N8N (Workflows :5678)
+          <span class="badge badge-blue">VIA STACK</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-orange"></div>
+          Grafana (:3002)
+          <span class="badge badge-gray">KONFIGURIERT</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          Prometheus (:9090)
+          <span class="badge badge-gray">KONFIGURIERT</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-purple"></div>
+          Loki (Logs :3100)
+          <span class="badge badge-gray">KONFIGURIERT</span>
+        </div>
+        <div class="arch-service">
+          <div class="dot dot-green"></div>
+          Uptime-Kuma
+          <span class="badge badge-blue">VIA STACK</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KEY FINDING BOX -->
+  <div style="margin-top:20px; padding:16px 20px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.3); border-radius:10px;">
+    <div style="font-weight:700; color:var(--purple); margin-bottom:8px; font-size:12px;">💡 KEY FINDING: Was ist agents.automation-plus-ki.de?</div>
+    <p style="font-size:11px; color:var(--text); line-height:1.8;">
+      <strong style="color:var(--text-bright)">Authentik</strong> ist ein <strong style="color:var(--purple)">Open-Source Identity Provider / SSO-System</strong> (ähnlich wie Keycloak, Okta).<br>
+      Du hast damit Single Sign-On für alle deine Services eingerichtet. Das ist gut!<br>
+      → Alle Services können dahinter geschützt werden (One Login für alles)<br>
+      → Es erklärt warum "dashboard.automation-plus-ki.de" einen Login-Screen zeigt
+    </p>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 2: LIVE SERVICES                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-deployed" class="panel">
+
+  <div class="section-header">Bestätigte Live-Services (Hetzner)</div>
+
+  <a class="url-card" href="https://agents.automation-plus-ki.de" target="_blank">
+    <div class="url-icon" style="background:rgba(139,92,246,0.15)">🔐</div>
+    <div style="flex:1">
+      <div class="url-main">agents.automation-plus-ki.de</div>
+      <div class="url-desc">Authentik SSO – Identity Provider / Single Sign-On für alle Services</div>
+    </div>
+    <span class="badge badge-green">LIVE ✓</span>
+  </a>
+
+  <a class="url-card" href="https://dashboard.automation-plus-ki.de" target="_blank">
+    <div class="url-icon" style="background:rgba(245,158,11,0.15)">📊</div>
+    <div style="flex:1">
+      <div class="url-main">dashboard.automation-plus-ki.de</div>
+      <div class="url-desc">Wahrscheinlich Coolify-Dashboard oder Admin-Dashboard (Next.js) – manuell prüfen</div>
+    </div>
+    <span class="badge badge-orange">PRÜFEN</span>
+  </a>
+
+  <div class="section-header">CI/CD Pipeline (GitHub Actions)</div>
+
+  <div class="grid-2">
+    <div class="card blue">
+      <div class="card-title">🔨 build-and-push.yml</div>
+      <div class="card-sub">Trigger: Push zu main</div>
+      <div class="row-list">
+        <div class="row-item">
+          <div class="row-item-left">
+            <span>nexus-core</span>
+          </div>
+          <span class="badge badge-green">→ ghcr.io</span>
+        </div>
+        <div class="row-item">
+          <div class="row-item-left">
+            <span>admin-dashboard</span>
+          </div>
+          <span class="badge badge-green">→ ghcr.io</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title">🚀 deploy.yml</div>
+      <div class="card-sub">Trigger: Push zu main + manual</div>
+      <div class="row-list">
+        <div class="row-item">
+          <div class="row-item-left"><span>Hetzner SSH Deploy</span></div>
+          <span class="badge badge-purple">AKTIV</span>
+        </div>
+        <div class="row-item">
+          <div class="row-item-left"><span>guardian.yml (Storage)</span></div>
+          <span class="badge badge-gray">LÄUFT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-header">Docker-Images (ghcr.io/timogoetz1988)</div>
+
+  <div class="grid-4">
+    <div class="card green">
+      <div class="card-title">nexus-core</div>
+      <div class="card-sub">FastAPI Backend</div>
+      <span class="badge badge-green">:latest</span>
+    </div>
+    <div class="card green">
+      <div class="card-title">aios-admin-dashboard</div>
+      <div class="card-sub">Next.js UI</div>
+      <span class="badge badge-green">:latest</span>
+    </div>
+    <div class="card orange">
+      <div class="card-title">coder-agent</div>
+      <div class="card-sub">CrewAI Agent</div>
+      <span class="badge badge-orange">FEHLT</span>
+    </div>
+    <div class="card orange">
+      <div class="card-title">crew-api</div>
+      <div class="card-sub">CrewAI + N8N</div>
+      <span class="badge badge-orange">FEHLT</span>
+    </div>
+  </div>
+
+  <div class="section-header">Deployment-Stacks (auf Hetzner via devops-center)</div>
+
+  <div class="grid-4">
+    <div class="card blue">
+      <div class="card-title">📋 N8N</div>
+      <div class="card-sub">Workflow Automation</div>
+      <span class="badge badge-blue">STACK</span>
+    </div>
+    <div class="card blue">
+      <div class="card-title">🗃️ NocoDB</div>
+      <div class="card-sub">No-Code DB UI</div>
+      <span class="badge badge-blue">STACK</span>
+    </div>
+    <div class="card blue">
+      <div class="card-title">🧠 Qdrant</div>
+      <div class="card-sub">Vector Database</div>
+      <span class="badge badge-blue">STACK</span>
+    </div>
+    <div class="card blue">
+      <div class="card-title">📡 Uptime Kuma</div>
+      <div class="card-sub">Service Monitor</div>
+      <span class="badge badge-blue">STACK</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 3: CODE-STRUKTUR                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-code" class="panel">
+
+  <div class="grid-2">
+
+    <!-- IST-ZUSTAND -->
+    <div>
+      <div class="section-header" style="color:var(--red)">⚠️ Ist-Zustand (fragmentiert)</div>
+
+      <div class="card red" style="margin-bottom:12px">
+        <div class="card-title">📁 01_AI/</div>
+        <div class="card-sub">Haupt-Entwicklungsordner</div>
+        <div class="row-list">
+          <div class="row-item"><div class="row-item-left"><span>apps/nexus-core/</span></div><span class="badge badge-green">PRIMÄR-BACKEND</span></div>
+          <div class="row-item"><div class="row-item-left"><span>apps/admin-dashboard/</span></div><span class="badge badge-green">DEPLOYED</span></div>
+          <div class="row-item"><div class="row-item-left"><span>agents/coder-agent/</span></div><span class="badge badge-blue">AKTIV</span></div>
+          <div class="row-item"><div class="row-item-left"><span>ai-control-center/</span></div><span class="badge badge-orange">DUPLIKAT</span></div>
+          <div class="row-item"><div class="row-item-left"><span>infrastructure/docker/</span></div><span class="badge badge-green">COMPOSE FILES</span></div>
+          <div class="row-item"><div class="row-item-left"><span>monitoring/ (grafana/loki)</span></div><span class="badge badge-blue">KONFIGURIERT</span></div>
+          <div class="row-item"><div class="row-item-left"><span>.github/workflows/</span></div><span class="badge badge-red">KEIN .git!</span></div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title">📁 02_PROJECTS/</div>
+        <div class="card-sub">Weitere Projekte</div>
+        <div class="row-list">
+          <div class="row-item"><div class="row-item-left"><span>agents-next-js/agent-backend/</span></div><span class="badge badge-blue">CREW-API</span></div>
+          <div class="row-item"><div class="row-item-left"><span>agents-next-js/dashboard-nextjs/</span></div><span class="badge badge-orange">DUPLIKAT?</span></div>
+          <div class="row-item"><div class="row-item-left"><span>agents-backend/</span></div><span class="badge badge-orange">DUPLIKAT?</span></div>
+          <div class="row-item"><div class="row-item-left"><span>devops-center/INFRA_AS_CODE/</span></div><span class="badge badge-purple">MCP + STACKS</span></div>
+          <div class="row-item"><div class="row-item-left"><span>devops-center/SERVICE_AGENTS/</span></div><span class="badge badge-blue">DEPT. AGENTS</span></div>
+          <div class="row-item"><div class="row-item-left"><span>devops-center/storage-guardian/</span></div><span class="badge badge-blue">AUTOMATION</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZIEL-ZUSTAND -->
+    <div>
+      <div class="section-header" style="color:var(--green)">✅ Ziel-Zustand (Monorepo ~/aios/)</div>
+
+      <div class="card green">
+        <div class="card-title">📁 ~/aios/ (Monorepo)</div>
+        <div class="card-sub">Ein Repo, klare Struktur</div>
+        <div class="row-list">
+          <div class="row-item"><div class="row-item-left"><span>services/nexus-core/</span></div><span class="badge badge-green">Primär-Backend</span></div>
+          <div class="row-item"><div class="row-item-left"><span>services/admin-dashboard/</span></div><span class="badge badge-green">Next.js UI</span></div>
+          <div class="row-item"><div class="row-item-left"><span>services/crew-api/</span></div><span class="badge badge-blue">N8N+NocoDB</span></div>
+          <div class="row-item"><div class="row-item-left"><span>agents/coder-agent/</span></div><span class="badge badge-blue">CrewAI</span></div>
+          <div class="row-item"><div class="row-item-left"><span>agents/service-agents/</span></div><span class="badge badge-purple">Submodule</span></div>
+          <div class="row-item"><div class="row-item-left"><span>infrastructure/</span></div><span class="badge badge-gray">Coolify + MCP</span></div>
+          <div class="row-item"><div class="row-item-left"><span>experiments/archive/</span></div><span class="badge badge-orange">Duplikate</span></div>
+          <div class="row-item"><div class="row-item-left"><span>.github/workflows/</span></div><span class="badge badge-green">CI/CD</span></div>
+        </div>
+      </div>
+
+      <!-- Git Repos -->
+      <div class="card purple" style="margin-top:12px">
+        <div class="card-title">🔀 Git-Repos (5 separate)</div>
+        <div class="card-sub">→ Ziel: 1 Monorepo + 3 Submodule</div>
+        <div class="row-list">
+          <div class="row-item"><div class="row-item-left"><span>INFRA_AS_CODE</span></div><span class="badge badge-purple">Submodule</span></div>
+          <div class="row-item"><div class="row-item-left"><span>SERVICE_AGENTS</span></div><span class="badge badge-purple">Submodule</span></div>
+          <div class="row-item"><div class="row-item-left"><span>storage-guardian</span></div><span class="badge badge-purple">Submodule</span></div>
+          <div class="row-item"><div class="row-item-left"><span>VERS_KNOW_DATA</span></div><span class="badge badge-purple">Submodule</span></div>
+          <div class="row-item"><div class="row-item-left"><span>dashboard-nextjs</span></div><span class="badge badge-orange">Klären!</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 4: PROBLEME                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-problems" class="panel">
+
+  <div class="section-header" style="color:var(--red)">Kritische Probleme</div>
+
+  <div class="problem-item critical">
+    <div class="problem-icon">🚨</div>
+    <div class="problem-text">
+      <h4>01_AI/.github/workflows/ ohne .git-Root</h4>
+      <p>GitHub Actions Workflows existieren, aber 01_AI/ ist kein Git-Repository. CI/CD kann nicht korrekt triggern! Die Workflows zeigen auf Pfade die im Repo nicht stimmen.</p>
+    </div>
+  </div>
+
+  <div class="problem-item critical">
+    <div class="problem-icon">🔴</div>
+    <div class="problem-text">
+      <h4>nexus-core vs ai-control-center (Duplikat)</h4>
+      <p>Beide FastAPI-Backends haben identische API-Struktur (api/agents.py, api/automations.py, api/models.py, api/prompts.py, api/tasks.py). Nur nexus-core hat Production-Deps. Welche wird aktiv entwickelt?</p>
+    </div>
+  </div>
+
+  <div class="problem-item critical">
+    <div class="problem-icon">🔴</div>
+    <div class="problem-text">
+      <h4>dashboard-nextjs vs admin-dashboard (Duplikat)</h4>
+      <p>Zwei Next.js Dashboards: 01_AI/apps/admin-dashboard/ (deployed via ghcr.io) und 02_PROJECTS/agents-next-js/dashboard-nextjs/ (eigene .git, node_modules vorhanden). Welche ist aktuell?</p>
+    </div>
+  </div>
+
+  <div class="section-header" style="color:var(--orange)">Warnungen</div>
+
+  <div class="problem-item warn">
+    <div class="problem-icon">⚠️</div>
+    <div class="problem-text">
+      <h4>Naming-Chaos in agents-next-js/</h4>
+      <p>agents-next-js/ enthält weder primär Agents noch Next.js: Streamlit-Scripts (dashboard.py, layout.py, widgets.py), Python-Backend, Coder-Agent-Boilerplate und ein Next.js-Dashboard. Komplett falsch benannt.</p>
+    </div>
+  </div>
+
+  <div class="problem-item warn">
+    <div class="problem-icon">⚠️</div>
+    <div class="problem-text">
+      <h4>.venv und __pycache__ in Repository</h4>
+      <p>02_PROJECTS/agents-next-js/ enthält .venv/ und __pycache__/ Verzeichnisse. Diese sollten niemals committed sein. Müssen aus dem Repo entfernt und in .gitignore.</p>
+    </div>
+  </div>
+
+  <div class="problem-item warn">
+    <div class="problem-icon">⚠️</div>
+    <div class="problem-text">
+      <h4>Agents-Backend doppelt</h4>
+      <p>agents-backend/agent-backend/ und agents-next-js/agent-backend/ sind ähnliche FastAPI-Backends. agents-next-js/agent-backend/ ist aktueller (hat N8N, NocoDB, MCP Integrationen). agents-backend/ ist veraltet.</p>
+    </div>
+  </div>
+
+  <div class="section-header" style="color:var(--blue)">Infos</div>
+
+  <div class="problem-item info">
+    <div class="problem-icon">ℹ️</div>
+    <div class="problem-text">
+      <h4>agents.automation-plus-ki.de = Authentik (kein Bug)</h4>
+      <p>Der Name "agents" ist irreführend für einen SSO-Dienst. Empfehlung: DNS-Subdomain auf "auth.automation-plus-ki.de" oder "sso.automation-plus-ki.de" umbenennen, dann Authentik-URLs anpassen.</p>
+    </div>
+  </div>
+
+  <div class="problem-item info">
+    <div class="problem-icon">ℹ️</div>
+    <div class="problem-text">
+      <h4>5 separate Git-Repos statt Monorepo</h4>
+      <p>Kein Monorepo-Root für 01_AI/. DevOps-Center-Repos haben eigene Git-History. Diese als Submodule in neues Monorepo einbinden – History bleibt erhalten.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 5: ROADMAP                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-roadmap" class="panel">
+
+  <div class="grid-2">
+
+    <div>
+      <div class="section-header">Phase 1 – Sofort (diese Woche)</div>
+
+      <div class="card red">
+        <div class="card-title">🚨 Kritische Fixes</div>
+        <div class="row-list">
+          <div class="row-item">
+            <div class="row-item-left">
+              <span style="color:var(--text-dim)">1.</span>
+              <div>
+                <div class="row-item-name">Monorepo anlegen (~/aios/)</div>
+                <div class="row-item-desc">migrate-structure.sh --dry-run → --execute</div>
+              </div>
+            </div>
+            <span class="badge badge-red">P1</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <span style="color:var(--text-dim)">2.</span>
+              <div>
+                <div class="row-item-name">CI/CD im Monorepo-Root verankern</div>
+                <div class="row-item-desc">git init + workflows korrekt verknüpfen</div>
+              </div>
+            </div>
+            <span class="badge badge-red">P1</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <span style="color:var(--text-dim)">3.</span>
+              <div>
+                <div class="row-item-name">dashboard-nextjs vs admin-dashboard klären</div>
+                <div class="row-item-desc">Beide öffnen, vergleichen, eine wählen</div>
+              </div>
+            </div>
+            <span class="badge badge-red">P1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card orange" style="margin-top:12px">
+        <div class="card-title">⚠️ Woche 2</div>
+        <div class="row-list">
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">crew-api + coder-agent einbinden</div>
+                <div class="row-item-desc">Docker-Images bauen & zu ghcr.io pushen</div>
+              </div>
+            </div>
+            <span class="badge badge-orange">P2</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">Monitoring aktivieren</div>
+                <div class="row-item-desc">Grafana/Loki/Prometheus deployen</div>
+              </div>
+            </div>
+            <span class="badge badge-orange">P2</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">Authentik-Subdomain umbenennen</div>
+                <div class="row-item-desc">auth.automation-plus-ki.de</div>
+              </div>
+            </div>
+            <span class="badge badge-orange">P2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-header">Phase 2 – Dann (Woche 3-4)</div>
+
+      <div class="card blue">
+        <div class="card-title">🔧 Aufräumen</div>
+        <div class="row-list">
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">Duplikate archivieren</div>
+                <div class="row-item-desc">ai-control-center, leads-backend → experiments/archive/</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">P3</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">.venv + __pycache__ entfernen</div>
+                <div class="row-item-desc">.gitignore anpassen</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">P3</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">Submodule einrichten</div>
+                <div class="row-item-desc">SERVICE_AGENTS, INFRA_AS_CODE, storage-guardian</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">P3</span>
+          </div>
+          <div class="row-item">
+            <div class="row-item-left">
+              <div>
+                <div class="row-item-name">Self-Managing Agents</div>
+                <div class="row-item-desc">file-watcher + structure-audit via N8N</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">P4</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green" style="margin-top:12px">
+        <div class="card-title">✅ Ziel-Zustand</div>
+        <div class="row-list">
+          <div class="row-item"><div class="row-item-left"><span>1 Monorepo (~/aios/)</span></div><span class="badge badge-green">✓</span></div>
+          <div class="row-item"><div class="row-item-left"><span>4 Services deployed via Coolify</span></div><span class="badge badge-green">✓</span></div>
+          <div class="row-item"><div class="row-item-left"><span>CI/CD automatisch bei Push/Tag</span></div><span class="badge badge-green">✓</span></div>
+          <div class="row-item"><div class="row-item-left"><span>Monitoring aktiv (Grafana)</span></div><span class="badge badge-green">✓</span></div>
+          <div class="row-item"><div class="row-item-left"><span>Authentik schützt alle Services</span></div><span class="badge badge-green">✓</span></div>
+          <div class="row-item"><div class="row-item-left"><span>Keine Duplikate mehr</span></div><span class="badge badge-green">✓</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

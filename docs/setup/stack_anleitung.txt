@@ -1,0 +1,447 @@
+# Anleitung A–Z: Stack komplett einrichten
+**Deine Umgebung:** Hetzner-Server, Domain **automation-plus-ki.de**, DNS bei
+Cloudflare.
+Vom Server vorbereiten bis zum laufenden Stack (Traefik, n8n, NocoDB, Authentik,
+Uptime Kuma). Schritt für Schritt.
+---
+## Deine Umgebung (Hetzner + Cloudflare)
+| Was | Wert |
+|-----|------|
+| **Server** | Hetzner (root) |
+| **IPv4** | 46.224.145.109 |
+| **IPv6** | 2a01:4f8:1c1f:b58e::/64 |
+| **SSH** | `ssh root@46.224.145.109` (mit deinem Passwort oder SSH-Key) |
+| **Domain** | automation-plus-ki.de |
+| **Subdomains** | n8n, crm, auth, status (alle → automation-plus-ki.de) |
+| **Cloudflare** | Account: timo.goetz1988@gmail.com – DNS für automation-plus-
+ki.de |
+| **Traefik / Let's Encrypt** | ai_studio@timo-goetz-ai.de |
+### Deine Hetzner-Firewall (Stand jetzt)
+Für **diesen Stack** (Traefik auf 80/443) reichen:
+- **SSH:** 22 (TCP)
+- **HTTP:** 80 (TCP)
+- **HTTPS:** 443 (TCP)
+Zusätzlich hast du bereits für Coolify: 6001, 6002, 8000 und ICMP. Der Stack nutzt
+nur 22, 80, 443; es ist nichts weiter zu öﬀnen.
+### Deine URLs nach dem Setup
+| Dienst | URL |
+|--------|-----|
+| n8n | https://n8n.automation-plus-ki.de |
+| NocoDB | https://crm.automation-plus-ki.de |
+| Authentik | https://auth.automation-plus-ki.de |
+| Uptime Kuma | https://status.automation-plus-ki.de |
+### Cloudflare-Hinweis
+- DNS-Einträge für **n8n**, **crm**, **auth**, **status** auf die Server-IP
+**46.224.145.109** zeigen lassen (A-Record).
+- Für Let’s Encrypt (HTTP-Challenge) die Subdomains zunächst auf **„DNS only“**
+(graue Wolke) stellen. Orange Wolke (Proxy) später möglich, dann SSL/TLS auf
+„Full“ oder „Full (strict)“ stellen.
+---
+## Inhaltsverzeichnis
+1. [Übersicht & Voraussetzungen](#1-übersicht--voraussetzungen)
+2. [Server vorbereiten](#2-server-vorbereiten)
+3. [Domain & DNS (Cloudflare)](#3-domain--dns-cloudflare)
+4. [Projekt auf den Server bringen](#4-projekt-auf-den-server-bringen)
+5. [Umgebungsdatei (.env) anlegen](#5-umgebungsdatei-env-anlegen)
+6. [Erster Start (optional: ohne GitHub-Sync)](#6-erster-start-optional-ohne-github-
+sync)
+7. [Nach dem Start: Dienste einrichten](#7-nach-dem-start-dienste-einrichten)
+8. [Prüfliste & URLs testen](#8-prüfliste--urls-testen)
+9. [Troubleshooting](#9-troubleshooting)
+10. [Backup, Updates, Wartung](#10-backup-updates-wartung)
+---
+## 1. Übersicht & Voraussetzungen
+### Was der Stack enthält
+| Dienst | Zweck | Deine URL |
+|---------------|--------------------------|-----------|
+| **Traefik** | Reverse Proxy, TLS | – (intern) |
+| **PostgreSQL**| Datenbank | – (intern) |
+| **Redis** | Cache/Queue | – (intern) |
+| **n8n** | Workflow-Automatisierung | https://n8n.automation-plus-ki.de |
+| **NocoDB** | CRM/No-Code-Datenbank | https://crm.automation-plus-ki.de |
+| **Authentik** | SSO / Login | https://auth.automation-plus-ki.de |
+| **Uptime Kuma** | Monitoring | https://status.automation-plus-ki.de |
+| **Watchtower** | Container-Updates | – (intern) |
+| **GitHub-Sync** | n8n-Backup nach Git | – (optional) |
+### Was du brauchst (bei dir erledigt)
+- **Server:** Hetzner, IP 46.224.145.109, root-Zugang.
+- **Domain:** automation-plus-ki.de mit Subdomains n8n, crm, auth, status.
+- **DNS:** Cloudflare (timo.goetz1988@gmail.com).
+- **Firewall:** Ports 22, 80, 443 oﬀen (Hetzner Cloud Firewall bereits so
+konfiguriert).
+### Was du am Ende hast
+- Alle Dienste laufen in Docker-Containern auf dem Hetzner-Server.
+- TLS-Zertifikate von Let’s Encrypt (automatisch).
+- Erreichbarkeit unter https://n8n.automation-plus-ki.de, https://crm.automation-
+plus-ki.de usw.
+---
+## 2. Server vorbereiten
+### 2.1 Server-Zugang prüfen
+```bash
+ssh root@46.224.145.109
+```
+Anmelden mit Passwort oder SSH-Key (z. B. aus `~/.ssh/authorized_keys`). Wenn
+die Verbindung steht, bist du auf dem Server.
+### 2.2 System aktualisieren
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+### 2.3 Docker installieren
+Falls Docker noch nicht installiert ist:
+```bash
+# Docker-Repository hinzufügen (Ubuntu)
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/
+keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/
+docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo
+"$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /
+dev/null
+# Installieren
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+docker-compose-plugin
+# Prüfen
+docker --version
+docker compose version
+```
+Unter **Debian** die oﬃzielle Docker-Doku für Debian verwenden.
+### 2.4 Firewall
+Du nutzt die **Hetzner Cloud Firewall** mit 22, 80, 443 (plus Coolify-Ports). Damit
+ist für diesen Stack nichts weiter nötig.
+Falls du zusätzlich **UFW auf dem Server** nutzen willst:
+```bash
+sudo apt install -y ufw
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+sudo ufw status
+```
+### 2.5 Verzeichnis für den Stack anlegen
+```bash
+sudo mkdir -p /opt/stack
+sudo chown $USER:$USER /opt/stack
+cd /opt/stack
+```
+Ab jetzt arbeiten wir in `/opt/stack`.
+---
+## 3. Domain & DNS (Cloudflare)
+### 3.1 Deine Domain
+- **Domain:** automation-plus-ki.de
+- **Eintrag in .env:** `DOMAIN=automation-plus-ki.de` (ohne https:// und ohne
+www).
+### 3.2 Subdomains für die Dienste
+Alle zeigen auf die **gleiche Server-IP** 46.224.145.109:
+| Subdomain | Dienst | FQDN |
+|-----------|-------------|------|
+| n8n | n8n | n8n.automation-plus-ki.de |
+| crm | NocoDB | crm.automation-plus-ki.de |
+| auth | Authentik | auth.automation-plus-ki.de |
+| status | Uptime Kuma | status.automation-plus-ki.de |
+### 3.3 DNS-Einträge in Cloudflare anlegen
+Im Cloudflare-Dashboard (timo.goetz1988@gmail.com) → Zone **automation-plus-
+ki.de** → DNS → Einträge:
+| Typ | Name | Inhalt (IPv4) | Proxy-Status |
+|-----|-------|------------------|--------------|
+| A | n8n | 46.224.145.109 | DNS only (grau) |
+| A | crm | 46.224.145.109 | DNS only (grau) |
+| A | auth | 46.224.145.109 | DNS only (grau) |
+| A | status| 46.224.145.109 | DNS only (grau) |
+- **TTL:** Auto oder 300.
+- Für Let’s Encrypt HTTP-Challenge: Subdomains zunächst **„DNS only“** (graue
+Wolke). Später kannst du auf „Proxied“ (orange) wechseln und SSL/TLS auf „Full“
+oder „Full (strict)“ stellen.
+### 3.4 DNS prüfen (nach ein paar Minuten)
+```bash
+# Von deinem Rechner aus
+ping n8n.automation-plus-ki.de
+ping crm.automation-plus-ki.de
+```
+Die angezeigte IP sollte **46.224.145.109** sein.
+---
+## 4. Projekt auf den Server bringen
+Du brauchst auf dem Server in einem Ordner (z. B. `/opt/stack`):
+- `docker-compose.yml`
+- `init-db.sql`
+- `.env` (erstellst du aus `.env.example`; **niemals** mit echten Secrets ins Git)
+### Option A: Manuell kopieren (SCP)
+**Von deinem Mac** (nicht auf dem Server):
+```bash
+cd /Volumes/TIMO_GOETZ/40_Projekte/03_INFRASTRUKTUR/stack
+scp docker-compose.yml init-db.sql .env.example root@46.224.145.109:/opt/
+stack/
+```
+Dann **auf dem Server**:
+```bash
+ssh root@46.224.145.109
+cd /opt/stack
+cp .env.example .env
+nano .env # Werte eintragen (Abschnitt 5)
+```
+### Option B: Git-Repository
+Falls der Stack in einem privaten Repo liegt (ohne `.env`):
+```bash
+# Auf dem Server
+cd /opt
+cd stack
+cp .env.example .env
+nano .env
+```
+git clone https://github.com/DEIN_USER/DEIN_REPO.git stack
+### Option C: Dateien per Editor auf dem Server anlegen
+```bash
+ssh root@46.224.145.109
+cd /opt/stack
+nano docker-compose.yml # Inhalt einfügen, Strg+O, Enter, Strg+X
+nano init-db.sql # Inhalt einfügen
+cp .env.example .env
+nano .env
+```
+Wichtig: Im Ordner müssen liegen: `docker-compose.yml`, `init-db.sql`, `.env`.
+---
+## 5. Umgebungsdatei (.env) anlegen
+Die `.env` liegt im gleichen Ordner wie `docker-compose.yml` und enthält Domains,
+Passwörter und Secrets. **Niemals** die `.env` committen oder teilen.
+### 5.1 Vorlage kopieren
+```bash
+cd /opt/stack
+cp .env.example .env
+nano .env
+```
+### 5.2 Variable für Variable (mit deinen Werten)
+Alle Beispiele unten verwenden **automation-plus-ki.de**. Passwörter/Secrets
+**selbst setzen** (z. B. mit `openssl rand -base64 24`).
+---
+#### DOMAIN
+```env
+DOMAIN=automation-plus-ki.de
+```
+---
+#### TRAEFIK_EMAIL
+E-Mail für Let’s Encrypt (Ablauf-/Sicherheitsmails):
+```env
+TRAEFIK_EMAIL=ai_studio@timo-goetz-ai.de
+```
+---
+#### POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+- **POSTGRES_DB:** Haupt-Datenbank (wird u. a. von n8n genutzt).
+- **POSTGRES_USER:** DB-Benutzer.
+- **POSTGRES_PASSWORD:** Starkes Passwort (z. B. `openssl rand -base64 24`
+auf dem Server).
+```env
+POSTGRES_DB=main_db
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=DEIN_GEHEIMES_POSTGRES_PASSWORT
+```
+---
+#### REDIS_PASSWORD
+Passwort für Redis (n8n Queue, Authentik). Z. B. wieder `openssl rand -base64 24`.
+```env
+REDIS_PASSWORD=DEIN_GEHEIMES_REDIS_PASSWORT
+```
+---
+#### N8N_ENCRYPTION_KEY
+Verschlüsselung sensibler n8n-Daten. **Einmal setzen, nie ändern.** Z. B. `openssl
+rand -base64 32`.
+```env
+```
+N8N_ENCRYPTION_KEY=DEIN_32_ZEICHEN_SCHLUESSEL
+---
+#### N8N_WEBHOOK_URL
+Öﬀentliche Basis-URL von n8n (für Webhooks):
+```env
+```
+N8N_WEBHOOK_URL=https://n8n.automation-plus-ki.de
+---
+#### NOCODB_DB
+Muss zum Namen in `init-db.sql` passen (dort: `nocodb`):
+```env
+NOCODB_DB=nocodb
+```
+---
+#### NOCODB_JWT_SECRET
+Geheimer Schlüssel für NocoDB-Sessions. Z. B. `openssl rand -base64 32`.
+```env
+```
+NOCODB_JWT_SECRET=DEIN_NOCODB_JWT_SECRET
+---
+#### AUTHENTIK_SECRET_KEY
+Geheimer Schlüssel für Authentik. Z. B. `openssl rand -base64 50`.
+```env
+```
+AUTHENTIK_SECRET_KEY=DEIN_LANGER_AUTHENTIK_SECRET_KEY
+---
+#### GITHUB_REPO (optional)
+Nur nötig, wenn der **GitHub-Sync**-Container n8n-Daten nach GitHub pushen
+soll.
+`main`).
+Format: `https://TOKEN@github.com/BENUTZER/REPO.git` (Repo anlegen, Branch
+Ohne GitHub-Backup leer lassen oder Service `github-sync` in der Compose
+auskommentieren:
+```env
+GITHUB_REPO=
+```
+Hinweis: Deine lokale SSH-Config (`~/.ssh/id_github_ed25519`) gilt für **Git auf
+deinem Rechner**. Der Container nutzt **HTTPS + Token** in `GITHUB_REPO`,
+nicht SSH.
+---
+### 5.3 Beispiel-.env für automation-plus-ki.de (zum Abhaken)
+```env
+DOMAIN=automation-plus-ki.de
+TRAEFIK_EMAIL=ai_studio@timo-goetz-ai.de
+POSTGRES_DB=main_db
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=DEIN_GEHEIMES_POSTGRES_PASSWORT
+REDIS_PASSWORD=DEIN_GEHEIMES_REDIS_PASSWORT
+N8N_ENCRYPTION_KEY=DEIN_32_ZEICHEN_SCHLUESSEL
+N8N_WEBHOOK_URL=https://n8n.automation-plus-ki.de
+NOCODB_DB=nocodb
+NOCODB_JWT_SECRET=DEIN_NOCODB_JWT_SECRET
+AUTHENTIK_SECRET_KEY=DEIN_LANGER_AUTHENTIK_SECRET_KEY
+GITHUB_REPO=
+GIT_AUTHOR_NAME=autosync
+GIT_AUTHOR_EMAIL=autosync@local
+```
+Speichern (nano: Strg+O, Enter, Strg+X).
+---
+## 6. Erster Start (optional: ohne GitHub-Sync)
+Ohne GitHub-Backup: Service `github-sync` in `docker-compose.yml`
+auskommentieren oder `GITHUB_REPO` leer lassen (der Container wird
+fehlschlagen, die anderen laufen).
+### Compose prüfen (ohne Container zu starten)
+```bash
+cd /opt/stack
+docker compose config
+```
+Keine Fehlermeldung → YAML und Variablen stimmen. Bei „variable not set“ →
+fehlende Variable in `.env` setzen.
+### Stack starten
+```bash
+cd /opt/stack
+docker compose up -d
+```
+Beim ersten Mal werden Images gezogen; kann einige Minuten dauern.
+### Status prüfen
+```bash
+docker compose ps
+```
+Alle Services sollten „running“ sein. Logs z. B.:
+```bash
+docker compose logs -f traefik
+docker compose logs -f n8n
+docker compose logs -f postgres
+```
+Strg+C beendet die Log-Ausgabe.
+---
+## 7. Nach dem Start: Dienste einrichten
+### 7.1 n8n
+1. Im Browser: **https://n8n.automation-plus-ki.de**
+2. Beim ersten Aufruf: **Owner-Account** anlegen (E-Mail, Passwort).
+3. Danach Workflows anlegen.
+### 7.2 NocoDB
+1. Im Browser: **https://crm.automation-plus-ki.de**
+2. Ersten **Admin-Account** anlegen.
+3. Bases und Tabellen anlegen.
+### 7.3 Authentik
+1. Im Browser: **https://auth.automation-plus-ki.de**
+2. Beim ersten Start: **Admin-Benutzer** anlegen (Hinweise auf der Startseite / in
+der Authentik-Doku).
+3. Später: Anwendungen (Provider) anlegen und z. B. n8n/NocoDB per SSO
+anbinden.
+### 7.4 Uptime Kuma
+1. Im Browser: **https://status.automation-plus-ki.de**
+2. Ersten **Admin-Account** anlegen.
+3. Monitore für n8n, NocoDB, Authentik anlegen (URL + optional
+Benachrichtigungen).
+---
+## 8. Prüfliste & URLs testen
+- [ ] Server: `ssh root@46.224.145.109` funktioniert; Docker + Docker Compose
+installiert; `docker compose config` fehlerfrei.
+- [ ] DNS (Cloudflare): n8n, crm, auth, status → A-Record auf **46.224.145.109**;
+für TLS-Start „DNS only“.
+- [ ] `.env`: DOMAIN=automation-plus-ki.de, TRAEFIK_EMAIL, alle Passwörter/
+Secrets gesetzt.
+- [ ] `docker compose up -d` ohne Abbruch; `docker compose ps` zeigt alle
+Services „Up“.
+- [ ] https://n8n.automation-plus-ki.de → n8n Setup/Owner-Login.
+- [ ] https://crm.automation-plus-ki.de → NocoDB Setup.
+- [ ] https://auth.automation-plus-ki.de → Authentik Setup.
+- [ ] https://status.automation-plus-ki.de → Uptime Kuma Setup.
+- [ ] Browser zeigt gültiges TLS-Zertifikat (Schloss-Symbol).
+---
+## 9. Troubleshooting
+### Container starten nicht
+```bash
+docker compose ps -a
+docker compose logs SERVICE_NAME
+```
+- **postgres:** `init-db.sql` im richtigen Pfad? Keine Syntaxfehler? User/Passwort
+wie in `.env`.
+- **redis:** `REDIS_PASSWORD` in `.env` gesetzt?
+- **n8n:** postgres und redis müssen „healthy“ sein; Logs auf Verbindungsfehler
+prüfen.
+- **traefik:** Ports 80/443 frei? `sudo ss -tlnp | grep -E ':80|:443'`
+### TLS-Zertifikat wird nicht ausgestellt
+- Let’s Encrypt braucht von außen erreichbaren Port 80 auf **46.224.145.109**.
+- In Cloudflare: Subdomains n8n, crm, auth, status auf **„DNS only“** (graue
+Wolke), Ziel **46.224.145.109**.
+- Traefik-Logs: `docker compose logs traefik` (ACME-Fehler stehen dort).
+### 502 Bad Gateway / Service Unavailable
+- Backend-Container laufen? `docker compose ps`.
+- Nach dem ersten Start 1–2 Minuten warten; Traefik-Service-Ports sind in der
+Compose bereits gesetzt.
+### n8n: Database / Queue Fehler
+- postgres und redis „healthy“; `.env` mit POSTGRES_* und REDIS_PASSWORD
+konsistent.
+- Nach `.env`-Änderung: `docker compose up -d` erneut ausführen.
+### Authentik: Redis/PostgreSQL
+- `.env`: REDIS_PASSWORD, POSTGRES_*, DB-Name `authentik`; `init-db.sql` legt
+`authentik` an.
+### Alle Container neu starten
+```bash
+cd /opt/stack
+docker compose down
+docker compose up -d
+```
+---
+## 10. Backup, Updates, Wartung
+### Backup
+- **PostgreSQL:** Dumps von main_db, nocodb, authentik (z. B. mit `pg_dump`).
+- **Volumes:** postgres_data, n8n_data, nocodb_data, authentik_media,
+uptime_kuma_data sichern (z. B. restic/Borg).
+- **Optional:** GitHub-Sync mit `GITHUB_REPO` für n8n-Backup.
+Beispiel Dump (auf dem Server):
+```bash
+cd /opt/stack
+docker compose exec postgres pg_dump -U admin main_db > backup_main_$
+(date +%Y%m%d).sql
+```
+### Updates
+- **Watchtower** im Stack prüft auf neue Images (z. B. täglich). Vorher Backups
+haben.
+- Manuell: `docker compose pull && docker compose up -d`
+### Wartung
+- Festplatte: `df -h`, `docker system df`.
+- System-Updates: `sudo apt update && sudo apt upgrade -y`.
+---
+## Kurz: Schrittfolge mit deinen Werten
+1. **Server:** `ssh root@46.224.145.109` → System updaten, Docker installieren, `/
+opt/stack` anlegen.
+2. **Firewall:** Bereits erledigt (Hetzner: 22, 80, 443).
+3. **DNS (Cloudflare):** n8n, crm, auth, status → A auf **46.224.145.109**, „DNS
+only“.
+4. **Projekt:** `docker-compose.yml`, `init-db.sql`, `.env.example` nach `/opt/stack`
+(z. B. per SCP von deinem Mac).
+5. **.env:** Aus `.env.example` kopieren; DOMAIN=automation-plus-ki.de,
+TRAEFIK_EMAIL=ai_studio@timo-goetz-ai.de, alle Passwörter/Secrets setzen.
+6. **Start:** Optional github-sync auskommentieren → `docker compose config` →
+`docker compose up -d`.
+7. **Test:** https://n8n.automation-plus-ki.de, https://crm.automation-plus-ki.de,
+https://auth.automation-plus-ki.de, https://status.automation-plus-ki.de – jeweils
+ersten Account anlegen.
+Wenn du magst, gehen wir im nächsten Schritt **einen** Abschnitt gemeinsam
+durch (z. B. nur „Server vorbereiten“ oder nur „.env“) und du führst die Befehle
+nacheinander aus.

@@ -1,0 +1,262 @@
+# 🎯 Prompt für Cursor: Hetzner S3 Bucket Dashboard Widget
+
+Kopiere das komplett in Cursor:
+
+---
+
+```markdown
+# TASK: Hetzner S3 Bucket Storage Widget ins Agent Platform Dashboard integrieren
+
+## ZIEL
+Erstelle ein neues Dashboard-Widget für das Agent Platform (automation-plus-ki.de) 
+das in Echtzeit den Hetzner S3 Storage-Status anzeigt.
+
+## KONTEXT
+- Platform: Agent Platform (automation-plus-ki.de)
+- Stack: Grafana/NocoDB Dashboard
+- S3 Provider: Hetzner Object Storage (Spaces)
+- Placement: Im Dashboard-Bereich unten links, neben "Workspace"
+
+---
+
+## ANFORDERUNGEN
+
+### 1️⃣ S3 SPEICHER-METRIKEN (Top-Sektion)
+
+Zeige folgende Werte **live/aktualisiert alle 5 Min**:
+
+```
+┌─────────────────────────────────────────┐
+│ 💾 HETZNER S3 STORAGE MONITOR          │
+├─────────────────────────────────────────┤
+│                                         │
+│  Genutzt:  45.2 GB / 100 GB  [===45%] │
+│  Verfügbar: 54.8 GB                   │
+│  Trend: ↑ +2.1 GB diese Woche         │
+│                                         │
+│  Status: 🟢 HEALTHY                    │
+│  Kosten (monatlich): ~€3,24            │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Metriken:**
+- `used_storage_gb`: Genutzer Speicher
+- `total_storage_gb`: Gesamtspeicher
+- `usage_percentage`: Prozentanzeige
+- `available_storage_gb`: Verfügbar
+- `weekly_growth_gb`: Wachstum pro Woche
+- `monthly_cost_eur`: Geschätzte Kosten
+- `status`: 🟢 HEALTHY / 🟡 WARNING (>80%) / 🔴 CRITICAL (>95%)
+
+---
+
+### 2️⃣ VERSIONEN & UPDATES (Mittlere Sektion)
+
+```
+┌──────────────────────────────────────────┐
+│ 📦 VERSIONS & CONFIG                    │
+├──────────────────────────────────────────┤
+│                                          │
+│ S3 Bucket Region:        eu-de          │
+│ Bucket Name:             [timo-workspace]│
+│ API Version:             v3              │
+│ Endpoint:                eu-de.spaces.de│
+│ Created:                 2024-06-15      │
+│ Last Modified:           2025-03-07      │
+│ ACL Policy:              Private         │
+│ Versioning:              ✅ Enabled     │
+│ Transfer Acceleration:   ❌ Disabled    │
+│                                          │
+└──────────────────────────────────────────┘
+```
+
+**Zu zeigen:**
+- `bucket_name`
+- `region`
+- `created_date`
+- `last_modified_date`
+- `endpoint_url`
+- `api_version`
+- `versioning_enabled` (boolean → ✅/❌)
+- `transfer_acceleration` (boolean → ✅/❌)
+- `acl_policy` (Private/Public/Mixed)
+
+---
+
+### 3️⃣ BACKUPS & UPDATES ZEITPLAN (Untere Sektion)
+
+```
+┌────────────────────────────────────────────┐
+│ 🔄 BACKUP & UPDATE SCHEDULE                │
+├────────────────────────────────────────────┤
+│                                            │
+│ Letzte Vollsicherung:    2025-03-08 02:15 │
+│ Status:                  ✅ Success        │
+│ Größe:                   45.2 GB           │
+│                                            │
+│ Nächste Sicherung:       2025-03-09 02:00 │
+│ Sicherungs-Frequenz:     Täglich (02:00)  │
+│ Aufbewahrung:            30 Tage           │
+│                                            │
+│ Letzte Backup-Prüfung:   2025-03-08 03:45 │
+│ Integrität:              ✅ Verified       │
+│                                            │
+│ Update-Schedule:         Wöchentlich (Fr)  │
+│ Letzte Updates:          2025-03-07 19:30  │
+│ Verfügbare Updates:      0                 │
+│                                            │
+└────────────────────────────────────────────┘
+```
+
+**Zu zeigen:**
+- `last_backup_date` + `time`
+- `last_backup_status` (Success/Failed/Running)
+- `last_backup_size_gb`
+- `next_backup_scheduled` (datetime)
+- `backup_frequency` (z.B. "Täglich 02:00")
+- `backup_retention_days` (z.B. 30)
+- `last_integrity_check` (datetime)
+- `integrity_status` (Verified/Failed/Pending)
+- `backup_health` (🟢 HEALTHY / 🟡 WARNING / 🔴 CRITICAL)
+
+**Updates:**
+- `update_schedule` (z.B. "Wöchentlich Freitag")
+- `last_update_check` (datetime)
+- `last_update_applied` (datetime)
+- `pending_updates_count` (number)
+- `update_status` (Up-to-date/Updates available/Updating)
+
+---
+
+## TECHNISCHE UMSETZUNG
+
+### API-Integration
+```yaml
+datenquellen:
+  hetzner_s3:
+    type: "REST API"
+    endpoint: "https://api.hetzner.cloud/v1/object_storage"
+    authentication: "Bearer Token (aus .env)"
+    refresh_interval: "5 minutes"
+    
+  backup_monitor:
+    type: "NocoDB Table"
+    table: "s3_backups"
+    fields:
+      - backup_date
+      - backup_size
+      - backup_status
+      - integrity_check
+      - next_scheduled
+    refresh: "Real-time"
+```
+
+### NocoDB Tabelle erstellen (falls nicht existent):
+```sql
+CREATE TABLE s3_backups (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  backup_date DATETIME NOT NULL,
+  backup_size_gb DECIMAL(10,2),
+  backup_status VARCHAR(50),
+  integrity_verified BOOLEAN,
+  next_scheduled DATETIME,
+  backup_notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+### Grafana Panel (Alternative)
+Falls du Grafana nutzt, erstelle 3 Panels:
+1. **Stat Panel**: Storage Usage %
+2. **Gauge Panel**: Available Storage
+3. **Table Panel**: Backup History + Scheduled
+
+---
+
+## DESIGN & UX
+
+### Layout (im bestehendem Dashboard)
+```
+WORKSPACE-Sektion unten erweitern:
+
+Linke Spalte (wie jetzt):          Rechte Spalte (NEU):
+┌─────────────────┐               ┌──────────────────┐
+│ n8n             │               │ S3 STORAGE MON   │
+│ AppFlowy        │               │ ──────────────── │
+│ NocoDB          │               │ Used: 45.2 GB    │
+│ Coolify         │               │ Status: 🟢       │
+│ Voicen          │               │                  │
+└─────────────────┘               │ VERSIONS         │
+                                  │ ──────────────── │
+                                  │ Bucket: eu-de    │
+                                  │ API v3           │
+                                  │                  │
+                                  │ BACKUPS          │
+                                  │ ──────────────── │
+                                  │ Last: 02:15 ✅   │
+                                  │ Next: 02:00 (mo) │
+                                  │ 30d Retention    │
+                                  └──────────────────┘
+```
+
+### Farben & Icons
+- 🟢 Healthy: `#00C853`
+- 🟡 Warning (>80%): `#FFD600`
+- 🔴 Critical (>95%): `#F44336`
+- Status-Icons: Material Design Icons
+- Speicher-Gauge: Blauer Gradient
+
+---
+
+## AUTOMATE (Optional: N8n Workflow)
+
+Erstelle einen N8n Workflow `S3_Storage_Monitor_Daily`:
+```
+Trigger: Schedule (täglich 00:00)
+├─ HTTP Request → Hetzner S3 API (usage stats)
+├─ Extract Metrics
+├─ Query NocoDB s3_backups (last entry)
+├─ Calculate: 
+│  ├─ Weekly Growth
+│  ├─ Estimated Costs
+│  └─ Health Status
+├─ Update NocoDB: s3_monitor_metrics
+├─ IF (usage > 95%): Send Alert Email
+└─ Prometheus Push: s3_storage_usage_percent
+```
+
+---
+
+## DELIVERABLES
+
+1. ✅ Dashboard Widget HTML/React Component
+2. ✅ Hetzner S3 API Integration Code
+3. ✅ NocoDB Table Schema für Backups
+4. ✅ (Optional) N8n Workflow für Monitoring
+5. ✅ Dokumentation: Wie man es debuggt/updated
+
+---
+
+## FRAGEN AN DICH (BITTE BEANTWORTEN)
+
+- [ ] Hetzner S3 API Key / Secret vorhanden?
+- [ ] Bucket Name? (z.B. `timo-workspace`)
+- [ ] Region? (z.B. `eu-de`)
+- [ ] Backup-Tool nutzt du? (z.B. Duplicati, Restic, Rclone, Manual?)
+- [ ] Sollen Backups automatisiert in NocoDB geloggt werden?
+- [ ] Willst du Cost-Tracking? (Wenn ja: wie viel GB kostet pro Monat?)
+
+**Mach Cursor los!** 🚀
+```
+
+---
+
+## 📋 Zusatz-Infos für dich selbst
+
+Wenn du das mit Cursor machst, gib ihm noch:
+- **Hetzner API Key** (aus deinem Hetzner-Account)
+- **Bucket Name** (exakt wie bei Hetzner)
+- **Deine aktuelle Dashboard-Technologie** (Grafana? Nativem React? NocoDB View?)
+
+Dann baut er dir in **1-2h** ein geiles S3 Widget rein. 💾✨

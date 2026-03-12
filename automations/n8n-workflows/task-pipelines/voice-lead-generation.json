@@ -1,0 +1,196 @@
+
+{
+  "name": "Voice AI Assistentin - Complete System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Incoming Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "voice-assistant"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "caller_number",
+              "value": "={{ $json.From }}"
+            },
+            {
+              "name": "call_id",
+              "value": "={{ $json.CallSid }}"
+            },
+            {
+              "name": "call_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "to_number",
+              "value": "={{ $json.To }}"
+            },
+            {
+              "name": "call_status",
+              "value": "initiated"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-call-data",
+      "name": "Set Call Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "Calls",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Call ID": "={{ $json.call_id }}",
+            "Caller Number": "={{ $json.caller_number }}",
+            "Timestamp": "={{ $json.call_time }}",
+            "Status": "initiated"
+          }
+        },
+        "options": {}
+      },
+      "id": "log-call-airtable",
+      "name": "Log Call to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtable-credentials",
+          "name": "Airtable Personal Access Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Du bist die professionelle und freundliche Assistentin eines Automatisierungs-Beratungsunternehmens. Erstelle eine kurze, natürliche Begrüßung (2-3 Sätze) und frage nach dem Anliegen des Anrufers."
+            },
+            {
+              "role": "user",
+              "content": "Erstelle eine Begrüßung für einen eingehenden Geschäftsanruf."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "generate-greeting",
+      "name": "Generate Greeting (GPT-4)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [900, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fish.audio/v1/tts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "fishAudioApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.choices[0].message.content }}"
+            },
+            {
+              "name": "reference_id",
+              "value": "={{ $env.FISH_AUDIO_VOICE_ID }}"
+            },
+            {
+              "name": "format",
+              "value": "mp3"
+            },
+            {
+              "name": "normalize",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fish-audio-greeting",
+      "name": "Fish Audio TTS (Greeting)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "resource": "call",
+        "operation": "update",
+        "callSid": "={{ $('Set Call Data').item.json.call_id }}",
+        "twiml": "=<Response><Play>={{ $json.audio_url }}</Play><Gather input=\"speech\" language=\"de-DE\" timeout=\"5\" speechTimeout=\"auto\" action=\"{{ $env.N8N_WEBHOOK_URL }}/webhook/process-speech\"><Say voice=\"Polly.Vicki\">Bitte sprechen Sie nach dem Ton.</Say></Gather></Response>",
+        "options": {}
+      },
+      "id": "twilio-play-greeting",
+      "name": "Twilio: Play Greeting",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio-credentials",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>Vielen Dank. Einen Moment bitte.</Say></Response>"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "process-speech",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-speech",
+      "name": "Webhook: Process Speech",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 600],
+      "webhookId": "process-speech"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepgram.com/v1/listen",
+        "authentication": "generic

@@ -1,0 +1,5 @@
+name,url,type,scrape_method,frequency,active
+StepStone,https://www.stepstone.de,Jobbörse,API,Wöchentlich,true
+Indeed,https://www.indeed.de,Jobbörse,API,Wöchentlich,true
+Xing,https://www.xing.com/jobs,Karrierenetzwerk,Manual,Wöchentlich,true
+LinkedIn,https://www.linkedin.com/jobs,Karrierenetzwerk,Manual,Wöchentlich,true

@@ -1,0 +1,206 @@
+# LLM Security Policy
+
+Hier ist eine Übersicht, was jede Erweiterung bewirkt und welchen Mehrwert sie bringt:
+
+---
+
+## 1️⃣ Spezifische IDE-Integrationen
+
+### Was es bewirkt:
+
+IDEIntegrationNutzen**Cursor**Native Rules in `.cursor/rules/`, Settings-HooksPolicy wird bei jedem AI-Chat automatisch geladen, blockiert unsichere Vorschläge direkt im Editor**VS Code**Extension API, Copilot-Filter, Workspace TrustVerhindert, dass Copilot/Continue/Cody Secrets vorschlagen oder ausführen**JetBrains**Plugin-System, AI Assistant HooksIntegriert in IntelliJ, PyCharm, WebStorm – blockiert unsichere Code-Generierung**Neovim/Vim**Lua-Plugins für Codeium/CopilotTerminal-basierte Entwickler bekommen gleichen Schutz**Zed**Assistant-KonfigurationSchnelle IDE mit eingebautem AI – Policy-Enforcement nativ
+
+### Konkreter Nutzen:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  OHNE IDE-Integration          MIT IDE-Integration          │
+├─────────────────────────────────────────────────────────────┤
+│  AI schlägt vor:               AI wird blockiert:           │
+│  "const API_KEY = 'sk-..'"     ⛔ "Secret detected"         │
+│                                                             │
+│  AI führt aus:                 AI fragt nach:               │
+│  "rm -rf /important"           ⚠️ "Confirm dangerous cmd?"  │
+│                                                             │
+│  AI liest:                     AI ignoriert:                │
+│  ".env" Datei komplett         🔒 ".env" ist geschützt      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2️⃣ Python/Node.js Enforcement Libraries
+
+### Was es bewirkt:
+
+LibraryFunktionUse Case**Python SDK**Middleware für LangChain, LlamaIndex, OpenAI SDKFiltert Prompts/Responses automatisch, bevor sie gesendet/empfangen werden**Node.js SDK**Wrapper für AI SDKs, Express-MiddlewareAPI-Server und CLI-Tools bekommen automatischen Schutz**Pre-commit Hooks**Git-IntegrationVerhindert Commit von Code, der Policy verletzt**Runtime Guards**Decorator/Wrapper-PatternJeder LLM-Call wird zur Laufzeit validiert
+
+### Beispiel Python:
+
+```python
+from llm_security import SecureClient, PolicyViolation
+
+# Automatische Filterung aller LLM-Calls
+client = SecureClient(
+    provider="openai",
+    policy=".llm-security-policy.yaml"
+)
+
+try:
+    # Secret wird automatisch erkannt und blockiert
+    response = client.chat("Was ist in meiner .env Datei?")
+except PolicyViolation as e:
+    print(f"⛔ Blocked: {e.rule} - {e.message}")
+```
+
+### Beispiel Node.js:
+
+```javascript
+import { secureLLM } from '@llm-security/node';
+
+// Wraps any AI SDK
+const ai = secureLLM(openai, {
+  policy: '.llm-security-policy.yaml',
+  onViolation: (v) => console.warn(`⛔ ${v.rule}`)
+});
+
+// Automatically filtered
+await ai.chat.completions.create({...});
+```
+
+### Konkreter Nutzen:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Entwickler-Workflow mit Enforcement Library                   │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  Code schreiben                                                │
+│       ↓                                                        │
+│  LLM-Call (z.B. Code-Review)                                   │
+│       ↓                                                        │
+│  ┌──────────────────────────────┐                              │
+│  │  🛡️ Enforcement Library      │                              │
+│  │  • Prompt scannen            │                              │
+│  │  • Secrets redaktieren       │                              │
+│  │  • Injection erkennen        │                              │
+│  │  • Response validieren       │                              │
+│  └──────────────────────────────┘                              │
+│       ↓                                                        │
+│  Sicherer Output an Entwickler                                 │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3️⃣ Compliance-Erweiterungen (SOC2, ISO27001, etc.)
+
+### Was es bewirkt:
+
+StandardAnforderungenPolicy-Mapping**SOC 2 Type II**Access Controls, Audit Logs, Data ProtectionLogging aktiviert, Secrets-Schutz, Approval-Workflows**ISO 27001**Informationssicherheits-ManagementKlassifizierung, Zugriffskontrolle, Incident Response**GDPR**Personendatenschutz, Recht auf LöschungPII-Erkennung, Datenminimierung, Consent-Tracking**HIPAA**Gesundheitsdaten-SchutzPHI-Filter, Audit-Trails, Verschlüsselung**PCI-DSS**Zahlungsdaten-SchutzKreditkarten-Erkennung, Netzwerk-Isolation**NIST AI RMF**KI-RisikomanagementBias-Detection, Transparency, Human Oversight
+
+### Compliance-Mapping-Beispiel:
+
+```yaml
+compliance:
+  soc2:
+    enabled: true
+    controls:
+      CC6.1:  # Logical Access Controls
+        mapped_rules:
+          - workspace_isolation
+          - secrets_protection
+        evidence:
+          - audit_logs
+          - access_denied_events
+      
+      CC6.7:  # Data Transmission Protection
+        mapped_rules:
+          - network_safety
+          - encrypted_transport
+        evidence:
+          - transmission_logs
+          - tls_verification
+      
+      CC7.2:  # System Monitoring
+        mapped_rules:
+          - audit_logging
+          - violation_alerts
+        evidence:
+          - security_event_logs
+          - alert_history
+  
+  iso27001:
+    enabled: true
+    controls:
+      A.9.2.3:  # Privileged Access Management
+        mapped_rules:
+          - tool_safety.least_privilege
+          - execution_approval
+      
+      A.12.4.1:  # Event Logging
+        mapped_rules:
+          - audit_logging
+        retention: 1_year
+  
+  gdpr:
+    enabled: true
+    requirements:
+      data_minimization:
+        mapped_rules:
+          - pii_protection
+          - redact_personal_data
+      
+      right_to_erasure:
+        log_retention: configurable
+        prompt_history: deletable
+```
+
+### Konkreter Nutzen:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Audit-Situation (z.B. SOC 2 Prüfung)                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Auditor fragt: "Wie schützen Sie Daten bei AI-Nutzung?"       │
+│                                                                 │
+│  OHNE Compliance-Erweiterung:                                   │
+│  😰 "Ähm... wir sagen den Entwicklern, sie sollen aufpassen"   │
+│                                                                 │
+│  MIT Compliance-Erweiterung:                                    │
+│  ✅ "Hier ist unser Policy-Dokument mit SOC2-Mapping"          │
+│  ✅ "Hier sind 6 Monate Audit-Logs"                            │
+│  ✅ "Hier ist der Nachweis für CC6.1, CC6.7, CC7.2"            │
+│  ✅ "Automatische Enforcement-Rate: 99,7%"                     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📊 Entscheidungshilfe
+
+ErweiterungPrioritätAufwandWann sinnvoll?**IDE-Integrationen**🔴 HochMittelSofort – größter Impact für Entwickler-Alltag**Python/Node.js Libraries**🔴 HochHochWenn eigene AI-Tools/Agents gebaut werden**Compliance (SOC2/ISO)**🟡 MittelMittelBei Enterprise-Kunden, Audits, B2B-Sales**GDPR/HIPAA**🔴 HochMittelBei EU-Kunden oder Gesundheitsdaten**NIST AI RMF**🟢 NiedrigHochZukunftssicher für AI-Regulierung
+
+---
+
+## 🎯 Meine Empfehlung
+
+**Prioritätsreihenfolge:**
+
+```
+1. 🥇 IDE-Integrationen (Cursor + VS Code)
+   → Sofortiger Schutz für 90% der Entwickler
+   
+2. 🥈 Python/Node.js Enforcement Libraries  
+   → Programmatischer Schutz für Custom-Tools
+   
+3. 🥉 SOC2 + GDPR Compliance
+   → Enterprise-Readiness & rechtliche Absicherung
+```
+
+---
+
+Welche Erweiterung soll ich als Erstes vollständig ausarbeiten?

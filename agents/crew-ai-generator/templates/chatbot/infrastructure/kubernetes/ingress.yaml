@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ project_name | default('chatbot') }}-ingress
+  namespace: {{ project_name | default('chatbot') }}
+spec:
+  rules:
+  - host: {{ project_name | default('chatbot') }}.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ project_name | default('chatbot') }}-svc
+            port:
+              number: 80

@@ -1,0 +1,50 @@
+name: "service-agent"
+description: >
+  KI-Service-Agent für Business-Prozesse: Kundenanfragen, Rechnungen, HR,
+  Terminbuchungen, CRM, Incident-Reports. Liest Policies, Prozesse und FAQs
+  aus docs/ und beantwortet Anfragen strukturiert.
+
+capabilities:
+  - file_system
+  - shell_commands
+  - http_requests
+  - git
+
+config:
+  docs_root: "./docs"
+  processes_root: "./docs/processes"
+  faq_root: "./docs/faq"
+  templates_root: "./docs/templates"
+  policies_root: "./docs/policies"
+  integrations_root: "./docs/integrations"
+  output_root: "~/devops-center/docs/service-agent-outputs"
+
+tools:
+  - name: "list_processes"
+    description: "Zeigt alle verfügbaren Prozesse aus docs/processes/"
+    script: "./scripts/list-processes.sh"
+
+  - name: "run_tests"
+    description: "Führt alle Tests aus (pytest)"
+    script: "./scripts/run-tests.sh"
+
+  - name: "update_docs"
+    description: "Zieht aktuelle Docs aus Git und aktualisiert Wissensanker"
+    script: "./scripts/update-docs.sh"
+
+knowledge_base:
+  - path: "docs/processes/"
+    type: "business_processes"
+  - path: "docs/faq/"
+    type: "faq"
+  - path: "docs/policies/"
+    type: "policies"
+  - path: "docs/templates/"
+    type: "templates"
+  - path: "docs/integrations/"
+    type: "mcp_integrations"
+
+integration:
+  n8n_webhook: "https://n8n.automation-plus-ki.de/webhook/service-agent"
+  nocodb_table: "SERVICE_REQUESTS"
+  ai_control_api: "https://agents.automation-plus-ki.de/api/agents/execute"

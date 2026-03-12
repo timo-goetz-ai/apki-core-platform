@@ -1,0 +1,190 @@
+{
+  "name": "CoderAgent – Auto-Review & QA",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook: Code Generated",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coder-agent/review",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "Payload: { rowId, title, content, language }"
+    },
+    {
+      "id": "node-syntax",
+      "name": "Syntax Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst content  = item.content  ?? '';\nconst language = item.language ?? '';\nconst rowId    = item.rowId    ?? '';\nconst title    = item.title    ?? '';\n\nconst issues = [];\nlet score = 100;\n\nif (!content.includes('```')) {\n  issues.push('Kein Code-Block gefunden');\n  score -= 30;\n}\nif (!content.includes('## Description')) {\n  issues.push('Description-Section fehlt');\n  score -= 10;\n}\nif (!content.includes('## Dependencies')) {\n  issues.push('Dependencies-Section fehlt');\n  score -= 10;\n}\n\nconst dangerPatterns = [\n  ['eval(',       'eval() – Sicherheitsrisiko'],\n  ['innerHTML =', 'innerHTML Assignment – XSS-Risiko'],\n  ['password =',  'Hardcoded password'],\n  ['API_KEY =',   'Hardcoded API Key'],\n];\nfor (const [pattern, msg] of dangerPatterns) {\n  if (content.includes(pattern)) {\n    issues.push(msg);\n    score -= 20;\n  }\n}\n\nscore = Math.max(0, score);\n\nreturn [{ json: { rowId, title, language, content, syntaxScore: score, syntaxIssues: issues } }];"
+      }
+    },
+    {
+      "id": "node-claude",
+      "name": "Claude: Code-Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",          "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version",   "value": "2023-06-01" },
+            { "name": "content-type",        "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 800, messages: [{ role: 'user', content: 'Reviewe kurz diesen Code auf Fehler, fehlendes Error-Handling und Security. Antworte NUR als JSON ohne Markdown: {\"rating\": 1-10, \"issues\": [\"...\"], \"suggestions\": [\"...\"]}\\n\\n' + $json.content.substring(0, 3000) }] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "node-parse",
+      "name": "Parse & Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300],
+      "parameters": {
+        "jsCode": "// Claude-Response parsen\nconst claudeBody = $input.first().json;\nconst rawText = claudeBody?.content?.[0]?.text ?? '{}';\n\nlet review = { rating: 5, issues: [], suggestions: [] };\ntry {\n  const match = rawText.match(/\\{[\\s\\S]*?\\}/);\n  if (match) review = JSON.parse(match[0]);\n} catch(e) { /* Fallback bleibt */ }\n\n// Daten aus Syntax-Check-Node holen\nconst syntax = $('Syntax Check').first().json;\n\nconst finalScore = Math.round((syntax.syntaxScore + (review.rating ?? 5) * 10) / 2);\nconst passed     = finalScore >= 60;\nconst allIssues  = [...(syntax.syntaxIssues ?? []), ...(review.issues ?? [])];\nconst notesText  = passed\n  ? `Auto-Review OK. Score: ${finalScore}/100. Vorschläge: ${(review.suggestions ?? []).join('; ')}`\n  : `Issues: ${allIssues.join('; ')}`;\n\nreturn [{ json: {\n  rowId:       syntax.rowId,\n  title:       syntax.title,\n  qaScore:     finalScore,\n  qaIssues:    allIssues,\n  qaNotes:     notesText,\n  passed,\n  newStatus:   passed ? 'Reviewed' : 'Needs Fix',\n  reviewedDate: new Date().toISOString().split('T')[0],\n}}];"
+      }
+    },
+    {
+      "id": "node-if",
+      "name": "Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1080, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue":  "={{ $json.passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-nc-ok",
+      "name": "NocoDB: Status Reviewed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 180],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://homestack-nocodb:8080/api/v1/db/data/noco/pwxfagcnm6bru9w/mjq8palk78za2sz/{{ $json.rowId }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token",      "value": "qvOud9RyADawysdG0vqzVa8vZ2n-wXCnK6skTXC2" },
+            { "name": "content-type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ Status: 'Reviewed', QAScore: $json.qaScore, QANotes: $json.qaNotes, ReviewedDate: $json.reviewedDate }) }}"
+      }
+    },
+    {
+      "id": "node-nc-fail",
+      "name": "NocoDB: Status Needs Fix",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 420],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://homestack-nocodb:8080/api/v1/db/data/noco/pwxfagcnm6bru9w/mjq8palk78za2sz/{{ $json.rowId }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token",      "value": "qvOud9RyADawysdG0vqzVa8vZ2n-wXCnK6skTXC2" },
+            { "name": "content-type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ Status: 'Needs Fix', QAScore: $json.qaScore, QANotes: $json.qaNotes }) }}"
+      }
+    },
+    {
+      "id": "node-merge",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1520, 300],
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1"
+      }
+    },
+    {
+      "id": "node-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1720, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ rowId: $('Parse & Score').first().json.rowId, status: $('Parse & Score').first().json.newStatus, qaScore: $('Parse & Score').first().json.qaScore, issues: $('Parse & Score').first().json.qaIssues }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Code Generated": {
+      "main": [[{ "node": "Syntax Check",      "type": "main", "index": 0 }]]
+    },
+    "Syntax Check": {
+      "main": [[{ "node": "Claude: Code-Review", "type": "main", "index": 0 }]]
+    },
+    "Claude: Code-Review": {
+      "main": [[{ "node": "Parse & Score",       "type": "main", "index": 0 }]]
+    },
+    "Parse & Score": {
+      "main": [[{ "node": "Passed?",             "type": "main", "index": 0 }]]
+    },
+    "Passed?": {
+      "main": [
+        [{ "node": "NocoDB: Status Reviewed",  "type": "main", "index": 0 }],
+        [{ "node": "NocoDB: Status Needs Fix", "type": "main", "index": 0 }]
+      ]
+    },
+    "NocoDB: Status Reviewed":  { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "NocoDB: Status Needs Fix": { "main": [[{ "node": "Merge", "type": "main", "index": 1 }]] },
+    "Merge": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  },
+  "meta": {
+    "description": "CoderAgent QA: Syntax-Check → Claude-Review → NocoDB Status-Update",
+    "nocodb": {
+      "base":  "pwxfagcnm6bru9w",
+      "table": "mjq8palk78za2sz",
+      "note":  "Läuft intern auf Hetzner (homestack-nocodb:8080) – kein SSH-Tunnel nötig wenn n8n im gleichen Docker-Netz"
+    }
+  }
+}

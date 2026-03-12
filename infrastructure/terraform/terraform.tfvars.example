@@ -1,0 +1,20 @@
+# =============================================
+# ACHTUNG: Kopiere diese Datei als terraform.tfvars
+#          und trage die echten Werte ein.
+#          terraform.tfvars wird NICHT committed!
+# =============================================
+
+# Hetzner Cloud API Token
+# -> https://console.hetzner.cloud/projects -> API-Tokens
+hetzner_token = "DEIN_HETZNER_API_TOKEN"
+
+# SSH Public Key fuer Server-Zugang
+ssh_public_key = "ssh-ed25519 AAAA... dein-key-kommentar"
+
+# Cloudflare Global API Key
+# -> https://dash.cloudflare.com/profile/api-keys
+cloudflare_api_key = "DEIN_CLOUDFLARE_GLOBAL_API_KEY"
+cloudflare_email   = "deine-email@example.com"
+
+# Cloudflare Zone ID (automation-plus-ki.de)
+cloudflare_zone_id = "e1db61ccea38251e9bf8c0ca6482de64"

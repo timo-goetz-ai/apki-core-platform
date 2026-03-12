@@ -1,0 +1,111 @@
+{
+  "name": "01 Research Jobs",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "Manuell starten",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "trigger-cron",
+      "name": "Täglich 8:00 (Cron)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 480],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## Job-Research Workflow\n\n1. Hier: Apify-Node für StepStone/Indeed einbinden\n2. Oder: HTTP Request zu Job-API\n3. Output: NocoDB Create Records in Tabelle 'jobs'\n\n**Credentials:** NocoDB API, SMTP (mail-eu.smtp2go.com:2525), Apify (optional)",
+        "height": 200,
+        "width": 400
+      },
+      "id": "placeholder-research",
+      "name": "Placeholder: Job-Scraping",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [460, 180]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "baseId": "={{ $env.NOCODB_BASE_ID }}",
+        "tableId": "={{ $env.NOCODB_JOBS_TABLE_ID }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $json.title }}",
+            "company": "={{ $json.company }}",
+            "description": "={{ $json.description }}",
+            "url": "={{ $json.url }}",
+            "location": "={{ $json.location }}"
+          }
+        }
+      },
+      "id": "nocodb-create",
+      "name": "NocoDB: Job speichern",
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "credentials": {
+        "nocoDbApi": {
+          "id": "PLACEHOLDER",
+          "name": "NocoDB Bewerbung"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "[{\"title\":\"Test-Stelle KI-Berater\",\"company\":\"Test GmbH\",\"description\":\"Testbeschreibung\",\"url\":\"https://example.com/job/1\",\"location\":\"Frankfurt\"}]"
+      },
+      "id": "set-testdata",
+      "name": "Testdaten (ersetzen durch Apify/Scraper)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Manuell starten": {
+      "main": [
+        [
+          {
+            "node": "Testdaten (ersetzen durch Apify/Scraper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Testdaten (ersetzen durch Apify/Scraper)": {
+      "main": [
+        [
+          {
+            "node": "NocoDB: Job speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

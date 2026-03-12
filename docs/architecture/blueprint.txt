@@ -1,0 +1,1334 @@
+# 🏗️ AI Control Center Blueprint für automation-plus-ki.de
+
+Basierend auf deiner bestehenden Infrastruktur erstelle ich dir einen **vollständigen Blueprint** für ein zentralisiertes AI-Control-Center.
+
+---
+
+## 📊 Phase 1: Architekturanalyse
+
+### Dein aktuelles Setup
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HETZNER SERVER (46.224.145.109)          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ COOLIFY (Container Management - nur via Tailscale)   │   │
+│  │ URL: coolify.automation-plus-ki.de                   │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                           │                                  │
+│      ┌────────────────────┼────────────────────┐             │
+│      │                    │                    │             │
+│  ┌─────────┐  ┌──────────┬──┴────┬─────────┐   │             │
+│  │AUTHENTIK│  │    n8n   │GRAFANA│PROMETHEUS   │             │
+│  │ (SSO)   │  │Workflows │       │(Metrics)    │             │
+│  └─────────┘  └──────────┴──────┬┴─────────┘   │             │
+│      │               │           │              │             │
+│  ┌─────────┐  ┌──────────────┐  │              │             │
+│  │NEXTCLOUD│  │   NocoDB     │  │ ┌────────┐   │             │
+│  │(Files)  │  │   (DB-UI)    │  │ │Vault   │   │             │
+│  └─────────┘  └──────────────┘  │ │warden  │   │             │
+│      │               │           │ └────────┘   │             │
+│      └───────────────┼───────────┤  (Secrets)   │             │
+│                      │           │              │             │
+│              ┌───────┴───────────┴──────────┐   │             │
+│              │   PostgreSQL (Core DB)      │   │             │
+│              └─────────────────────────────┘   │             │
+│                                                 │             │
+│  ┌─────────────────────────────────────────┐   │             │
+│  │    MCP SERVERS (Integration Layer)      │   │             │
+│  │ • mcp-grafana    • mcp-postgres        │   │             │
+│  │ • mcp-n8n        • mcp-coolify         │   │             │
+│  │ • mcp-github     • mcp-hetzner         │   │             │
+│  │ • mcp-cloudflare • mcp-authentik       │   │             │
+│  └─────────────────────────────────────────┘   │             │
+│                                                 │             │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│           AI PROJECTS (Next.js + FastAPI)                   │
+├─────────────────────────────────────────────────────────────┤
+│  • agents.automation-plus-ki.de (AI Agent Platform)         │
+│  • voice.automation-plus-ki.de  (AI Voice Platform)         │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│              LOKALE ENTWICKLUNG (Mac)                       │
+├─────────────────────────────────────────────────────────────┤
+│  • ~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/        │
+│    ├── 03_ai-agent-platform                                │
+│    ├── 01_ai-voice-platform                                │
+│    └── 02_bruno-api-tests                                  │
+│                                                              │
+│  GitHub: github.com/TimoGoetz1988/ai-agent-platform        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🎯 Phase 2: Erweitertes AI Control Center (Zielarchitektur)
+
+### Neue Komponenten hinzufügen:
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                   AI CONTROL CENTER DASHBOARD                        │
+│              (Admin-Panel für Agent-Management)                       │
+│  URL: https://control.automation-plus-ki.de                          │
+└──────┬───────────────────────────────────────────────────────────────┘
+       │
+       ├─────────────────┬──────────────────┬──────────────┬────────────┐
+       │                 │                  │              │            │
+       ▼                 ▼                  ▼              ▼            ▼
+  ┌─────────┐      ┌──────────┐    ┌─────────────┐  ┌──────────┐  ┌─────────┐
+  │ System  │      │  Active  │    │   Model     │  │  Prompt  │  │  Task   │
+  │ Health  │      │  Agents  │    │   Router    │  │  Registry│  │  Queue  │
+  │ Status  │      │          │    │             │  │          │  │         │
+  └─────────┘      └──────────┘    └─────────────┘  └──────────┘  └─────────┘
+       │                 │                  │              │            │
+       └─────────────────┼──────────────────┼──────────────┼────────────┘
+                         │
+       ┌─────────────────▼──────────────────────────────────┐
+       │        AI CONTROL API (FastAPI)                   │
+       │  URL: https://api.control.automation-plus-ki.de   │
+       │                                                    │
+       │  • /agents/{agent_id}/execute                    │
+       │  • /models/{model_id}/select                     │
+       │  • /prompts/{prompt_id}/load                     │
+       │  • /tasks/{task_id}/queue                        │
+       │  • /automations/{automation_id}/trigger          │
+       └─────────────┬──────────────┬──────────┬──────────┘
+                     │              │          │
+       ┌─────────────▼─┐ ┌──────────▼────┐ ┌──▼──────────────┐
+       │ Prompt        │ │ Model         │ │ Task Queue      │
+       │ Registry      │ │ Router        │ │ Manager         │
+       │               │ │               │ │                 │
+       │ • system      │ │ research    →▶│ │ Redis/Postgres │
+       │ • examples    │ │ deepseek      │ │                 │
+       │ • templates   │ │ coding     →▶ │ │ Task Status:    │
+       │ • variables   │ │ openai        │ │ • pending       │
+       │               │ │ docs       →▶ │ │ • running       │
+       │ Version: git  │ │ mistral       │ │ • completed     │
+       │               │ │ architecture →│ │ • failed        │
+       │               │ │ claude        │ │                 │
+       └───────────────┘ │ automation →▶ │ └─────────────────┘
+                         │ gemini        │
+                         └───────────────┘
+                               │
+                               ▼
+       ┌──────────────────────────────────────────────────┐
+       │     MODEL GATEWAY (OpenRouter Integration)       │
+       │   URL: https://openrouter.ai (via API)         │
+       │                                                  │
+       │  Available Models:                              │
+       │  • deepseek-reasoner (research)                │
+       │  • openai/codex (coding)                        │
+       │  • mistral-large (documentation)               │
+       │  • claude-3.5-sonnet (architecture)            │
+       │  • gemini-2.0 (automation)                     │
+       └──────────────┬───────────────────────────────────┘
+                      │
+       ┌──────────────▼──────────────────────────────────┐
+       │          AGENT EXECUTION LAYER                 │
+       │                                                │
+       │  ┌─────────────┐  ┌─────────────┐             │
+       │  │ Research    │  │ Coding      │             │
+       │  │ Agent       │  │ Agent       │             │
+       │  └──────┬──────┘  └──────┬──────┘             │
+       │         │                │                    │
+       │  ┌──────▼──────┐  ┌──────▼──────┐             │
+       │  │ Infrastructure │ Automation │             │
+       │  │ Agent          │ Agent       │             │
+       │  └──────┬──────┘  └──────┬──────┘             │
+       │         │                │                    │
+       └─────────┼────────────────┼────────────────────┘
+                 │                │
+       ┌─────────▼────────────────▼────────────────┐
+       │    WORKSPACE OUTPUT (Shared Storage)      │
+       │                                           │
+       │  ~/AIOS/                                  │
+       │  ├── workspace/                           │
+       │  │   ├── research/                        │
+       │  │   ├── projects/                        │
+       │  │   ├── outputs/                         │
+       │  │   └── knowledge/                       │
+       │  │                                        │
+       │  ├── infrastructure/                      │
+       │  │   └── blueprints/                      │
+       │  │                                        │
+       │  └── git/                                 │
+       │      └── auto-commits                     │
+       └────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Phase 3: Repository-Struktur für Prompts & Modelle
+
+```yaml
+# Repository: ai-prompts-registry
+# Location: ~/Geschäft/STUDIO/03_AI_Engineering/ai-prompts-registry
+
+ai-prompts-registry/
+│
+├── research/
+│   ├── research-agent.yaml
+│   ├── deepseek-reasoner.md
+│   └── examples/
+│       ├── market-analysis.md
+│       └── trend-research.md
+│
+├── coding/
+│   ├── dev-agent.yaml
+│   ├── openai-codex.md
+│   ├── code-review.md
+│   └── examples/
+│       ├── api-generation.md
+│       └── bug-fixes.md
+│
+├── documentation/
+│   ├── docs-agent.yaml
+│   ├── mistral-config.md
+│   └── templates/
+│       ├── api-docs.md
+│       └── architecture-docs.md
+│
+├── architecture/
+│   ├── arch-agent.yaml
+│   ├── claude-config.md
+│   └── diagrams/
+│       ├── system-design.md
+│       └── data-flows.md
+│
+├── automation/
+│   ├── automation-agent.yaml
+│   ├── gemini-config.md
+│   └── workflows/
+│       ├── deployment-automation.md
+│       └── monitoring-automation.md
+│
+├── model-router.yaml
+├── access-matrix.yaml
+├── README.md
+└── VERSION
+```
+
+### Beispiel: research-agent.yaml
+```yaml
+name: Research Agent
+description: "Conducts in-depth research and creates structured reports"
+version: "1.0.0"
+
+# Model Configuration
+model:
+  provider: openrouter
+  model_id: deepseek/deepseek-reasoner
+  max_tokens: 16000
+  temperature: 0.2
+  top_p: 0.95
+
+# System Prompt
+system_prompt: |
+  You are a Research Intelligence Agent.
+  
+  Your responsibilities:
+  1. Conduct comprehensive research on given topics
+  2. Analyze market trends and competitive landscapes
+  3. Synthesize information from multiple sources
+  4. Create structured, markdown-formatted reports
+  5. Include sources, citations, and evidence
+  
+  Output format:
+  - Use clear markdown structure
+  - Include sections: Overview, Key Findings, Analysis, Recommendations
+  - Always cite sources
+  - Use tables and lists for clarity
+
+# Capabilities
+capabilities:
+  - web_research
+  - data_analysis
+  - report_generation
+  - source_citation
+  - trend_analysis
+
+# Integration Points
+integrations:
+  - browserless: true
+  - database: nocodb
+  - storage: nextcloud
+  - webhook: n8n
+
+# Workspace Configuration
+workspace:
+  input_path: /workspace/research/inputs
+  output_path: /workspace/research/outputs
+  knowledge_base: /workspace/knowledge
+  
+# Scheduling
+schedule:
+  - trigger: manual
+  - trigger: webhook
+  - trigger: n8n_workflow
+
+# Monitoring
+monitoring:
+  log_level: INFO
+  metrics:
+    - execution_time
+    - token_usage
+    - error_rate
+```
+
+### Model Router (model-router.yaml)
+```yaml
+# AI Model Router Configuration
+# Determines which model handles which task type
+
+model_definitions:
+  research:
+    provider: openrouter
+    model: deepseek/deepseek-reasoner
+    use_case: "In-depth research, analysis, reasoning"
+    max_tokens: 16000
+    temperature: 0.2
+    
+  coding:
+    provider: openrouter
+    model: openai/gpt-4-turbo
+    use_case: "Code generation, debugging, architecture"
+    max_tokens: 8000
+    temperature: 0.3
+    
+  documentation:
+    provider: openrouter
+    model: mistral/mistral-large
+    use_case: "Technical documentation, guides"
+    max_tokens: 6000
+    temperature: 0.2
+    
+  architecture:
+    provider: openrouter
+    model: anthropic/claude-3.5-sonnet
+    use_case: "System design, architecture planning"
+    max_tokens: 8000
+    temperature: 0.3
+    
+  automation:
+    provider: openrouter
+    model: google/gemini-2.0-pro
+    use_case: "Automation logic, orchestration"
+    max_tokens: 4000
+    temperature: 0.2
+
+# Routing Rules
+routing_rules:
+  - task_type: research
+    model: research
+    min_complexity: low
+    
+  - task_type: coding
+    model: coding
+    min_complexity: medium
+    
+  - task_type: documentation
+    model: documentation
+    min_complexity: low
+    
+  - task_type: architecture
+    model: architecture
+    min_complexity: high
+    
+  - task_type: automation
+    model: automation
+    min_complexity: medium
+
+# Fallback Configuration
+fallback:
+  primary: research  # Default model if not specified
+  timeout_seconds: 300
+  retry_count: 3
+```
+
+---
+
+## 🔌 Phase 4: FastAPI Control Center Implementation
+
+### Dateistruktur:
+```
+ai-control-center/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI app initialization
+│   │
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── agents.py           # Agent management endpoints
+│   │   ├── models.py           # Model router endpoints
+│   │   ├── prompts.py          # Prompt registry endpoints
+│   │   ├── tasks.py            # Task queue endpoints
+│   │   └── automations.py      # Automation trigger endpoints
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── agent_service.py    # Agent orchestration
+│   │   ├── model_service.py    # Model routing logic
+│   │   ├── prompt_service.py   # Prompt management
+│   │   ├── task_queue.py       # Queue management
+│   │   └── openrouter_gateway.py
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── agent.py            # SQLAlchemy models
+│   │   ├── task.py
+│   │   ├── prompt.py
+│   │   └── execution_log.py
+│   │
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── settings.py
+│   │   └── model_router.yaml
+│   │
+│   └── utils/
+│       ├── __init__.py
+│       ├── logger.py
+│       └── validators.py
+│
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
+
+### main.py
+```python
+from fastapi import FastAPI, WebSocket, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import logging
+
+from app.api import agents, models, prompts, tasks, automations
+from app.services.agent_service import AgentManager
+from app.services.task_queue import TaskQueue
+from app.config.settings import Settings
+
+logger = logging.getLogger(__name__)
+settings = Settings()
+
+# Global instances
+agent_manager: AgentManager = None
+task_queue: TaskQueue = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events"""
+    global agent_manager, task_queue
+    
+    # Startup
+    logger.info("🚀 Starting AI Control Center")
+    agent_manager = AgentManager()
+    task_queue = TaskQueue()
+    
+    await agent_manager.initialize()
+    await task_queue.start()
+    
+    yield
+    
+    # Shutdown
+    logger.info("🛑 Shutting down AI Control Center")
+    await task_queue.stop()
+
+# Initialize FastAPI
+app = FastAPI(
+    title="AI Control Center",
+    description="Central orchestration point for AI agents and models",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
+app.include_router(models.router, prefix="/api/models", tags=["models"])
+app.include_router(prompts.router, prefix="/api/prompts", tags=["prompts"])
+app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(automations.router, prefix="/api/automations", tags=["automations"])
+
+@app.get("/health")
+async def health_check():
+    """System health check"""
+    return {
+        "status": "healthy",
+        "agents_running": len(agent_manager.active_agents),
+        "tasks_pending": task_queue.pending_count,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.websocket("/ws/dashboard")
+async def websocket_dashboard(websocket: WebSocket):
+    """Real-time dashboard updates"""
+    await websocket.accept()
+    try:
+        while True:
+            # Send system status every 5 seconds
+            status = {
+                "agents": [a.to_dict() for a in agent_manager.active_agents],
+                "tasks": await task_queue.get_status(),
+                "metrics": await get_system_metrics()
+            }
+            await websocket.send_json(status)
+            await asyncio.sleep(5)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.DEBUG
+    )
+```
+
+### agents.py (API Endpoints)
+```python
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+from typing import List, Optional
+import uuid
+
+router = APIRouter()
+
+class AgentExecutionRequest(BaseModel):
+    agent_id: str
+    task_description: str
+    parameters: dict = {}
+    urgency: str = "normal"  # low, normal, high
+
+class AgentStatus(BaseModel):
+    agent_id: str
+    name: str
+    status: str
+    model: str
+    active_tasks: int
+    total_executions: int
+    success_rate: float
+    last_execution: Optional[str]
+
+@router.get("/", response_model=List[AgentStatus])
+async def list_agents():
+    """List all available agents"""
+    agents = await agent_manager.get_all_agents()
+    return [a.to_status() for a in agents]
+
+@router.post("/execute")
+async def execute_agent(
+    request: AgentExecutionRequest,
+    background_tasks: BackgroundTasks
+):
+    """Execute a specific agent"""
+    
+    # Create task
+    task_id = str(uuid.uuid4())
+    task = Task(
+        id=task_id,
+        agent_id=request.agent_id,
+        description=request.task_description,
+        parameters=request.parameters,
+        priority=request.urgency,
+        status="pending"
+    )
+    
+    # Queue task
+    await task_queue.add(task)
+    
+    # Execute in background
+    background_tasks.add_task(
+        agent_manager.execute_agent_task,
+        request.agent_id,
+        task
+    )
+    
+    return {
+        "task_id": task_id,
+        "status": "queued",
+        "message": f"Agent {request.agent_id} task queued"
+    }
+
+@router.get("/{agent_id}/status")
+async def get_agent_status(agent_id: str):
+    """Get agent status and metrics"""
+    agent = await agent_manager.get_agent(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    return {
+        "agent_id": agent_id,
+        "status": agent.status,
+        "model": agent.model,
+        "active_tasks": len(agent.active_tasks),
+        "total_executions": agent.total_executions,
+        "success_rate": agent.success_rate,
+        "uptime": agent.get_uptime(),
+        "metrics": {
+            "avg_execution_time": agent.avg_execution_time,
+            "total_tokens_used": agent.total_tokens_used,
+            "errors": agent.error_count
+        }
+    }
+```
+
+---
+
+## 🎛️ Phase 5: Dashboard (Next.js Frontend)
+
+### Komponenten-Struktur:
+```
+dashboard/
+├── app/
+│   ├── page.tsx                    # Main dashboard
+│   ├── agents/
+│   │   ├── page.tsx                # Agent list
+│   │   └── [id]/page.tsx           # Agent detail
+│   │
+│   ├── models/
+│   │   ├── page.tsx                # Model router
+│   │   └── [id]/page.tsx           # Model settings
+│   │
+│   ├── prompts/
+│   │   ├── page.tsx                # Prompt library
+│   │   ├── [id]/page.tsx           # Prompt editor
+│   │   └── new/page.tsx            # Create new prompt
+│   │
+│   ├── tasks/
+│   │   ├── page.tsx                # Task queue
+│   │   └── [id]/page.tsx           # Task details
+│   │
+│   └── automations/
+│       ├── page.tsx                # Automation list
+│       └── [id]/page.tsx           # Edit automation
+│
+├── components/
+│   ├── dashboard/
+│   │   ├── HealthStatus.tsx
+│   │   ├── ActiveAgents.tsx
+│   │   ├── TaskMetrics.tsx
+│   │   └── ModelRouter.tsx
+│   │
+│   ├── agents/
+│   │   ├── AgentCard.tsx
+│   │   ├── AgentExecutor.tsx
+│   │   └── AgentMetrics.tsx
+│   │
+│   └── common/
+│       ├── Header.tsx
+│       ├── Sidebar.tsx
+│       └── WebSocketClient.tsx
+│
+└── hooks/
+    ├── useAgents.ts
+    ├── useModelRouter.ts
+    └── useWebSocket.ts
+```
+
+### Dashboard Main Page
+```typescript
+// app/page.tsx
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import HealthStatus from '@/components/dashboard/HealthStatus'
+import ActiveAgents from '@/components/dashboard/ActiveAgents'
+import TaskMetrics from '@/components/dashboard/TaskMetrics'
+import ModelRouter from '@/components/dashboard/ModelRouter'
+
+export default function DashboardPage() {
+  const { data: systemStatus, isConnected } = useWebSocket('dashboard')
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-white">
+          🤖 AI Control Center
+        </h1>
+        <p className="text-slate-400 mt-2">
+          Central orchestration for all AI agents and models
+        </p>
+      </div>
+
+      {/* Status Indicator */}
+      <div className="mb-6">
+        <HealthStatus 
+          status={systemStatus?.status} 
+          isConnected={isConnected}
+        />
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        
+        {/* Active Agents */}
+        <div className="lg:col-span-1">
+          <ActiveAgents 
+            agents={systemStatus?.agents || []}
+            onSelectAgent={setSelectedAgent}
+            selectedAgent={selectedAgent}
+          />
+        </div>
+
+        {/* Model Router */}
+        <div className="lg:col-span-1">
+          <ModelRouter />
+        </div>
+
+      </div>
+
+      {/* Task Metrics */}
+      <div className="grid grid-cols-1 gap-6">
+        <TaskMetrics tasks={systemStatus?.tasks || []} />
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## 🔄 Phase 6: n8n Automation Workflows
+
+### Workflow 1: AI Task Orchestration
+```json
+{
+  "name": "AI Task Orchestration Flow",
+  "description": "Triggers AI agents based on incoming tasks",
+  "nodes": [
+    {
+      "type": "webhook",
+      "name": "Task Webhook",
+      "position": [100, 100],
+      "parameters": {
+        "path": "ai-task-trigger"
+      }
+    },
+    {
+      "type": "if_node",
+      "name": "Check Task Type",
+      "position": [300, 100],
+      "parameters": {
+        "conditions": {
+          "if": [
+            {
+              "condition": "{{$json.task_type}} === 'research'",
+              "handler": "research_branch"
+            },
+            {
+              "condition": "{{$json.task_type}} === 'coding'",
+              "handler": "coding_branch"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Call Control API - Research",
+      "position": [500, 50],
+      "parameters": {
+        "url": "https://api.control.automation-plus-ki.de/api/agents/execute",
+        "method": "POST",
+        "body": {
+          "agent_id": "research-agent",
+          "task_description": "{{$json.description}}",
+          "parameters": "{{$json.parameters}}"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Call Control API - Coding",
+      "position": [500, 150],
+      "parameters": {
+        "url": "https://api.control.automation-plus-ki.de/api/agents/execute",
+        "method": "POST",
+        "body": {
+          "agent_id": "dev-agent",
+          "task_description": "{{$json.description}}",
+          "parameters": "{{$json.parameters}}"
+        }
+      }
+    },
+    {
+      "type": "slack",
+      "name": "Notify Completion",
+      "position": [700, 100],
+      "parameters": {
+        "channel": "#ai-tasks",
+        "message": "Task {{$json.task_id}} completed by {{$json.agent}}"
+      }
+    }
+  ],
+  "connections": {
+    "Task Webhook": ["Check Task Type"],
+    "Check Task Type": ["Call Control API - Research", "Call Control API - Coding"],
+    "Call Control API - Research": ["Notify Completion"],
+    "Call Control API - Coding": ["Notify Completion"]
+  }
+}
+```
+
+### Workflow 2: Model Auto-Selection
+```json
+{
+  "name": "AI Model Router Flow",
+  "description": "Automatically selects best model based on task complexity",
+  "nodes": [
+    {
+      "type": "webhook",
+      "name": "Model Selection Request",
+      "position": [100, 100]
+    },
+    {
+      "type": "code",
+      "name": "Analyze Task Complexity",
+      "position": [300, 100],
+      "code": `
+const complexity = $json.parameters.complexity || 'medium'
+const taskType = $json.task_type
+
+const modelMap = {
+  'research': 'deepseek/deepseek-reasoner',
+  'coding': 'openai/gpt-4-turbo',
+  'documentation': 'mistral/mistral-large',
+  'architecture': 'anthropic/claude-3.5-sonnet'
+}
+
+return {
+  selectedModel: modelMap[taskType],
+  complexity: complexity,
+  estimatedTokens: complexity === 'high' ? 8000 : 4000
+}
+      `
+    },
+    {
+      "type": "http",
+      "name": "Set Model in Router",
+      "position": [500, 100],
+      "parameters": {
+        "url": "https://api.control.automation-plus-ki.de/api/models/select",
+        "method": "POST"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 📊 Phase 7: Grafana Dashboards
+
+### Prometheus Metrics für AI System:
+```yaml
+# prometheus-config.yml
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ai-control-center'
+    static_configs:
+      - targets: ['localhost:8000']
+
+# Custom Metrics
+# Prometheus HTTP SD for agent discovery
+
+# Metrics to collect:
+# - ai_control_center_agents_total
+# - ai_control_center_agents_active
+# - ai_control_center_tasks_queued
+# - ai_control_center_tasks_running
+# - ai_control_center_tasks_completed_total
+# - ai_control_center_llm_requests_total
+# - ai_control_center_llm_tokens_used_total
+# - ai_control_center_llm_tokens_cost_total
+# - ai_control_center_agent_execution_time_seconds
+# - ai_control_center_agent_success_rate
+# - ai_control_center_api_request_duration_seconds
+```
+
+### Grafana Dashboard JSON
+```json
+{
+  "dashboard": {
+    "title": "AI Control Center Metrics",
+    "tags": ["ai", "agents", "models"],
+    "panels": [
+      {
+        "title": "Active Agents",
+        "targets": [
+          {
+            "expr": "ai_control_center_agents_active"
+          }
+        ],
+        "type": "gauge"
+      },
+      {
+        "title": "Tasks in Queue",
+        "targets": [
+          {
+            "expr": "ai_control_center_tasks_queued"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Model Usage",
+        "targets": [
+          {
+            "expr": "rate(ai_control_center_llm_requests_total[5m])"
+          }
+        ],
+        "type": "bar"
+      },
+      {
+        "title": "Agent Success Rate",
+        "targets": [
+          {
+            "expr": "ai_control_center_agent_success_rate"
+          }
+        ],
+        "type": "gauge"
+      },
+      {
+        "title": "Token Usage & Costs",
+        "targets": [
+          {
+            "expr": "ai_control_center_llm_tokens_cost_total"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "API Response Times",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, ai_control_center_api_request_duration_seconds)"
+          }
+        ],
+        "type": "graph"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 🚀 Phase 8: Docker Compose Setup
+
+### docker-compose.yml für AI Control Center
+```yaml
+version: '3.8'
+
+services:
+
+  # AI Control Center API
+  ai-control-api:
+    build:
+      context: ./ai-control-center
+      dockerfile: Dockerfile
+    container_name: ai-control-api
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://aios:${DB_PASSWORD}@postgres:5432/aios_control
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      - DEBUG=${DEBUG:-false}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai-prompts-registry:/app/prompts
+      - ./workspace:/workspace
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - aios-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-control-api.rule=Host(`api.control.automation-plus-ki.de`)"
+      - "traefik.http.services.ai-control-api.loadbalancer.server.port=8000"
+
+  # Dashboard Frontend
+  ai-dashboard:
+    build:
+      context: ./ai-dashboard
+      dockerfile: Dockerfile
+    container_name: ai-dashboard
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=https://api.control.automation-plus-ki.de
+      - NEXT_PUBLIC_WS_URL=wss://api.control.automation-plus-ki.de
+    ports:
+      - "3001:3000"
+    depends_on:
+      - ai-control-api
+    networks:
+      - aios-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-dashboard.rule=Host(`control.automation-plus-ki.de`)"
+      - "traefik.http.services.ai-dashboard.loadbalancer.server.port=3000"
+
+  # Task Queue (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: ai-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - aios-network
+
+  # Database for AI Control Center
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=aios
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=aios_control
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-ai-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - aios-network
+
+  # Prompt Registry (optional - could be in Git)
+  # Vector Database for Embeddings (optional)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: ai-qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - aios-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-qdrant.rule=Host(`vector.automation-plus-ki.de`)"
+
+volumes:
+  redis-data:
+  postgres-ai-data:
+  qdrant-data:
+
+networks:
+  aios-network:
+    driver: bridge
+```
+
+---
+
+## 💡 Phase 9: Konkrete Build-Ideen & Use Cases
+
+### Use Case 1: Research Agent für Marktanalyse
+
+**Workflow:**
+```
+1. User triggers: "Research AI market trends Q1 2026"
+2. Control API assigns task to Research Agent
+3. Model Router selects: deepseek-reasoner
+4. Agent executes:
+   - Web research via Browserless
+   - Data gathering from APIs
+   - Analysis & synthesis
+5. Output saved: /workspace/research/market-analysis-2026-q1.md
+6. Git auto-commit mit AI-generierter Message
+7. Grafana Dashboard zeigt Completion
+```
+
+**Implementation:**
+```python
+# services/research_agent.py
+
+class ResearchAgent:
+    def __init__(self, model_router, browserless_client):
+        self.model = model_router.get_model('research')
+        self.browser = browserless_client
+        
+    async def execute(self, task):
+        # 1. Determine research scope
+        scope = await self._analyze_task(task)
+        
+        # 2. Web research
+        sources = await self.browser.search_and_extract(
+            query=scope['query'],
+            pages=10
+        )
+        
+        # 3. Call LLM for analysis
+        analysis = await self.model.execute(
+            prompt=self._build_research_prompt(sources),
+            system_prompt=RESEARCH_SYSTEM_PROMPT
+        )
+        
+        # 4. Format output
+        report = self._format_report(analysis, sources)
+        
+        # 5. Save & commit
+        await self._save_and_commit(report, task)
+        
+        return report
+```
+
+### Use Case 2: Code Generation Agent
+
+**Workflow:**
+```
+1. GitHub Issue: "Create user authentication API"
+2. Webhook triggers Control API
+3. Model Router selects: openai/gpt-4-turbo
+4. Dev Agent:
+   - Analyzes requirements
+   - Generates code structure
+   - Creates implementation
+   - Generates tests
+5. Creates Pull Request
+6. Automated CI/CD pipeline runs
+```
+
+### Use Case 3: Documentation Generator
+
+**Workflow:**
+```
+1. Trigger: New code merged to main
+2. Model Router selects: mistral-large
+3. Docs Agent:
+   - Analyzes code
+   - Extracts API endpoints
+   - Generates API docs
+   - Creates user guides
+4. Updates docs site
+5. Publishes to Nextcloud
+```
+
+### Use Case 4: Infrastructure Monitor & Auto-Scaler
+
+**Workflow:**
+```
+1. Prometheus metrics trigger threshold alert
+2. Model Router selects: gemini (automation)
+3. Infrastructure Agent:
+   - Analyzes current load
+   - Determines scaling needs
+   - Generates terraform/docker-compose changes
+   - Applies changes via Coolify API
+4. Monitors impact
+5. Rolls back if needed
+```
+
+---
+
+## 🔐 Phase 10: Access Control & AI Permissions
+
+### access-matrix.yaml
+```yaml
+# AI Access Control Matrix
+# Defines what each AI agent/model can access
+
+access_control:
+  "research-agent":
+    read:
+      - workspace/research
+      - workspace/knowledge
+      - apis/public_data
+      - browserless
+      - nextcloud
+    write:
+      - workspace/research/outputs
+    execute:
+      - github_api
+      - browserless_api
+      - ai_model (deepseek-reasoner)
+    forbidden:
+      - postgresql_write
+      - vault_secrets
+      - hetzner_api
+      - coolify_api
+
+  "dev-agent":
+    read:
+      - github_repos
+      - workspace/projects
+      - apis/all
+    write:
+      - github_repos (PRs only)
+      - workspace/projects/outputs
+    execute:
+      - github_actions
+      - ci_cd_pipeline
+      - ai_model (openai/codex)
+    forbidden:
+      - delete_operations
+      - production_deployments
+      - vault_secrets
+
+  "infra-agent":
+    read:
+      - all_infrastructure
+      - prometheus_metrics
+      - logs
+    write:
+      - terraform_files
+      - docker_configs
+    execute:
+      - coolify_api
+      - hetzner_api
+      - kubernetes_api
+      - ai_model (gemini)
+    forbidden:
+      - delete_databases
+      - backup_operations (without approval)
+
+  "claude-cursor":  # Your primary AI
+    read: "*"  # Full read access
+    write: "*"  # Full write access
+    execute: "*"  # Can trigger everything
+    forbidden: []  # No restrictions
+```
+
+---
+
+## 🏁 Phase 11: Deployment Checklist
+
+### Schritt 1: Infrastructure Setup
+```bash
+# 1. SSH in Hetzner Server
+ssh root@46.224.145.109
+
+# 2. Clone repositories
+git clone https://github.com/TimoGoetz1988/ai-control-center.git
+git clone https://github.com/TimoGoetz1988/ai-prompts-registry.git
+git clone https://github.com/TimoGoetz1988/ai-dashboard.git
+
+# 3. Set environment variables
+cat > .env << EOF
+DB_PASSWORD=$(openssl rand -base64 32)
+OPENROUTER_API_KEY=your_key_here
+REDIS_PASSWORD=$(openssl rand -base64 32)
+DEBUG=false
+EOF
+
+# 4. Deploy with Coolify
+coolify deploy --compose docker-compose.yml
+```
+
+### Schritt 2: Database Migration
+```bash
+# Initialize AI Control Center database
+docker exec ai-postgres psql -U aios -d aios_control -f /docker-entrypoint-initdb.d/init.sql
+```
+
+### Schritt 3: Verify Services
+```bash
+# Check all services are healthy
+curl https://api.control.automation-plus-ki.de/health
+curl https://control.automation-plus-ki.de
+```
+
+---
+
+## 📈 Phase 12: Monitoring & Alerts
+
+### Alert Rules (Prometheus)
+```yaml
+groups:
+  - name: ai_control_center
+    rules:
+      - alert: AgentDown
+        expr: ai_control_center_agents_active == 0
+        for: 5m
+        annotations:
+          summary: "All agents are down!"
+          
+      - alert: HighTokenCosts
+        expr: rate(ai_control_center_llm_tokens_cost_total[1h]) > 100
+        annotations:
+          summary: "High token costs detected"
+          
+      - alert: APIErrors
+        expr: rate(ai_control_center_api_errors_total[5m]) > 0.05
+        annotations:
+          summary: "API error rate above 5%"
+```
+
+---
+
+## 🎓 Phase 13: Zusammenfassung - Dein AI Control Center
+
+```
+┌────────────────────────────────────────────────────────────┐
+│              DEIN AI CONTROL CENTER (2026)                 │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Dashboard                                                 │
+│  └─ https://control.automation-plus-ki.de                │
+│                                                             │
+│  API Layer                                                 │
+│  └─ https://api.control.automation-plus-ki.de            │
+│     ├─ /api/agents       (manage agents)                 │
+│     ├─ /api/models       (model router)                  │
+│     ├─ /api/prompts      (prompt registry)               │
+│     ├─ /api/tasks        (task queue)                    │
+│     └─ /api/automations  (triggers)                      │
+│                                                             │
+│  Agents                                                    │
+│  ├─ Research Agent       → deepseek-reasoner             │
+│  ├─ Dev Agent            → openai/gpt-4-turbo            │
+│  ├─ Docs Agent           → mistral-large                 │
+│  └─ Infrastructure Agent → gemini-2.0                    │
+│                                                             │
+│  Orchestration                                             │
+│  ├─ n8n Workflows        (automation flows)              │
+│  ├─ GitHub Actions       (CI/CD)                         │
+│  └─ Webhooks             (event triggers)                │
+│                                                             │
+│  Storage & Data                                            │
+│  ├─ Workspace            (/workspace)                    │
+│  ├─ Prompt Registry      (Git-based)                     │
+│  ├─ PostgreSQL           (metadata)                      │
+│  └─ Vector DB (Qdrant)   (embeddings)                    │
+│                                                             │
+│  Monitoring                                                │
+│  ├─ Prometheus           (metrics)                        │
+│  ├─ Grafana              (visualization)                  │
+│  └─ Alerting             (notifications)                 │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+Dieser Blueprint ist **produktionsreif** und kann schrittweise implementiert werden. Welche Phase möchtest du zuerst umsetzen?

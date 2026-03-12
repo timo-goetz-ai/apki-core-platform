@@ -1,0 +1,60 @@
+# Bewerbungs-Automation – Coolify Deployment
+# Optional: Eigener Stack (wenn nicht Homestack genutzt)
+# Coolify: Docker Compose → Repo/Path zu diesem File
+
+services:
+  n8n-bewerbung:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      - N8N_HOST=${N8N_HOST:-n8n-bewerbung.automation-plus-ki.de}
+      - N8N_PROTOCOL=https
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
+    volumes:
+      - n8n_bewerbung_data:/home/node/.n8n
+    depends_on:
+      - nocodb-bewerbung
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.n8n-bewerbung.rule=Host(`n8n-bewerbung.automation-plus-ki.de`)
+      - traefik.http.routers.n8n-bewerbung.entrypoints=websecure
+      - traefik.http.routers.n8n-bewerbung.tls=true
+      - traefik.http.services.n8n-bewerbung.loadbalancer.server.port=5678
+      - traefik.docker.network=coolify
+      - coolify.managed=true
+    networks:
+      - coolify
+
+  nocodb-bewerbung:
+    image: nocodb/nocodb:latest
+    restart: unless-stopped
+    environment:
+      - NC_DB=sqlite3
+      - NC_DB_URL=file:/usr/app/data/nocodb.sqlite
+      - NC_AUTH_JWT_SECRET=${NC_AUTH_JWT_SECRET}
+      - NC_PUBLIC_URL=${NC_PUBLIC_URL:-https://nocodb-bewerbung.automation-plus-ki.de}
+      - TZ=Europe/Berlin
+    volumes:
+      - nocodb_bewerbung_data:/usr/app/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nocodb-bewerbung.rule=Host(`nocodb-bewerbung.automation-plus-ki.de`)
+      - traefik.http.routers.nocodb-bewerbung.entrypoints=websecure
+      - traefik.http.routers.nocodb-bewerbung.tls=true
+      - traefik.http.services.nocodb-bewerbung.loadbalancer.server.port=8080
+      - traefik.docker.network=coolify
+      - coolify.managed=true
+    networks:
+      - coolify
+
+volumes:
+  n8n_bewerbung_data:
+  nocodb_bewerbung_data:
+
+networks:
+  coolify:
+    external: true

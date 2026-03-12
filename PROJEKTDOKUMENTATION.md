@@ -367,4 +367,100 @@ docker compose exec aios-db psql -U aios_user -d aios_db
 
 ---
 
-*Dokument erstellt: 12. März 2026 | Monorepo: ~/aios | GitHub: TimoGoetz1988/aios*
+---
+
+## 11. VOLLSTÄNDIGER MONOREPO-INHALT (nach Workspace-Scan)
+
+Nach dem kompletten Scan des Workspace wurden folgende Inhalte in das Monorepo integriert:
+
+### Neu hinzugefügte Komponenten
+
+| Bereich | Quellpfad | Ziel in aios/ |
+|---------|-----------|---------------|
+| **Dashboard-Komponenten** | `02_PROJECTS/agents-next-js/dashboard-nextjs/` | `services/admin-dashboard/src/components/` |
+| MCPHealthDashboard, ProjektKanban, LeadFeedWidget, S3StorageWidget, SecurityCheckWidget, ServicesSidebar | `02_PROJECTS/agents-backend/dashboard-nextjs/` | `services/admin-dashboard/src/components/` |
+| CrewExecutionViewer, CrewLauncher, useCrewStream | `02_PROJECTS/agents-next-js/` | `services/admin-dashboard/src/` |
+| **Terraform / IaC** | `02_PROJECTS/devops-center/agents/INFRA_AS_CODE/terraform/` | `infrastructure/terraform/` |
+| **Service-Agents** | `02_PROJECTS/devops-center/agents/SERVICE_AGENTS/` | `agents/service-agents/` |
+| **Storage-Guardian Scripts** | `02_PROJECTS/devops-center/agents/storage-guardian/scripts/` | `automations/storage-guardian/scripts/` |
+| **Crew-AI-Generator** | `03_BUSINESS/STUDIO/crew-ai-generator/` | `agents/crew-ai-generator/` |
+| **N8N Workflows** | `01_AI/`, `03_BUSINESS/STUDIO/03_AI_Engineering/n8n/` | `automations/n8n-workflows/` |
+| **NocoDB Schemas & Setup** | `03_BUSINESS/STUDIO/03_AI_Engineering/nocodb/` | `infrastructure/databases/nocodb/` |
+| **Prompt-Definitionen** | `01_AI/ai-prompts-registry/` | `automations/prompts-registry/` |
+| **Crew-API Configs** | `02_PROJECTS/agents-next-js/agent-backend/config/` | `agents/crew-api-configs/`, `services/crew-api/config/` |
+| **Infra-Docs** | `Downloads/`, `03_BUSINESS/STUDIO/03_AI_Engineering/` | `docs/architecture/` |
+| **Systemanalysen** | `02_PROJECTS/devops-center/docs/` | `docs/knowledge-base/` |
+| **Architektur-Docs** | `02_PROJECTS/agents-next-js/`, `01_AI/Blueprint.txt` | `docs/architecture/` |
+| **AppFlowy-Workspace** | `02_PROJECTS/docs/appflowy-workspace/` | `docs/appflowy-workspace/` |
+| **System-Canvas** | `canvas/aios-system-overview.html` | `docs/visuals/` |
+| **MCP-Referenz** | `03_BUSINESS/STUDIO/03_AI_Engineering/.cursor/` | `docs/architecture/` |
+| **Deployment Scripts** | `02_PROJECTS/devops-center/agents/INFRA_AS_CODE/scripts/` | `scripts/deployment/` |
+| **AI-Control-Center** | `01_AI/ai-control-center/` | `experiments/prototypes/ai-control-center/` |
+| **AI-Engineering Stack** | `03_BUSINESS/STUDIO/03_AI_Engineering/coolify/` | `infrastructure/stacks/ai-engineering-coolify/` |
+
+### Aktuelle Monorepo-Struktur (vollständig)
+
+```
+~/aios/
+├── .github/workflows/          → CI (lint/test), Build&Push, Deploy-Staging, Deploy-Prod
+├── agents/
+│   ├── coder-agent/            → CrewAI Coder-Agent (Python + JS)
+│   ├── crew-ai-generator/      → Tool zur Generierung neuer CrewAI-Agenten
+│   ├── crew-api-configs/       → YAML-Konfigurationen für Crews & MCP-Server
+│   ├── prompts/                → Prompt-Vorlagen & Agent-Prompts
+│   └── service-agents/         → Service-Monitoring-Agenten
+├── services/
+│   ├── nexus-core/             → FastAPI Haupt-Backend [läuft: localhost:8000]
+│   ├── admin-dashboard/        → Next.js Frontend [läuft: localhost:3000]
+│   │   └── src/components/     → 9 Komponenten inkl. MCPHealth, Kanban, S3, Crew
+│   └── crew-api/               → CrewAI API-Service
+├── automations/
+│   ├── n8n-workflows/
+│   │   ├── task-pipelines/     → Voice-Lead, Coder-Agent Workflows
+│   │   ├── event-driven/       → File-Sort-Webhook
+│   │   └── scheduled-jobs/     → Research-Jobs
+│   ├── prompts-registry/       → access-matrix, model-router, agent YAMLs
+│   ├── integrations/           → n8n_client.py
+│   └── storage-guardian/
+│       └── scripts/            → scan, classify, cluster, mark-relevance, propose
+├── infrastructure/
+│   ├── coolify/                → YAML-Deployment-Templates für alle Services
+│   ├── config/                 → system-map.yaml, setup.yaml
+│   ├── databases/
+│   │   ├── postgres/           → init.sql, backup-script
+│   │   ├── mysql/              → init.sql
+│   │   └── nocodb/             → schema (7 Tabellen), seed CSV, setup.py
+│   ├── docker/                 → base-images, AI-Engineering compose
+│   ├── mcp-servers/            → Cloudflare, Coolify, Filesystem, HCloud, Postgres
+│   ├── monitoring/             → Prometheus, Grafana, Loki
+│   ├── networking/             → internal-network.yaml
+│   ├── server-config/          → nginx, firewall
+│   ├── stacks/                 → n8n, NocoDB, Qdrant, Uptime-Kuma, AI-Engineering
+│   └── terraform/              → Hetzner IaC (main.tf, variables, outputs)
+├── experiments/
+│   ├── archive/                → ai-control-center, leads-backend
+│   └── prototypes/             → coder-agent-boilerplate, streamlit-dashboard
+├── docs/
+│   ├── architecture/           → blueprint, system-map, server-übersicht, MCP-Referenz, Infra-HTML
+│   ├── knowledge-base/         → Inventar, semantische Zuordnung, Themencluster, Wissensanker
+│   ├── visuals/                → aios-system-overview.html (interaktiv)
+│   ├── plans/                  → Implementierungspläne (AppFlowy, n8n-MCP, Agent Control Center)
+│   ├── appflowy-workspace/     → Templates, Rollen, Workspace-Design
+│   ├── setup/                  → local-development, hetzner-setup, stack_anleitung
+│   ├── workflows/              → deployment.md, ci-cd, agent-development
+│   └── troubleshooting/        → common-issues, debugging
+├── scripts/
+│   ├── deployment/             → deploy-to-hetzner, deploy-via-coolify-api, health-check, drift-check
+│   ├── setup/                  → init-project, setup-dev-env, setup-coolify
+│   ├── maintenance/            → backup-all, cleanup
+│   ├── migration/              → migrate-structure.sh (bereits ausgeführt)
+│   └── utils/                  → validate-structure, test-connectivity, op-run-local
+└── tests/
+    ├── integration/
+    └── e2e/
+```
+
+---
+
+*Dokument erstellt: 12. März 2026 | Zuletzt aktualisiert: 12. März 2026 nach vollständigem Workspace-Scan*
+*Monorepo: ~/aios | GitHub: TimoGoetz1988/aios | Status: CI/CD grün ✅*

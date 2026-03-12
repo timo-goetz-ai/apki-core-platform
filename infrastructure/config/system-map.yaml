@@ -1,0 +1,123 @@
+systems:
+  n8n:
+    url: "https://n8n.automation-plus-ki.de/home/workflows"
+    role: "workflow_orchestration"
+    description: "Zentrale Engine für Events, Automationen und Integrationen (Webhooks, GitHub, Monitoring, AI-Aufrufe)."
+    owner: "DevOps / Automation"
+    integrations:
+      - "AI_Control_API"
+      - "GitHub"
+      - "Prometheus/Grafana"
+      - "NocoDB"
+      - "Agents_Platform"
+    core: true
+
+  homestack_dashboard:
+    url: "https://dashboard.automation-plus-ki.de"
+    role: "overview_ui"
+    description: "Zentrales Einstiegs-Dashboard für alle Plattformdienste und Statusanzeigen."
+    owner: "Platform"
+    integrations:
+      - "n8n"
+      - "Grafana"
+      - "NocoDB"
+      - "Agents_Platform"
+    core: true
+
+  nocodb:
+    url: "https://nocodb.automation-plus-ki.de/dashboard/#/nc/ph47jcdl7tb4mq1"
+    role: "data_ui"
+    description: "No-Code-UI auf Postgres für Projekte, CRM, Systeme, Workflows und Incidents."
+    owner: "Data / Business"
+    integrations:
+      - "Postgres"
+      - "n8n"
+      - "AI_Control_API"
+      - "MCP_NocoDB"
+    core: true
+
+  appflowy:
+    url: "https://appflowy.automation-plus-ki.de/app/2558a41a-e4a6-4050-b571-7b8e92ea0c82/7f50028f-a4a7-4499-ad7e-b720708126e0"
+    role: "workspace_ui"
+    description: "Persönliches/Team-Kollaborations- und Notizsystem für Specs, Runbooks und Ideen."
+    owner: "You / Team"
+    integrations:
+      - "GitHub (manuelle Links)"
+      - "NocoDB (Referenzen)"
+      - "n8n (optionale Sync-Flows)"
+    core: false
+
+  agents_platform:
+    url: "https://agents.automation-plus-ki.de/"
+    role: "agents_ui_api"
+    description: "AI-Agenten-Plattform (Next.js + FastAPI) als Cockpit für Agents, Tasks und Runs."
+    owner: "AI Engineering"
+    integrations:
+      - "AI_Control_API"
+      - "MCP_Services"
+      - "n8n"
+      - "GitHub"
+    core: true
+
+  grafana:
+    url: "https://grafana.automation-plus-ki.de/dashboards"
+    role: "observability_ui"
+    description: "Zentrales Monitoring-Dashboard für Infra, AI-Systeme, Business-KPIs und Alerts."
+    owner: "DevOps / SRE"
+    integrations:
+      - "Prometheus"
+      - "AI_Control_API (Custom-Metrics)"
+      - "n8n (via Exporter/Logs)"
+      - "Hetzner/Coolify-Exporter"
+    core: true
+
+  browserless:
+    url: "http://localhost:3001"
+    remote_url: "https://browserless.automation-plus-ki.de"
+    role: "browser_automation"
+    description: "Headless-Chrome-Instanz für Browser-Automatisierung, Scraping und Playwright-/Puppeteer-basierte Agent-Tasks."
+    owner: "AI Engineering"
+    integrations:
+      - "Research_Agent (Web Research)"
+      - "Dev_Agent (UI Tests)"
+      - "Nexus_Core"
+      - "AI_Control_API"
+    core: true
+    notes:
+      - "Lokale Instanz läuft in AIOS-Docker-Stack (Port 3001)"
+      - "Auf Hetzner bereits als eigener Dienst deploybar"
+      - "Token-Schutz via BROWSERLESS_TOKEN"
+
+  loki:
+    url: "http://localhost:3100"
+    role: "log_aggregation"
+    description: "Grafana Loki sammelt Logs ALLER Container zentral. Grafana greift darauf zu für Log-Dashboards und -Suche."
+    owner: "DevOps / SRE"
+    integrations:
+      - "Grafana (Log-Visualisierung)"
+      - "Promtail (Log-Forwarder)"
+      - "Nexus_Core (Docker-Logging)"
+      - "Admin_Dashboard"
+      - "Browserless"
+    core: true
+    notes:
+      - "Kein Login-Tracker im klassischen Sinne – Loki aggregiert Anwendungs-Logs (stdout/stderr aller Container)"
+      - "Promtail leitet Logs an Loki weiter"
+      - "In Grafana: Dashboard 'Explore' → Log-Suche über Labels (service=nexus-core etc.)"
+      - "Authentik ist der eigentliche Login/SSO-Tracker (Auth-Events, Sessions)"
+
+  # Platzhalter für AI Control Center / API
+  ai_control_center:
+    url: "https://api.control.automation-plus-ki.de"
+    role: "ai_control_api"
+    description: "Zentrale FastAPI-Schicht zur Steuerung von Agents, Modellen, Tasks und Automationen."
+    owner: "AI Engineering"
+    integrations:
+      - "Agents_Platform"
+      - "n8n"
+      - "Prometheus/Grafana"
+      - "MCP_Services"
+      - "NocoDB/Postgres"
+      - "OpenRouter"
+    core: planned
+
