@@ -37,17 +37,21 @@
 
 ## Homestack
 
-| Service | URL | API-Key Pfad | Health-Endpoint |
-|---------|-----|-------------|-----------------|
-| **Nextcloud** | https://nextcloud.automation-plus-ki.de | `Einstellungen` → `Sicherheit` → App-Token | `/status.php` |
-| **NocoDB** | https://nocodb.automation-plus-ki.de | `Team & Settings` → `API Tokens` | `/api/v1/health` |
-| **Vaultwarden** | https://vault.automation-plus-ki.de | Admin Panel | `/alive` |
-| **Hoppscotch** | https://hoppscotch.automation-plus-ki.de | – | – |
-| **Browserless** | https://browserless.automation-plus-ki.de | Config-File | `/pressure` |
-| **Mailpit** | https://mail.automation-plus-ki.de | – | – |
-| **AppFlowy** | https://appflowy.automation-plus-ki.de | – | – |
+> **Hinweis:** Nextcloud und Vaultwarden sind **nicht** mehr Teil dieses Stacks.
+> Secrets werden in **1Password** verwaltet und als ENV-Variablen in **Coolify** eingetragen (kein Vaultwarden mehr).
 
-**ENV-Variable:** `NOCODB_API_KEY` → in Coolify unter infra-dashboard eintragen
+| Service | URL | API-Key Pfad | Health-Endpoint | Hinweis |
+|---------|-----|-------------|-----------------|---------|
+| **Hetzner Storage** | `$HETZNER_STORAGE_URL` | – | S3-Endpoint (403 = online) | 403 ohne signed request ist normal |
+| **NocoDB** | https://nocodb.automation-plus-ki.de | `Team & Settings` → `API Tokens` | `/api/v1/health` | |
+| **Hoppscotch** | https://hoppscotch.automation-plus-ki.de | – | – | |
+| **Browserless** | https://browserless.automation-plus-ki.de | Config-File | `/pressure` | |
+| **Mailpit** | https://mail.automation-plus-ki.de | – | – | |
+| **AppFlowy** | https://appflowy.automation-plus-ki.de | – | – | |
+
+**ENV-Variablen:**
+- `NOCODB_API_KEY` → in Coolify unter infra-dashboard eintragen
+- `HETZNER_STORAGE_URL` → S3-Bucket-Endpoint (z. B. `https://fsn1.your-objectstorage.com`)
 
 ---
 
@@ -77,8 +81,8 @@
 | **MCP Authentik** | https://mcp-authentik.automation-plus-ki.de | `/health` | ✅ |
 | **MCP Qdrant** | https://mcp-qdrant.automation-plus-ki.de | `/health` | ✅ |
 | **MCP NocoDB** | https://mcp-nocodb.automation-plus-ki.de | `/health` | ✅ |
-| **MCP Nextcloud** | https://mcp-nextcloud.automation-plus-ki.de | `/health` | ⚠️ unhealthy |
-| **MCP Vaultwarden** | https://mcp-vaultwarden.automation-plus-ki.de | `/health` | ⚠️ unhealthy |
+| ~~MCP Nextcloud~~ | ~~https://mcp-nextcloud.automation-plus-ki.de~~ | `/health` | ❌ decommissioned |
+| ~~MCP Vaultwarden~~ | ~~https://mcp-vaultwarden.automation-plus-ki.de~~ | `/health` | ❌ decommissioned |
 
 ---
 
@@ -91,14 +95,20 @@
 **ENV-Variablen setzen (Produktion):**
 → Coolify → infra-dashboard → Environment Variables
 
+> Secrets werden in **1Password** verwaltet und von dort in Coolify eingetragen.
+
 | Variable | Wert |
 |----------|------|
-| `N8N_API_KEY` | _(aus n8n holen)_ |
+| `N8N_API_KEY` | _(aus n8n holen, in 1Password ablegen)_ |
 | `N8N_BASE_URL` | `https://n8n.automation-plus-ki.de` |
-| `NOCODB_API_KEY` | _(aus NocoDB holen)_ |
+| `NOCODB_API_KEY` | _(aus NocoDB holen, in 1Password ablegen)_ |
 | `NOCODB_BASE_URL` | `https://nocodb.automation-plus-ki.de` |
-| `GRAFANA_API_KEY` | _(aus Grafana holen)_ |
+| `GRAFANA_API_KEY` | _(aus Grafana holen, in 1Password ablegen)_ |
 | `GRAFANA_BASE_URL` | `https://grafana.automation-plus-ki.de` |
+| `HETZNER_STORAGE_URL` | S3-Bucket-Endpoint (z. B. `https://fsn1.your-objectstorage.com`) |
+
+**Hinweis Hetzner S3:** Der Health-Check gibt HTTP 403 zurück, wenn kein signed request verwendet wird.
+Das Dashboard wertet 403 als **online** — der Service läuft, er verlangt nur Auth.
 
 ---
 
