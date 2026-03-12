@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import Settings
+from app.routers import crews, mcp
 from app.services.crew_manager import CrewManager
 from app.services.event_stream import EventBroadcaster
 
@@ -21,8 +22,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-
-from app.routers import crews, mcp
 
 app.include_router(mcp.router)
 app.include_router(crews.router)

@@ -130,8 +130,6 @@ jobs:
             image: nexus-core
           - context: services/admin-dashboard
             image: aios-admin-dashboard
-          - context: agents/coder-agent
-            image: coder-agent
 
     steps:
       - uses: actions/checkout@v4
