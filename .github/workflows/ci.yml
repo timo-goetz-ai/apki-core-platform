@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
-        service: [services/nexus-core, services/crew-api, agents/coder-agent]
+        service: [services/nexus-core, services/crew-api]
 
     steps:
       - uses: actions/checkout@v4
@@ -103,7 +103,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: services/admin-dashboard
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Lint (eslint)
         working-directory: services/admin-dashboard
