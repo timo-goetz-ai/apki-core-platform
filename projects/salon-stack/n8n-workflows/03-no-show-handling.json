@@ -1,0 +1,144 @@
+{
+  "name": "Salon – No-Show Handling",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "salon-noshow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-noshow",
+      "name": "Webhook: No-Show melden",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "salon-noshow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Booking als No-Show markieren + Client-Counter hochzählen\nWITH updated_booking AS (\n  UPDATE bookings\n  SET status = 'no_show', updated_at = NOW()\n  WHERE id = '{{ $json.body.booking_id }}'\n    AND status = 'confirmed'\n  RETURNING id, salon_id, client_id, service_id, start_time\n),\nupdated_client AS (\n  UPDATE clients\n  SET no_show_count = no_show_count + 1,\n      requires_prepayment = CASE WHEN no_show_count + 1 >= 3 THEN true ELSE requires_prepayment END,\n      updated_at = NOW()\n  WHERE id = (SELECT client_id FROM updated_booking)\n  RETURNING id AS client_id, first_name, phone, no_show_count, requires_prepayment\n)\nSELECT\n  ub.id AS booking_id,\n  ub.salon_id,\n  ub.start_time,\n  uc.client_id,\n  uc.first_name AS client_name,\n  uc.phone AS client_phone,\n  uc.no_show_count,\n  uc.requires_prepayment,\n  s.name AS service_name,\n  sal.name AS salon_name\nFROM updated_booking ub\nJOIN updated_client uc ON uc.client_id = ub.client_id\nJOIN services s ON s.id = ub.service_id\nJOIN salons sal ON sal.id = ub.salon_id;",
+        "options": {}
+      },
+      "id": "mark-noshow",
+      "name": "DB: No-Show markieren",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [480, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "noshow-1",
+              "leftValue": "={{ $json.no_show_count }}",
+              "rightValue": 1,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "switch-count",
+      "name": "Wie oft No-Show?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [720, 300],
+      "parameters_extra": {
+        "rules": [
+          {
+            "output": 0,
+            "conditions": { "conditions": [{ "leftValue": "={{ $json.no_show_count }}", "rightValue": 1, "operator": { "type": "number", "operation": "equals" } }] }
+          },
+          {
+            "output": 1,
+            "conditions": { "conditions": [{ "leftValue": "={{ $json.no_show_count }}", "rightValue": 2, "operator": { "type": "number", "operation": "equals" } }] }
+          },
+          {
+            "output": 2,
+            "conditions": { "conditions": [{ "leftValue": "={{ $json.no_show_count }}", "rightValue": 2, "operator": { "type": "number", "operation": "gte" } }] }
+          }
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Erste No-Show: freundliche Nachricht\nconst d = $input.first().json;\nconst noShowCount = d.no_show_count;\n\nlet message = '';\n\nif (noShowCount === 1) {\n  message = `Hallo ${d.client_name} 😊\n\nWir haben dich heute leider vergeblich erwartet. Kein Problem – das kann passieren!\n\nMöchtest du einen neuen Termin buchen? Wir freuen uns auf dich! 💇\n\nDein Team von ${d.salon_name}`;\n} else if (noShowCount === 2) {\n  message = `Hallo ${d.client_name},\n\ndu hast heute leider zum zweiten Mal deinen Termin nicht wahrgenommen.\n\nWir bitten um Verständnis, dass wir bei der nächsten Buchung eine Anzahlung erheben müssen. So können wir unsere Plätze fair an alle Kunden vergeben.\n\nNeuen Termin buchen? Einfach hier antworten! 😊\n\nDein Team von ${d.salon_name}`;\n} else {\n  message = `Hallo ${d.client_name},\n\nleider konntest du deinen Termin erneut nicht wahrnehmen.\n\nFür zukünftige Buchungen ist eine Vorab-Anzahlung erforderlich. Du kannst ganz einfach online buchen und bezahlen.\n\nBei Fragen erreichst du uns jederzeit.\n\nDein Team von ${d.salon_name}`;\n}\n\nreturn [{\n  json: {\n    ...d,\n    message,\n    severity: noShowCount >= 3 ? 'high' : noShowCount === 2 ? 'medium' : 'low'\n  }\n}];"
+      },
+      "id": "build-noshow-message",
+      "name": "Nachricht nach Stufe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO message_log (salon_id, client_id, channel, direction, template_name, message_text, related_booking_id)\nVALUES (\n  '{{ $json.salon_id }}',\n  '{{ $json.client_id }}',\n  'whatsapp',\n  'outbound',\n  'no_show_{{ $json.severity }}',\n  '{{ $json.message }}',\n  '{{ $json.booking_id }}'\n);",
+        "options": {}
+      },
+      "id": "log-noshow-msg",
+      "name": "DB: Message Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1200, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, no_show_count: $json.no_show_count, severity: $json.severity, requires_prepayment: $json.requires_prepayment, message_sent: true }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "respond-noshow",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1440, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: No-Show melden": {
+      "main": [
+        [{ "node": "DB: No-Show markieren", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: No-Show markieren": {
+      "main": [
+        [{ "node": "Nachricht nach Stufe", "type": "main", "index": 0 }]
+      ]
+    },
+    "Nachricht nach Stufe": {
+      "main": [
+        [{ "node": "DB: Message Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Message Log": {
+      "main": [
+        [{ "node": "Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "salon" },
+    { "name": "no-show" },
+    { "name": "production" }
+  ]
+}

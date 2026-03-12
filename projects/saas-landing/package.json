@@ -1,0 +1,11 @@
+{
+  "name": "saas-landing",
+  "private": true,
+  "scripts": {
+    "dev:marketing": "pnpm --filter marketing dev",
+    "build:marketing": "pnpm --filter marketing build",
+    "dev:webapp": "pnpm --filter webapp dev",
+    "build:webapp": "pnpm --filter webapp build"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

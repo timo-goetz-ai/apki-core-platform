@@ -1,0 +1,56 @@
+{
+  "services": [
+    {
+      "id": "coolify",
+      "name": "Coolify",
+      "url": "https://coolify.automation-plus-ki.de",
+      "icon": "server",
+      "category": "infrastructure",
+      "healthEndpoint": "https://coolify.automation-plus-ki.de",
+      "description": "Deployment Platform",
+      "headers": {}
+    },
+    {
+      "id": "n8n",
+      "name": "n8n",
+      "url": "https://n8n.automation-plus-ki.de",
+      "icon": "workflow",
+      "category": "automation",
+      "healthEndpoint": "https://n8n.automation-plus-ki.de/healthz",
+      "description": "Workflow Automation",
+      "headers": {}
+    },
+    {
+      "id": "nocodb",
+      "name": "NocoDB",
+      "url": "https://nocodb.automation-plus-ki.de",
+      "icon": "table",
+      "category": "database",
+      "healthEndpoint": "https://nocodb.automation-plus-ki.de/api/v1/health",
+      "description": "Database UI",
+      "headers": {}
+    },
+    {
+      "id": "uptime-kuma",
+      "name": "Uptime Kuma",
+      "url": "https://status.automation-plus-ki.de",
+      "icon": "activity",
+      "category": "monitoring",
+      "healthEndpoint": "https://status.automation-plus-ki.de",
+      "description": "Service Monitoring",
+      "headers": {}
+    },
+    {
+      "id": "qdrant",
+      "name": "Qdrant",
+      "url": "https://qdrant.automation-plus-ki.de/dashboard",
+      "icon": "database",
+      "category": "database",
+      "healthEndpoint": "https://qdrant.automation-plus-ki.de/healthz",
+      "description": "Vector Database",
+      "headers": {
+        "api-key": "E3FI9RXU1INoSI6mK573TUOZcdV1q99csVlDQrjq"
+      }
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "name": "Salon – Termin-Reminder (24h + 1h)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "triggerAtHour": 8, "triggerAtMinute": 0 }
+          ]
+        }
+      },
+      "id": "cron-morning",
+      "name": "Täglich 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Termine morgen, die noch keinen 24h-Reminder bekommen haben\nSELECT\n  b.id AS booking_id,\n  b.salon_id,\n  b.start_time,\n  b.end_time,\n  s.name AS service_name,\n  st.name AS staff_name,\n  c.first_name AS client_name,\n  c.phone AS client_phone,\n  c.last_name,\n  sal.name AS salon_name,\n  sal.phone AS salon_phone\nFROM bookings b\nJOIN services s ON s.id = b.service_id\nJOIN staff st ON st.id = b.staff_id\nJOIN clients c ON c.id = b.client_id\nJOIN salons sal ON sal.id = b.salon_id\nWHERE b.status = 'confirmed'\n  AND b.reminder_24h_sent = false\n  AND b.start_time::date = (CURRENT_DATE + INTERVAL '1 day')\nORDER BY b.start_time;",
+        "options": {}
+      },
+      "id": "fetch-tomorrow",
+      "name": "DB: Termine morgen",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reminder-Nachricht pro Termin bauen\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const d = item.json;\n  const start = new Date(d.start_time);\n  const timeStr = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });\n\n  const message = `Hallo ${d.client_name} 👋\n\nKurze Erinnerung an deinen Termin morgen:\n\n📅 ${start.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}\n🕐 ${timeStr} Uhr\n💇 ${d.service_name}\n👤 bei ${d.staff_name}\n📍 ${d.salon_name}\n\nBitte bestätige mit ✅ oder verschiebe mit 🔄\n\nBis morgen! 😊`;\n\n  results.push({\n    json: {\n      ...d,\n      message,\n      time_str: timeStr\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "build-24h-message",
+      "name": "24h Reminder bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Reminder als gesendet markieren\nUPDATE bookings\nSET reminder_24h_sent = true, updated_at = NOW()\nWHERE id = '{{ $json.booking_id }}';",
+        "options": {}
+      },
+      "id": "mark-24h-sent",
+      "name": "DB: 24h gesendet",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Message Log eintragen\nINSERT INTO message_log (salon_id, client_id, channel, direction, template_name, message_text, related_booking_id)\nSELECT\n  b.salon_id,\n  b.client_id,\n  'whatsapp',\n  'outbound',\n  'reminder_24h',\n  '{{ $json.message }}',\n  b.id\nFROM bookings b WHERE b.id = '{{ $json.booking_id }}';",
+        "options": {}
+      },
+      "id": "log-message-24h",
+      "name": "DB: Message Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 480],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "minutes", "minutesInterval": 15 }
+          ]
+        }
+      },
+      "id": "cron-hourly",
+      "name": "Alle 15 Min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 640]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Termine in 1 Stunde, die noch keinen 1h-Reminder haben\nSELECT\n  b.id AS booking_id,\n  b.salon_id,\n  b.start_time,\n  s.name AS service_name,\n  st.name AS staff_name,\n  c.first_name AS client_name,\n  c.phone AS client_phone,\n  sal.name AS salon_name,\n  sal.address_street\nFROM bookings b\nJOIN services s ON s.id = b.service_id\nJOIN staff st ON st.id = b.staff_id\nJOIN clients c ON c.id = b.client_id\nJOIN salons sal ON sal.id = b.salon_id\nWHERE b.status = 'confirmed'\n  AND b.reminder_1h_sent = false\n  AND b.confirmed_by_client = false\n  AND b.start_time BETWEEN NOW() + INTERVAL '45 minutes' AND NOW() + INTERVAL '75 minutes'\nORDER BY b.start_time;",
+        "options": {}
+      },
+      "id": "fetch-1h",
+      "name": "DB: Termine in 1h",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 640],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const d = item.json;\n  const start = new Date(d.start_time);\n  const timeStr = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });\n\n  const message = `⏰ In 1 Stunde: Dein Termin um ${timeStr} Uhr bei ${d.staff_name} (${d.service_name}).\n\n📍 ${d.salon_name}${d.address_street ? ', ' + d.address_street : ''}\n\nWir freuen uns! 💇`;\n\n  results.push({\n    json: { ...d, message, time_str: timeStr }\n  });\n}\n\nreturn results;"
+      },
+      "id": "build-1h-message",
+      "name": "1h Reminder bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 640]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE bookings SET reminder_1h_sent = true, updated_at = NOW() WHERE id = '{{ $json.booking_id }}';",
+        "options": {}
+      },
+      "id": "mark-1h-sent",
+      "name": "DB: 1h gesendet",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 640],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## WhatsApp Senden\n\nHier wird der WhatsApp-Node eingefügt sobald\n360dialog / WABA konfiguriert ist.\n\nBis dahin: Message wird geloggt und\nkann manuell versendet werden.\n\n### Platzhalter-Nodes:\n- 360dialog HTTP Request Node\n- Oder: n8n WhatsApp Business Node\n\n### Template bei Meta einreichen:\n- `reminder_24h` — Termin-Erinnerung 24h\n- `reminder_1h` — Termin-Erinnerung 1h",
+        "height": 340,
+        "width": 300
+      },
+      "id": "sticky-whatsapp",
+      "name": "WhatsApp TODO",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [860, 80]
+    }
+  ],
+  "connections": {
+    "Täglich 08:00": {
+      "main": [
+        [{ "node": "DB: Termine morgen", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Termine morgen": {
+      "main": [
+        [{ "node": "24h Reminder bauen", "type": "main", "index": 0 }]
+      ]
+    },
+    "24h Reminder bauen": {
+      "main": [
+        [
+          { "node": "DB: 24h gesendet", "type": "main", "index": 0 },
+          { "node": "DB: Message Log", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Alle 15 Min": {
+      "main": [
+        [{ "node": "DB: Termine in 1h", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Termine in 1h": {
+      "main": [
+        [{ "node": "1h Reminder bauen", "type": "main", "index": 0 }]
+      ]
+    },
+    "1h Reminder bauen": {
+      "main": [
+        [{ "node": "DB: 1h gesendet", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "salon" },
+    { "name": "reminder" },
+    { "name": "production" }
+  ]
+}

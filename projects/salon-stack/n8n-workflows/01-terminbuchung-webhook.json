@@ -1,0 +1,269 @@
+{
+  "name": "Salon – Terminbuchung (Multi-Channel)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "salon-book",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-book",
+      "name": "Webhook: Buchungsanfrage",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "salon-book"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Eingehende Buchungsanfrage normalisieren\n// Quellen: Web-Widget, WhatsApp, Vapi Voicebot\nconst body = $input.first().json.body || $input.first().json;\n\nconst request = {\n  salon_id: body.salon_id || 'a0000000-0000-0000-0000-000000000001',\n  client_name: body.client_name || body.name || '',\n  client_phone: body.client_phone || body.phone || '',\n  client_email: body.client_email || body.email || '',\n  service_name: body.service_name || body.service || '',\n  service_id: body.service_id || null,\n  staff_name: body.staff_name || body.staff || '',\n  staff_id: body.staff_id || null,\n  preferred_date: body.preferred_date || body.date || '',\n  preferred_time: body.preferred_time || body.time || '',\n  source: body.source || 'web',\n  notes: body.notes || ''\n};\n\n// Validierung\nconst errors = [];\nif (!request.client_name) errors.push('client_name fehlt');\nif (!request.client_phone) errors.push('client_phone fehlt');\nif (!request.service_name && !request.service_id) errors.push('service fehlt');\nif (!request.preferred_date) errors.push('preferred_date fehlt');\n\nif (errors.length > 0) {\n  return [{ json: { valid: false, errors } }];\n}\n\nreturn [{ json: { valid: true, ...request } }];"
+      },
+      "id": "validate-input",
+      "name": "Validiere Anfrage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "valid-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-valid",
+      "name": "Gültig?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Service ID auflösen falls nur Name\nSELECT s.id AS service_id, s.name, s.duration_min, s.price_cents, s.category\nFROM services s\nWHERE s.salon_id = '{{ $json.salon_id }}'\n  AND s.is_active = true\n  AND (\n    s.id::text = '{{ $json.service_id }}'\n    OR LOWER(s.name) LIKE LOWER('%{{ $json.service_name }}%')\n  )\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "lookup-service",
+      "name": "DB: Service suchen",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 200],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Staff auflösen und prüfen ob Service angeboten wird\nSELECT st.id AS staff_id, st.name AS staff_name, st.color\nFROM staff st\nJOIN staff_services ss ON ss.staff_id = st.id\nWHERE st.salon_id = '{{ $('Validiere Anfrage').item.json.salon_id }}'\n  AND st.is_active = true\n  AND ss.service_id = '{{ $json.service_id }}'\n  AND (\n    st.id::text = '{{ $('Validiere Anfrage').item.json.staff_id }}'\n    OR LOWER(st.name) LIKE LOWER('%{{ $('Validiere Anfrage').item.json.staff_name }}%')\n    OR '{{ $('Validiere Anfrage').item.json.staff_name }}' = ''\n  )\nORDER BY st.name\nLIMIT 5;",
+        "options": {}
+      },
+      "id": "lookup-staff",
+      "name": "DB: Verfügbare Stylisten",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1140, 200],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Freie Slots finden\nSELECT slot_start, slot_end\nFROM find_available_slots(\n  '{{ $('Validiere Anfrage').item.json.salon_id }}'::UUID,\n  '{{ $json.staff_id }}'::UUID,\n  '{{ $('Validiere Anfrage').item.json.preferred_date }}'::DATE,\n  {{ $('DB: Service suchen').item.json.duration_min }}\n)\nWHERE slot_start::TIME >= '{{ $('Validiere Anfrage').item.json.preferred_time || '09:00' }}'::TIME\nORDER BY slot_start\nLIMIT 5;",
+        "options": {}
+      },
+      "id": "find-slots",
+      "name": "DB: Freie Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1360, 200],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-slots",
+              "leftValue": "={{ $json.slot_start }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "isNotEmpty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-slots-available",
+      "name": "Slots verfügbar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1580, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Kunde anlegen oder finden\nINSERT INTO clients (salon_id, first_name, phone, email, source, gdpr_consent, gdpr_consent_date)\nVALUES (\n  '{{ $('Validiere Anfrage').item.json.salon_id }}',\n  '{{ $('Validiere Anfrage').item.json.client_name }}',\n  '{{ $('Validiere Anfrage').item.json.client_phone }}',\n  NULLIF('{{ $('Validiere Anfrage').item.json.client_email }}', ''),\n  '{{ $('Validiere Anfrage').item.json.source }}',\n  true,\n  NOW()\n)\nON CONFLICT (salon_id, phone) DO UPDATE SET\n  updated_at = NOW()\nRETURNING id AS client_id, first_name, last_name, phone;",
+        "options": {}
+      },
+      "id": "upsert-client",
+      "name": "DB: Kunde anlegen/finden",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1820, 100],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Termin buchen\nINSERT INTO bookings (\n  salon_id, client_id, staff_id, service_id,\n  start_time, end_time, status, source, price_cents, notes\n) VALUES (\n  '{{ $('Validiere Anfrage').item.json.salon_id }}',\n  '{{ $json.client_id }}',\n  '{{ $('DB: Verfügbare Stylisten').item.json.staff_id }}',\n  '{{ $('DB: Service suchen').item.json.service_id }}',\n  '{{ $('DB: Freie Slots').item.json.slot_start }}',\n  '{{ $('DB: Freie Slots').item.json.slot_end }}',\n  'confirmed',\n  '{{ $('Validiere Anfrage').item.json.source }}',\n  {{ $('DB: Service suchen').item.json.price_cents }},\n  NULLIF('{{ $('Validiere Anfrage').item.json.notes }}', '')\n)\nRETURNING id AS booking_id, start_time, end_time;",
+        "options": {}
+      },
+      "id": "insert-booking",
+      "name": "DB: Termin buchen",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2060, 100],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bestätigungsnachricht zusammenbauen\nconst booking = $('DB: Termin buchen').item.json;\nconst service = $('DB: Service suchen').item.json;\nconst staff = $('DB: Verfügbare Stylisten').item.json;\nconst client = $('Validiere Anfrage').item.json;\n\nconst startDate = new Date(booking.start_time);\nconst dateStr = startDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });\nconst timeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });\nconst price = (service.price_cents / 100).toFixed(2).replace('.', ',');\n\nconst message = `✅ Termin bestätigt!\n\n📅 ${dateStr} um ${timeStr} Uhr\n💇 ${service.name}\n👤 bei ${staff.staff_name}\n💰 ${price} €\n\nWir freuen uns auf dich! 😊\nZum Umbuchen oder Stornieren einfach hier antworten.`;\n\nreturn [{\n  json: {\n    booking_id: booking.booking_id,\n    client_phone: client.client_phone,\n    client_name: client.client_name,\n    message,\n    source: client.source\n  }\n}];"
+      },
+      "id": "build-confirmation",
+      "name": "Bestätigungsnachricht",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2300, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, booking_id: $json.booking_id, message: $json.message }) }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "respond-success",
+      "name": "Response: Erfolg",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2540, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'Keine freien Slots am gewünschten Termin', alternatives: [] }) }}",
+        "options": { "responseCode": 409 }
+      },
+      "id": "respond-no-slots",
+      "name": "Response: Keine Slots",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1820, 320]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, errors: $json.errors }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "respond-invalid",
+      "name": "Response: Ungültig",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [920, 420]
+    }
+  ],
+  "connections": {
+    "Webhook: Buchungsanfrage": {
+      "main": [
+        [{ "node": "Validiere Anfrage", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validiere Anfrage": {
+      "main": [
+        [{ "node": "Gültig?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gültig?": {
+      "main": [
+        [{ "node": "DB: Service suchen", "type": "main", "index": 0 }],
+        [{ "node": "Response: Ungültig", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Service suchen": {
+      "main": [
+        [{ "node": "DB: Verfügbare Stylisten", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Verfügbare Stylisten": {
+      "main": [
+        [{ "node": "DB: Freie Slots", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Freie Slots": {
+      "main": [
+        [{ "node": "Slots verfügbar?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Slots verfügbar?": {
+      "main": [
+        [{ "node": "DB: Kunde anlegen/finden", "type": "main", "index": 0 }],
+        [{ "node": "Response: Keine Slots", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Kunde anlegen/finden": {
+      "main": [
+        [{ "node": "DB: Termin buchen", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Termin buchen": {
+      "main": [
+        [{ "node": "Bestätigungsnachricht", "type": "main", "index": 0 }]
+      ]
+    },
+    "Bestätigungsnachricht": {
+      "main": [
+        [{ "node": "Response: Erfolg", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "salon" },
+    { "name": "booking" },
+    { "name": "production" }
+  ]
+}

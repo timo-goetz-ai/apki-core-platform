@@ -1,0 +1,123 @@
+{
+  "name": "Salon – KPI Daily Snapshot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "triggerAtHour": 22, "triggerAtMinute": 0 }
+          ]
+        }
+      },
+      "id": "cron-night",
+      "name": "Täglich 22:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Alle aktiven Salons abfragen\nSELECT id AS salon_id, name AS salon_name, owner_name, phone AS owner_phone\nFROM salons\nWHERE is_active = true;",
+        "options": {}
+      },
+      "id": "get-salons",
+      "name": "DB: Aktive Salons",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- KPIs für heute berechnen\nWITH today_bookings AS (\n  SELECT * FROM bookings\n  WHERE salon_id = '{{ $json.salon_id }}'\n    AND start_time::date = CURRENT_DATE\n),\ntoday_revenue AS (\n  SELECT COALESCE(SUM(price_cents), 0) AS revenue_cents\n  FROM today_bookings\n  WHERE status = 'completed' AND payment_status = 'paid'\n),\ntoday_counts AS (\n  SELECT\n    COUNT(*) AS total_bookings,\n    COUNT(*) FILTER (WHERE status = 'completed') AS completed,\n    COUNT(*) FILTER (WHERE status = 'no_show') AS no_shows,\n    COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled\n  FROM today_bookings\n),\nnew_clients AS (\n  SELECT COUNT(*) AS count\n  FROM clients\n  WHERE salon_id = '{{ $json.salon_id }}'\n    AND created_at::date = CURRENT_DATE\n),\navg_rating AS (\n  SELECT COALESCE(AVG(rating), 0) AS avg_rating\n  FROM today_bookings\n  WHERE rating IS NOT NULL\n),\noccupancy AS (\n  SELECT\n    CASE WHEN COUNT(DISTINCT st.id) > 0 THEN\n      ROUND(\n        (COUNT(DISTINCT b.id)::DECIMAL / (COUNT(DISTINCT st.id) * 16)) * 100,\n        1\n      )\n    ELSE 0 END AS occupancy_pct\n  FROM staff st\n  LEFT JOIN today_bookings b ON b.staff_id = st.id AND b.status IN ('confirmed','completed')\n  WHERE st.salon_id = '{{ $json.salon_id }}' AND st.is_active = true\n)\nSELECT\n  tr.revenue_cents,\n  tc.total_bookings AS booking_count,\n  tc.completed AS completed_count,\n  nc.count AS new_clients,\n  tc.no_shows AS no_show_count,\n  tc.cancelled AS cancellation_count,\n  ar.avg_rating,\n  o.occupancy_pct\nFROM today_revenue tr, today_counts tc, new_clients nc, avg_rating ar, occupancy o;",
+        "options": {}
+      },
+      "id": "calc-kpis",
+      "name": "DB: KPIs berechnen",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- KPI Snapshot speichern\nINSERT INTO kpi_snapshots (\n  salon_id, date, revenue_cents, booking_count, completed_count,\n  new_clients, no_show_count, cancellation_count, avg_rating, occupancy_pct\n) VALUES (\n  '{{ $('DB: Aktive Salons').item.json.salon_id }}',\n  CURRENT_DATE,\n  {{ $json.revenue_cents || 0 }},\n  {{ $json.booking_count || 0 }},\n  {{ $json.completed_count || 0 }},\n  {{ $json.new_clients || 0 }},\n  {{ $json.no_show_count || 0 }},\n  {{ $json.cancellation_count || 0 }},\n  {{ $json.avg_rating || 0 }},\n  {{ $json.occupancy_pct || 0 }}\n)\nON CONFLICT (salon_id, date) DO UPDATE SET\n  revenue_cents = EXCLUDED.revenue_cents,\n  booking_count = EXCLUDED.booking_count,\n  completed_count = EXCLUDED.completed_count,\n  new_clients = EXCLUDED.new_clients,\n  no_show_count = EXCLUDED.no_show_count,\n  cancellation_count = EXCLUDED.cancellation_count,\n  avg_rating = EXCLUDED.avg_rating,\n  occupancy_pct = EXCLUDED.occupancy_pct;",
+        "options": {}
+      },
+      "id": "save-kpis",
+      "name": "DB: KPI speichern",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [940, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SALON_DB_CREDENTIAL_ID",
+          "name": "Salon DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tagesreport-Nachricht für Salonbesitzer\nconst salon = $('DB: Aktive Salons').item.json;\nconst kpi = $('DB: KPIs berechnen').item.json;\n\nconst revenue = (kpi.revenue_cents / 100).toFixed(2).replace('.', ',');\nconst today = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });\n\nconst noShowRate = kpi.booking_count > 0\n  ? Math.round((kpi.no_show_count / kpi.booking_count) * 100)\n  : 0;\n\nconst message = `📊 Tagesreport ${salon.salon_name}\n${today}\n\n💰 Umsatz: ${revenue} €\n📅 Termine: ${kpi.booking_count} (${kpi.completed_count} abgeschlossen)\n👤 Neukunden: ${kpi.new_clients}\n❌ No-Shows: ${kpi.no_show_count} (${noShowRate}%)\n📈 Auslastung: ${kpi.occupancy_pct}%\n${kpi.avg_rating > 0 ? '⭐ Bewertung: ' + Number(kpi.avg_rating).toFixed(1) + '/5' : ''}\n\nGuten Abend! 🌙`;\n\nreturn [{\n  json: {\n    salon_id: salon.salon_id,\n    owner_phone: salon.owner_phone,\n    owner_name: salon.owner_name,\n    message\n  }\n}];"
+      },
+      "id": "build-report",
+      "name": "Tagesreport bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 300]
+    },
+    {
+      "parameters": {
+        "content": "## WhatsApp Report senden\n\nHier kommt der WhatsApp-Node hin:\n→ Report an Salonbesitzer senden\n\nOwner-Phone: {{ $json.owner_phone }}\nMessage: {{ $json.message }}"
+      },
+      "id": "sticky-send",
+      "name": "TODO: WhatsApp senden",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1400, 200]
+    }
+  ],
+  "connections": {
+    "Täglich 22:00": {
+      "main": [
+        [{ "node": "DB: Aktive Salons", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: Aktive Salons": {
+      "main": [
+        [{ "node": "DB: KPIs berechnen", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: KPIs berechnen": {
+      "main": [
+        [{ "node": "DB: KPI speichern", "type": "main", "index": 0 }]
+      ]
+    },
+    "DB: KPI speichern": {
+      "main": [
+        [{ "node": "Tagesreport bauen", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "salon" },
+    { "name": "kpi" },
+    { "name": "production" }
+  ]
+}
