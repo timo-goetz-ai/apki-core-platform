@@ -7,6 +7,7 @@ export interface ServiceConfig {
   healthEndpoint: string;
   description: string;
   note?: string;
+  healthType?: string;
   headers: Record<string, string>;
 }
 

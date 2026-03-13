@@ -16,7 +16,7 @@
       "name": "Authentik",
       "url": "https://auth.automation-plus-ki.de",
       "icon": "shield",
-      "category": "infrastructure",
+      "category": "auth",
       "healthEndpoint": "https://auth.automation-plus-ki.de/-/health/ready/",
       "description": "SSO Identity Provider",
       "headers": {}
@@ -52,13 +52,15 @@
       "headers": {}
     },
     {
-      "id": "nextcloud",
-      "name": "Nextcloud",
-      "url": "https://nextcloud.automation-plus-ki.de",
-      "icon": "cloud",
+      "id": "hetzner-storage",
+      "name": "Hetzner Storage",
+      "url": "https://fsn1.your-objectstorage.com",
+      "icon": "hard-drive",
       "category": "homestack",
-      "healthEndpoint": "https://nextcloud.automation-plus-ki.de/status.php",
-      "description": "File Storage & Office",
+      "healthEndpoint": "https://fsn1.your-objectstorage.com",
+      "description": "S3 Object Storage",
+      "note": "HETZNER_STORAGE_URL in Coolify eintragen",
+      "healthType": "http",
       "headers": {}
     },
     {
@@ -69,16 +71,6 @@
       "category": "homestack",
       "healthEndpoint": "https://nocodb.automation-plus-ki.de/api/v1/health",
       "description": "No-Code Database",
-      "headers": {}
-    },
-    {
-      "id": "vaultwarden",
-      "name": "Vaultwarden",
-      "url": "https://vault.automation-plus-ki.de",
-      "icon": "key",
-      "category": "homestack",
-      "healthEndpoint": "https://vault.automation-plus-ki.de/alive",
-      "description": "Password Manager",
       "headers": {}
     },
     {
@@ -294,6 +286,7 @@
   ],
   "categories": [
     { "id": "infrastructure", "label": "Infrastruktur", "icon": "server" },
+    { "id": "auth", "label": "Auth & SSO", "icon": "shield" },
     { "id": "monitoring", "label": "Monitoring", "icon": "activity" },
     { "id": "automation", "label": "Automation", "icon": "workflow" },
     { "id": "ai", "label": "AI Projects", "icon": "bot" },

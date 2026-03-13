@@ -1,3 +1,4 @@
+// Secrets (API keys, tokens) werden in 1Password verwaltet und als Coolify env vars gesetzt.
 import type { ServiceConfig, ServiceStatus } from "./types";
 
 const SLOW_THRESHOLD_MS = 2000;
@@ -10,6 +11,15 @@ const AUTHENTIK_INDICATORS = [
   "authentik",
 ];
 
+// Hetzner S3 returns 403 without a signed request — service IS running, treat as online.
+// healthType "http" = any response (including 4xx) counts as reachable.
+function isReachableStatus(statusCode: number, healthType?: string): boolean {
+  if (healthType === "http") {
+    return statusCode >= 200 && statusCode < 500;
+  }
+  return statusCode >= 200 && statusCode < 400;
+}
+
 function isAuthentikRedirect(response: Response): boolean {
   const location = response.headers.get("location") ?? "";
   return AUTHENTIK_INDICATORS.some((s) => location.includes(s));
@@ -19,9 +29,10 @@ function buildResult(
   id: string,
   statusCode: number,
   responseTime: number,
-  protected_ = false
+  protected_ = false,
+  healthType?: string
 ): ServiceStatus {
-  const isUp = statusCode >= 200 && statusCode < 400;
+  const isUp = isReachableStatus(statusCode, healthType);
   return {
     id,
     status: !isUp
@@ -67,7 +78,7 @@ export async function checkService(
       return buildResult(service.id, 200, elapsed, false);
     }
 
-    return buildResult(service.id, response.status, elapsed);
+    return buildResult(service.id, response.status, elapsed, false, service.healthType);
   } catch {
     return {
       id: service.id,
