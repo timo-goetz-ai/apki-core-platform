@@ -45,7 +45,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
       .then((data) => {
         const list = Array.isArray(data) ? data : [];
         setCrews(list);
-        if (list.length && !selectedCrew) setSelectedCrew(list[0].id);
+        setSelectedCrew((prev) => (prev || (list[0]?.id ?? "")));
       })
       .catch(() => {})
       .finally(() => setLoading(false));

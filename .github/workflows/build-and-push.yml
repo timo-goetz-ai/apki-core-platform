@@ -30,6 +30,7 @@ jobs:
 
       - name: Load secrets from 1Password
         uses: 1password/load-secrets-action@v2
+        continue-on-error: true
         with:
           export-env: true
         env:
@@ -78,6 +79,7 @@ jobs:
 
       - name: Load secrets from 1Password
         uses: 1password/load-secrets-action@v2
+        continue-on-error: true
         with:
           export-env: true
         env:
@@ -89,6 +91,7 @@ jobs:
           NOCODB_MCP_AUDIT_TABLE_ID: op://AIOS/NocoDB/mcp_audit_table_id
           COOLIFY_URL: op://AIOS/Coolify/url
           COOLIFY_TOKEN: op://AIOS/Coolify/token
+          COOLIFY_API_KEY: op://AIOS/Coolify/token
           CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare/api_token
           DASHBOARD_API_KEY: op://AIOS/Core/dashboard_api_key
           AGENTIC_OS_BASE_PATH: op://AIOS/AgenticOS/base_path
@@ -106,6 +109,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v5
         with:
@@ -131,6 +137,7 @@ jobs:
 
       - name: Load secrets from 1Password
         uses: 1password/load-secrets-action@v2
+        continue-on-error: true
         with:
           export-env: true
         env:
@@ -153,6 +160,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.OWNER }}/crew-api
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v5
         with:
