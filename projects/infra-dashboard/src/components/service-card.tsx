@@ -20,6 +20,7 @@ import {
   Cpu,
   Home,
   Mail,
+  HardDrive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ServiceConfig, ServiceStatus } from "@/lib/types";
@@ -42,6 +43,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   cpu: Cpu,
   home: Home,
   mail: Mail,
+  "hard-drive": HardDrive,
 };
 
 const statusColors = {

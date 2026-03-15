@@ -27,29 +27,29 @@ export async function getServiceById(
 }
 
 export async function addService(service: ServiceConfig): Promise<void> {
-  const services = await getServices();
-  if (services.some((s) => s.id === service.id)) {
+  const data = await getServicesData();
+  if (data.services.some((s) => s.id === service.id)) {
     throw new Error(`Service with id "${service.id}" already exists`);
   }
-  services.push(service);
-  await writeFile(DATA_PATH, JSON.stringify({ services }, null, 2));
+  data.services.push(service);
+  await writeFile(DATA_PATH, JSON.stringify(data, null, 2));
 }
 
 export async function updateService(
   id: string,
   updates: Partial<ServiceConfig>
 ): Promise<void> {
-  const services = await getServices();
-  const index = services.findIndex((s) => s.id === id);
+  const data = await getServicesData();
+  const index = data.services.findIndex((s) => s.id === id);
   if (index === -1) throw new Error(`Service "${id}" not found`);
-  services[index] = { ...services[index], ...updates };
-  await writeFile(DATA_PATH, JSON.stringify({ services }, null, 2));
+  data.services[index] = { ...data.services[index], ...updates };
+  await writeFile(DATA_PATH, JSON.stringify(data, null, 2));
 }
 
 export async function deleteService(id: string): Promise<void> {
-  const services = await getServices();
-  const filtered = services.filter((s) => s.id !== id);
-  if (filtered.length === services.length)
+  const data = await getServicesData();
+  const filtered = data.services.filter((s) => s.id !== id);
+  if (filtered.length === data.services.length)
     throw new Error(`Service "${id}" not found`);
-  await writeFile(DATA_PATH, JSON.stringify({ services: filtered }, null, 2));
+  await writeFile(DATA_PATH, JSON.stringify({ ...data, services: filtered }, null, 2));
 }
