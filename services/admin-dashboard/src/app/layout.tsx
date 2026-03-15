@@ -23,6 +23,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Dashboard
             </Link>
             <Link
+              href="/agentic-os"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-colors"
+            >
+              🗺️ Agentic OS
+            </Link>
+            <Link
               href="/mcp-plattform"
               className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-colors"
             >
