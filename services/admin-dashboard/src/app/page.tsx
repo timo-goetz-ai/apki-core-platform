@@ -4,6 +4,10 @@ import { ServiceLinks } from "@/components/ServiceLinks";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MacProjectsWidget } from "@/components/MacProjectsWidget";
 import { DockerControlWidget } from "@/components/DockerControlWidget";
+import { CloudflareWidget } from "@/components/CloudflareWidget";
+import { CoolifyWidget } from "@/components/CoolifyWidget";
+import { GitHubStatsWidget } from "@/components/GitHubStatsWidget";
+import { CorporatePromptWidget } from "@/components/CorporatePromptWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +140,24 @@ export default async function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <MacProjectsWidget />
           <DockerControlWidget />
+        </div>
+      </section>
+
+      {/* Infrastruktur — Cloudflare & Coolify */}
+      <section>
+        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Infrastruktur</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <CloudflareWidget />
+          <CoolifyWidget />
+        </div>
+      </section>
+
+      {/* GitHub & Corporate LLM */}
+      <section>
+        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">GitHub & Prompts</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <GitHubStatsWidget />
+          <CorporatePromptWidget />
         </div>
       </section>
 
