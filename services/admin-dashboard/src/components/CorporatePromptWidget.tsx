@@ -187,7 +187,7 @@ export function CorporatePromptWidget() {
           <div className="px-5 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Lade Prompts…</div>
         ) : prompts.length === 0 ? (
           <div className="px-5 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-            Noch keine Prompts — klick auf „Neu"
+            Noch keine Prompts — klick auf &bdquo;Neu&ldquo;
           </div>
         ) : (
           prompts.map(p => (

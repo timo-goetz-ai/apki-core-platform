@@ -71,7 +71,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function EmptyState({ text }: { text: string }) {
+function EmptyState({ text }: { text: string }) {
   return (
     <div className="flex items-center justify-center py-10 text-slate-600 text-sm">
       <CheckCircle2 className="w-4 h-4 mr-2" /> {text}
