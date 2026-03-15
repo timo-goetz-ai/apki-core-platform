@@ -2,6 +2,8 @@ import { Bot, CheckCircle2, Clock, Cpu, LayoutDashboard, Zap } from "lucide-reac
 import { fetchAgents, fetchHealth, fetchPrompts, fetchTasks } from "@/lib/api";
 import { ServiceLinks } from "@/components/ServiceLinks";
 import { StatusBadge } from "@/components/StatusBadge";
+import { MacProjectsWidget } from "@/components/MacProjectsWidget";
+import { DockerControlWidget } from "@/components/DockerControlWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +129,15 @@ export default async function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* Mac — Lokale Projekte & Docker */}
+      <section>
+        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Mac – Lokal</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <MacProjectsWidget />
+          <DockerControlWidget />
+        </div>
+      </section>
 
       <footer className="text-center text-xs text-slate-600 pt-4">
         AIOS · {health?.environment ?? "–"} · {health?.timestamp ? new Date(health.timestamp).toLocaleString("de-DE") : "–"}

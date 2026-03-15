@@ -1,0 +1,13 @@
+{
+  "name": "mac-scanner",
+  "version": "1.0.0",
+  "description": "Scannt lokale Mac-Projekte und sendet sie ans Dashboard",
+  "type": "module",
+  "bin": {
+    "mac-scan": "./scan.js"
+  },
+  "scripts": {
+    "scan": "node scan.js",
+    "push": "node scan.js --push"
+  }
+}
