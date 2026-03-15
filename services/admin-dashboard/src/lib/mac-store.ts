@@ -69,9 +69,7 @@ export function syncProjects(payload: MacSyncPayload): number {
     }
   }
   // Add truly new projects
-  for (const newProject of incoming.values()) {
-    updated.push(newProject);
-  }
+  incoming.forEach(newProject => updated.push(newProject));
 
   macStore.projects = updated;
   macStore.lastSync = payload.scannedAt;

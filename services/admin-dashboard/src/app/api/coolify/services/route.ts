@@ -26,12 +26,13 @@ export async function GET() {
     const apps     = appsRes.ok     ? await appsRes.json()     : [];
     const services = servicesRes.ok ? await servicesRes.json() : [];
 
+    type CoolifyItem = {
+      uuid?: string; id?: string; name?: string;
+      status?: string; fqdn?: string; git_repository?: string;
+      updated_at?: string;
+    };
     const normalize = (items: unknown[], kind: string) =>
-      (Array.isArray(items) ? items : []).map((item: {
-        uuid?: string; id?: string; name?: string;
-        status?: string; fqdn?: string; git_repository?: string;
-        updated_at?: string;
-      }) => ({
+      (Array.isArray(items) ? (items as CoolifyItem[]) : []).map((item) => ({
         id:       item.uuid ?? item.id ?? "–",
         name:     item.name ?? "Unbenannt",
         kind,
