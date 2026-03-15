@@ -1,30 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, Mitarbeiter } from "@/lib/mcp-stadt-data";
+import { getMitarbeiter, createMitarbeiter, createAudit, isConfigured } from "@/lib/nocodb";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json(store.getMitarbeiter());
+  const liste = await getMitarbeiter();
+  return NextResponse.json(liste);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const m: Mitarbeiter = {
-      id: `m${Date.now()}`,
-      name: body.name,
-      rolle: body.rolle,
+    if (!body.name || !body.rolle) {
+      return NextResponse.json({ error: "name und rolle sind Pflicht" }, { status: 400 });
+    }
+
+    const m = await createMitarbeiter({
+      name:       body.name,
+      rolle:      body.rolle,
       rolleEmoji: body.rolleEmoji ?? "🔧",
-      bezirk: body.bezirk ?? "Alle",
-      status: "onboarding",
-      seit: new Date().toISOString().split("T")[0],
-      hallucLevel: 0,
-      hallucScore: 0,
-      hallucExpires: "",
-    };
-    store.addMitarbeiter(m);
+      bezirk:     body.bezirk ?? "Alle",
+    });
+
+    await createAudit({
+      aktion:    "mitarbeiter_created",
+      akteur:    "dashboard",
+      ressource: `mitarbeiter/${m.id}`,
+      ergebnis:  "OK",
+      details:   `${m.rolleEmoji} ${m.name} — ${m.rolle}`,
+    });
+
     return NextResponse.json(m, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
+  } catch (e) {
+    console.error("[mitarbeiter POST]", e);
+    return NextResponse.json({ error: "Fehler beim Anlegen" }, { status: 500 });
   }
+}
+
+export async function HEAD() {
+  return NextResponse.json({ nocodb: isConfigured() });
 }
