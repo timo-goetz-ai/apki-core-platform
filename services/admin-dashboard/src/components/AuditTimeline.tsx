@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AuditEintrag } from "@/lib/mcp-stadt-data";
+import type { AuditEintrag } from "@/lib/mcp-plattform-data";
 
 const ergebnisStyle: Record<AuditEintrag["ergebnis"], string> = {
   OK:     "text-emerald-400 bg-emerald-400/10",
@@ -10,14 +10,24 @@ const ergebnisStyle: Record<AuditEintrag["ergebnis"], string> = {
 };
 
 const aktionIcon: Record<string, string> = {
-  deploy_template:     "🚀",
-  hallucination_test:  "🧪",
+  deploy_service:      "🚀",
+  config_change:       "⚙️",
+  health_check:        "🩺",
   permission_grant:    "🔑",
   permission_revoke:   "🚫",
+  service_onboard:     "✨",
+  service_offboard:    "📦",
+  incident:            "🚨",
+  rollback:            "↩️",
+  scaling:             "📈",
+  // Legacy-Kompatibilität
+  deploy_template:     "🚀",
+  hallucination_test:  "🧪",
   bezirk_error:        "⚠️",
   mitarbeiter_onboard: "👋",
   mitarbeiter_created: "✨",
   mitarbeiter_offboard:"📦",
+  manual:              "📌",
 };
 
 export function AuditTimeline() {
@@ -25,7 +35,7 @@ export function AuditTimeline() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/mcp-stadt/audit")
+    fetch("/api/mcp-plattform/audit")
       .then((r) => r.json())
       .then((d) => { setEintraege(d); setLoading(false); })
       .catch(() => setLoading(false));

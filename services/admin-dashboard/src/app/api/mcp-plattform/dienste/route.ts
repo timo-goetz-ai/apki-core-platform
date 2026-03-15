@@ -1,4 +1,3 @@
-// Legacy-Route — leitet auf /api/mcp-plattform/dienste weiter
 import { NextRequest, NextResponse } from "next/server";
 import { getMCPDienste, createMCPDienst, createAudit, isConfigured } from "@/lib/nocodb";
 
@@ -15,12 +14,14 @@ export async function POST(req: NextRequest) {
     if (!body.name || !body.funktion) {
       return NextResponse.json({ error: "name und funktion sind Pflicht" }, { status: 400 });
     }
+
     const d = await createMCPDienst({
       name:        body.name,
       funktion:    body.funktion,
       dienstEmoji: body.dienstEmoji ?? "⚙️",
       projekt:     body.projekt ?? "infrastruktur",
     });
+
     await createAudit({
       aktion:    "service_onboard",
       akteur:    "dashboard",
@@ -28,9 +29,10 @@ export async function POST(req: NextRequest) {
       ergebnis:  "OK",
       details:   `${d.dienstEmoji} ${d.name} — ${d.funktion}`,
     });
+
     return NextResponse.json(d, { status: 201 });
   } catch (e) {
-    console.error("[mitarbeiter POST]", e);
+    console.error("[dienste POST]", e);
     return NextResponse.json({ error: "Fehler beim Anlegen" }, { status: 500 });
   }
 }

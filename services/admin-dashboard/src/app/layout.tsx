@@ -23,10 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Dashboard
             </Link>
             <Link
-              href="/mcp-stadt"
+              href="/mcp-plattform"
               className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-colors"
             >
-              🏙️ MCP-Stadt
+              ⚙️ MCP-Plattform
             </Link>
           </div>
         </nav>

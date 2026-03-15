@@ -3,23 +3,30 @@
  * Doku: https://docs.nocodb.com/developer-resources/rest-apis/overview
  *
  * Benötigte Env-Vars (in Coolify setzen):
- *   NOCODB_URL                      → https://nocodb.automation-plus-ki.de
- *   NOCODB_API_TOKEN                → xc-token aus NocoDB Team → API Tokens
- *   NOCODB_MCP_BEZIRKE_TABLE_ID     → md_xxxxxxxx (Tabellen-ID aus NocoDB)
- *   NOCODB_MCP_MITARBEITER_TABLE_ID → md_xxxxxxxx
- *   NOCODB_MCP_AUDIT_TABLE_ID       → md_xxxxxxxx
+ *   NOCODB_URL                       → https://nocodb.automation-plus-ki.de
+ *   NOCODB_API_TOKEN                 → xc-token aus NocoDB Team → API Tokens
+ *   NOCODB_MCP_PROJEKTE_TABLE_ID     → md_xxxxxxxx (Tabellen-ID aus NocoDB)
+ *   NOCODB_MCP_DIENSTE_TABLE_ID      → md_xxxxxxxx
+ *   NOCODB_MCP_AUDIT_TABLE_ID        → md_xxxxxxxx
  */
 
-import { BEZIRKE_SEED, MITARBEITER_SEED, AUDIT_SEED, type Bezirk, type Mitarbeiter, type AuditEintrag } from "./mcp-stadt-data";
+import {
+  PROJEKTE_SEED,
+  MCP_DIENSTE_SEED,
+  AUDIT_SEED,
+  type Projekt,
+  type MCPDienst,
+  type AuditEintrag,
+} from "./mcp-plattform-data";
 
-const BASE    = process.env.NOCODB_URL         ?? "https://nocodb.automation-plus-ki.de";
-const TOKEN   = process.env.NOCODB_API_TOKEN   ?? "";
+const BASE  = process.env.NOCODB_URL        ?? "https://nocodb.automation-plus-ki.de";
+const TOKEN = process.env.NOCODB_API_TOKEN  ?? "";
 
-const TABLE_BEZIRKE     = process.env.NOCODB_MCP_BEZIRKE_TABLE_ID     ?? "";
-const TABLE_MITARBEITER = process.env.NOCODB_MCP_MITARBEITER_TABLE_ID ?? "";
-const TABLE_AUDIT       = process.env.NOCODB_MCP_AUDIT_TABLE_ID       ?? "";
+const TABLE_PROJEKTE = process.env.NOCODB_MCP_PROJEKTE_TABLE_ID ?? "";
+const TABLE_DIENSTE  = process.env.NOCODB_MCP_DIENSTE_TABLE_ID  ?? "";
+const TABLE_AUDIT    = process.env.NOCODB_MCP_AUDIT_TABLE_ID    ?? "";
 
-export const isConfigured = () => !!TOKEN && !!TABLE_MITARBEITER;
+export const isConfigured = () => !!TOKEN && !!TABLE_DIENSTE;
 
 // ── Low-Level Fetch ─────────────────────────────────────────────────────────
 
@@ -34,7 +41,6 @@ async function nocoGet<T>(tableId: string, params?: Record<string, string>): Pro
   });
   if (!res.ok) throw new Error(`NocoDB GET ${tableId}: ${res.status}`);
   const json = await res.json();
-  // NocoDB v2 returns { list: [...], pageInfo: {...} }
   return (json.list ?? json) as T[];
 }
 
@@ -49,35 +55,35 @@ async function nocoPost<T>(tableId: string, data: Record<string, unknown>): Prom
 }
 
 // ── NocoDB ↔ App-Typen Mapping ──────────────────────────────────────────────
-// NocoDB speichert alles als flaches JSON.
-// Arrays (tools) werden als kommaseparierter String gespeichert.
 
-type NocoBezirk = {
+type NocoProjekt = {
   Id?: number;
   id?: string;
   name: string;
   emoji: string;
   beschreibung?: string;
+  url?: string;
   status?: string;
-  tools?: string;
-  leiterin?: string;
+  mcpServer?: string;
+  owner?: string;
   uptime_pct?: number;
-  tasks_heute?: number;
+  requests_heute?: number;
   fehler_heute?: number;
 };
 
-type NocoMitarbeiter = {
+type NocoMCPDienst = {
   Id?: number;
   id?: string;
   name: string;
-  rolle: string;
-  rolleEmoji?: string;
-  bezirk?: string;
+  funktion: string;
+  dienstEmoji?: string;
+  projekt?: string;
   status?: string;
   seit?: string;
-  hallucLevel?: number;
-  hallucScore?: number;
-  hallucExpires?: string;
+  zuverlaessigkeit?: number;
+  healthScore?: number;
+  lastCheck?: string;
+  url?: string;
 };
 
 type NocoAudit = {
@@ -91,33 +97,35 @@ type NocoAudit = {
   details?: string;
 };
 
-function mapBezirk(r: NocoBezirk): Bezirk {
+function mapProjekt(r: NocoProjekt): Projekt {
   return {
-    id:           String(r.id ?? r.Id ?? r.name),
-    name:         r.name,
-    emoji:        r.emoji ?? "🏙️",
-    beschreibung: r.beschreibung ?? "",
-    status:       (r.status as Bezirk["status"]) ?? "online",
-    tools:        r.tools ? r.tools.split(",").map((t) => t.trim()) : [],
-    leiterin:     r.leiterin,
-    uptime_pct:   r.uptime_pct ?? 100,
-    tasks_heute:  r.tasks_heute ?? 0,
-    fehler_heute: r.fehler_heute ?? 0,
+    id:              String(r.id ?? r.Id ?? r.name),
+    name:            r.name,
+    emoji:           r.emoji ?? "⚙️",
+    beschreibung:    r.beschreibung ?? "",
+    url:             r.url ?? "",
+    status:          (r.status as Projekt["status"]) ?? "online",
+    mcpServer:       r.mcpServer ? r.mcpServer.split(",").map((s) => s.trim()) : [],
+    owner:           r.owner,
+    uptime_pct:      r.uptime_pct ?? 100,
+    requests_heute:  r.requests_heute ?? 0,
+    fehler_heute:    r.fehler_heute ?? 0,
   };
 }
 
-function mapMitarbeiter(r: NocoMitarbeiter): Mitarbeiter {
+function mapMCPDienst(r: NocoMCPDienst): MCPDienst {
   return {
-    id:           String(r.id ?? r.Id ?? r.name),
-    name:         r.name,
-    rolle:        r.rolle,
-    rolleEmoji:   r.rolleEmoji ?? "🔧",
-    bezirk:       r.bezirk ?? "Alle",
-    status:       (r.status as Mitarbeiter["status"]) ?? "aktiv",
-    seit:         r.seit ?? new Date().toISOString().split("T")[0],
-    hallucLevel:  r.hallucLevel ?? 0,
-    hallucScore:  r.hallucScore ?? 0,
-    hallucExpires: r.hallucExpires ?? "",
+    id:               String(r.id ?? r.Id ?? r.name),
+    name:             r.name,
+    funktion:         r.funktion,
+    dienstEmoji:      r.dienstEmoji ?? "⚙️",
+    projekt:          r.projekt ?? "infrastruktur",
+    status:           (r.status as MCPDienst["status"]) ?? "aktiv",
+    seit:             r.seit ?? new Date().toISOString().split("T")[0],
+    zuverlaessigkeit: r.zuverlaessigkeit ?? 0,
+    healthScore:      r.healthScore ?? 0,
+    lastCheck:        r.lastCheck ?? "",
+    url:              r.url,
   };
 }
 
@@ -135,62 +143,61 @@ function mapAudit(r: NocoAudit): AuditEintrag {
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
-export async function getBezirke(): Promise<Bezirk[]> {
-  if (!TOKEN || !TABLE_BEZIRKE) return BEZIRKE_SEED;
+export async function getProjekte(): Promise<Projekt[]> {
+  if (!TOKEN || !TABLE_PROJEKTE) return PROJEKTE_SEED;
   try {
-    const rows = await nocoGet<NocoBezirk>(TABLE_BEZIRKE);
-    return rows.map(mapBezirk);
+    const rows = await nocoGet<NocoProjekt>(TABLE_PROJEKTE);
+    return rows.map(mapProjekt);
   } catch (e) {
-    console.warn("[NocoDB] getBezirke Fehler, Fallback auf Seed:", e);
-    return BEZIRKE_SEED;
+    console.warn("[NocoDB] getProjekte Fehler, Fallback auf Seed:", e);
+    return PROJEKTE_SEED;
   }
 }
 
-export async function getMitarbeiter(): Promise<Mitarbeiter[]> {
-  if (!TOKEN || !TABLE_MITARBEITER) return MITARBEITER_SEED;
+export async function getMCPDienste(): Promise<MCPDienst[]> {
+  if (!TOKEN || !TABLE_DIENSTE) return MCP_DIENSTE_SEED;
   try {
-    const rows = await nocoGet<NocoMitarbeiter>(TABLE_MITARBEITER);
-    return rows.map(mapMitarbeiter);
+    const rows = await nocoGet<NocoMCPDienst>(TABLE_DIENSTE);
+    return rows.map(mapMCPDienst);
   } catch (e) {
-    console.warn("[NocoDB] getMitarbeiter Fehler, Fallback auf Seed:", e);
-    return MITARBEITER_SEED;
+    console.warn("[NocoDB] getMCPDienste Fehler, Fallback auf Seed:", e);
+    return MCP_DIENSTE_SEED;
   }
 }
 
-export async function createMitarbeiter(data: {
+export async function createMCPDienst(data: {
   name: string;
-  rolle: string;
-  rolleEmoji: string;
-  bezirk: string;
-}): Promise<Mitarbeiter> {
-  if (!TOKEN || !TABLE_MITARBEITER) {
-    // In-Memory Fallback (Seed-Patch)
-    const m: Mitarbeiter = {
-      id: `m${Date.now()}`,
+  funktion: string;
+  dienstEmoji: string;
+  projekt: string;
+}): Promise<MCPDienst> {
+  if (!TOKEN || !TABLE_DIENSTE) {
+    const d: MCPDienst = {
+      id: `d${Date.now()}`,
       name: data.name,
-      rolle: data.rolle,
-      rolleEmoji: data.rolleEmoji,
-      bezirk: data.bezirk,
+      funktion: data.funktion,
+      dienstEmoji: data.dienstEmoji,
+      projekt: data.projekt,
       status: "onboarding",
       seit: new Date().toISOString().split("T")[0],
-      hallucLevel: 0,
-      hallucScore: 0,
-      hallucExpires: "",
+      zuverlaessigkeit: 0,
+      healthScore: 0,
+      lastCheck: "",
     };
-    MITARBEITER_SEED.push(m);
-    return m;
+    MCP_DIENSTE_SEED.push(d);
+    return d;
   }
-  const row = await nocoPost<NocoMitarbeiter>(TABLE_MITARBEITER, {
-    name:       data.name,
-    rolle:      data.rolle,
-    rolleEmoji: data.rolleEmoji,
-    bezirk:     data.bezirk,
-    status:     "onboarding",
-    seit:       new Date().toISOString().split("T")[0],
-    hallucLevel: 0,
-    hallucScore: 0,
+  const row = await nocoPost<NocoMCPDienst>(TABLE_DIENSTE, {
+    name:             data.name,
+    funktion:         data.funktion,
+    dienstEmoji:      data.dienstEmoji,
+    projekt:          data.projekt,
+    status:           "onboarding",
+    seit:             new Date().toISOString().split("T")[0],
+    zuverlaessigkeit: 0,
+    healthScore:      0,
   });
-  return mapMitarbeiter(row);
+  return mapMCPDienst(row);
 }
 
 export async function getAudit(): Promise<AuditEintrag[]> {

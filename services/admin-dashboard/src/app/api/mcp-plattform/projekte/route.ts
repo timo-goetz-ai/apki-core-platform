@@ -1,4 +1,3 @@
-// Legacy-Route — leitet auf /api/mcp-plattform/projekte weiter
 import { NextResponse } from "next/server";
 import { getProjekte } from "@/lib/nocodb";
 
