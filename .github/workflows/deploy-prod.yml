@@ -50,19 +50,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          HETZNER_IP: op://AIOS/Hetzner/ip
+          SSH_PRIVATE_KEY: op://AIOS/Hetzner/ssh_private_key
+
       - name: DB Migration via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HETZNER_IP }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ env.HETZNER_IP }}
+          username: root
+          key: ${{ env.SSH_PRIVATE_KEY }}
           script: |
             set -e
             cd /opt/aios
-
             echo "Starte Alembic Migration..."
             docker exec aios-nexus-core alembic upgrade head
-
             echo "Migration erfolgreich"
 
   # ──────────────────────────────────────────────
@@ -77,29 +84,84 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          COOLIFY_URL: op://AIOS/Coolify/url
+          COOLIFY_TOKEN: op://AIOS/Coolify/token
+          COOLIFY_NEXUS_CORE_UUID: op://AIOS/Coolify/nexus_core_uuid
+          COOLIFY_DASHBOARD_UUID: op://AIOS/Coolify/dashboard_uuid
+          COOLIFY_CODER_AGENT_UUID: op://AIOS/Coolify/coder_agent_uuid
+
+      - name: Setze Coolify Env-Variablen (admin-dashboard)
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          NOCODB_URL: op://AIOS/NocoDB/url
+          NOCODB_API_KEY: op://AIOS/NocoDB/api_key
+          NOCODB_MCP_PROJEKTE_TABLE_ID: op://AIOS/NocoDB/mcp_projekte_table_id
+          NOCODB_MCP_DIENSTE_TABLE_ID: op://AIOS/NocoDB/mcp_dienste_table_id
+          NOCODB_MCP_AUDIT_TABLE_ID: op://AIOS/NocoDB/mcp_audit_table_id
+          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare/api_token
+          CLOUDFLARE_ACCOUNT_ID: op://AIOS/Cloudflare/account_id
+          DASHBOARD_API_KEY: op://AIOS/Core/dashboard_api_key
+          AGENTIC_OS_BASE_PATH: op://AIOS/AgenticOS/base_path
+          HETZNER_TOKEN: op://AIOS/Hetzner/token
+
+      - name: Update Coolify Env – admin-dashboard
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          BASE="${COOLIFY_URL}/api/v1/applications/${COOLIFY_DASHBOARD_UUID}/envs"
+          AUTH="Authorization: Bearer ${COOLIFY_TOKEN}"
+
+          set_env() {
+            curl -s -X PATCH "$BASE" \
+              -H "$AUTH" -H "Content-Type: application/json" \
+              -d "{\"key\":\"$1\",\"value\":\"$2\",\"is_shown_once\":false}" \
+              > /dev/null
+          }
+
+          set_env "NOCODB_URL"                   "$NOCODB_URL"
+          set_env "NOCODB_API_KEY"               "$NOCODB_API_KEY"
+          set_env "NOCODB_MCP_PROJEKTE_TABLE_ID" "$NOCODB_MCP_PROJEKTE_TABLE_ID"
+          set_env "NOCODB_MCP_DIENSTE_TABLE_ID"  "$NOCODB_MCP_DIENSTE_TABLE_ID"
+          set_env "NOCODB_MCP_AUDIT_TABLE_ID"    "$NOCODB_MCP_AUDIT_TABLE_ID"
+          set_env "CLOUDFLARE_API_TOKEN"         "$CLOUDFLARE_API_TOKEN"
+          set_env "CLOUDFLARE_ACCOUNT_ID"        "$CLOUDFLARE_ACCOUNT_ID"
+          set_env "DASHBOARD_API_KEY"            "$DASHBOARD_API_KEY"
+          set_env "AGENTIC_OS_BASE_PATH"         "$AGENTIC_OS_BASE_PATH"
+          set_env "HETZNER_TOKEN"                "$HETZNER_TOKEN"
+          echo "✓ Coolify Env-Variablen gesetzt (admin-dashboard)"
+
       - name: Deploy nexus-core
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
         run: |
-          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+          curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"uuid": "${{ secrets.COOLIFY_NEXUS_CORE_UUID }}", "force": true}'
+            -d "{\"uuid\": \"${COOLIFY_NEXUS_CORE_UUID}\", \"force\": true}"
 
       - name: Deploy admin-dashboard
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
         run: |
-          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+          curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"uuid": "${{ secrets.COOLIFY_DASHBOARD_UUID }}", "force": true}'
+            -d "{\"uuid\": \"${COOLIFY_DASHBOARD_UUID}\", \"force\": true}"
 
       - name: Deploy coder-agent
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'coder-agent' || startsWith(github.ref, 'refs/tags/') }}
         run: |
-          curl -X POST "${{ secrets.COOLIFY_URL }}/api/v1/deploy" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+          curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"uuid": "${{ secrets.COOLIFY_CODER_AGENT_UUID }}", "force": true}'
+            -d "{\"uuid\": \"${COOLIFY_CODER_AGENT_UUID}\", \"force\": true}"
 
       - name: Warte auf Deploy (60s)
         run: sleep 60
@@ -149,30 +211,28 @@ jobs:
     environment: production
 
     steps:
+      - name: Load SSH key from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          HETZNER_IP: op://AIOS/Hetzner/ip
+          SSH_PRIVATE_KEY: op://AIOS/Hetzner/ssh_private_key
+
       - name: Rollback via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HETZNER_IP }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ env.HETZNER_IP }}
+          username: root
+          key: ${{ env.SSH_PRIVATE_KEY }}
           script: |
             set -e
             echo "ROLLBACK GESTARTET..."
             cd /opt/aios
-
-            # Vorherige Container-Version wiederherstellen
             docker service update --rollback nexus-core 2>/dev/null || \
               docker-compose up -d --no-deps --scale nexus-core=1
-
             echo "Rollback abgeschlossen"
-
-      - name: Sende Failure-Notification
-        run: |
-          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "text": "🚨 AIOS Deploy FEHLGESCHLAGEN – Rollback durchgeführt\nRef: ${{ github.ref }}\nActor: ${{ github.actor }}"
-            }'
 
   # ──────────────────────────────────────────────
   # Erfolgs-Notification
@@ -184,10 +244,16 @@ jobs:
     if: success()
 
     steps:
+      - name: Load Slack Webhook from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          SLACK_WEBHOOK: op://AIOS/Slack/webhook_url
+
       - name: Sende Success-Notification
         run: |
-          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          curl -s -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d '{
-              "text": "✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de"
-            }'
+            -d "{\"text\": \"✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de\"}"
