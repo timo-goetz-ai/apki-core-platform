@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ServiceConfig } from "@/lib/types";
 
 const iconOptions = ["server", "workflow", "table", "activity", "database", "globe"];
-const categoryOptions = ["infrastructure", "automation", "database", "monitoring", "other"];
+const categoryOptions = ["infrastructure", "auth", "automation", "ai", "homestack", "monitoring", "mcp", "other"];
 
 interface ServiceFormProps {
   service?: ServiceConfig;

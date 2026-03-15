@@ -1,0 +1,231 @@
+/**
+ * NocoDB REST-Client (v2 API)
+ * Doku: https://docs.nocodb.com/developer-resources/rest-apis/overview
+ *
+ * Benötigte Env-Vars (in Coolify setzen):
+ *   NOCODB_URL                       → https://nocodb.automation-plus-ki.de
+ *   NOCODB_API_TOKEN                 → xc-token aus NocoDB Team → API Tokens
+ *   NOCODB_MCP_PROJEKTE_TABLE_ID     → md_xxxxxxxx (Tabellen-ID aus NocoDB)
+ *   NOCODB_MCP_DIENSTE_TABLE_ID      → md_xxxxxxxx
+ *   NOCODB_MCP_AUDIT_TABLE_ID        → md_xxxxxxxx
+ */
+
+import {
+  PROJEKTE_SEED,
+  MCP_DIENSTE_SEED,
+  AUDIT_SEED,
+  type Projekt,
+  type MCPDienst,
+  type AuditEintrag,
+} from "./mcp-plattform-data";
+
+const BASE  = process.env.NOCODB_URL        ?? "https://nocodb.automation-plus-ki.de";
+const TOKEN = process.env.NOCODB_API_TOKEN  ?? "";
+
+const TABLE_PROJEKTE = process.env.NOCODB_MCP_PROJEKTE_TABLE_ID ?? "";
+const TABLE_DIENSTE  = process.env.NOCODB_MCP_DIENSTE_TABLE_ID  ?? "";
+const TABLE_AUDIT    = process.env.NOCODB_MCP_AUDIT_TABLE_ID    ?? "";
+
+export const isConfigured = () => !!TOKEN && !!TABLE_DIENSTE;
+
+// ── Low-Level Fetch ─────────────────────────────────────────────────────────
+
+async function nocoGet<T>(tableId: string, params?: Record<string, string>): Promise<T[]> {
+  const url = new URL(`${BASE}/api/v2/tables/${tableId}/records`);
+  url.searchParams.set("limit", "200");
+  if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url.toString(), {
+    headers: { "xc-token": TOKEN },
+    next: { revalidate: 0 },
+  });
+  if (!res.ok) throw new Error(`NocoDB GET ${tableId}: ${res.status}`);
+  const json = await res.json();
+  return (json.list ?? json) as T[];
+}
+
+async function nocoPost<T>(tableId: string, data: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${BASE}/api/v2/tables/${tableId}/records`, {
+    method: "POST",
+    headers: { "xc-token": TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`NocoDB POST ${tableId}: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+// ── NocoDB ↔ App-Typen Mapping ──────────────────────────────────────────────
+
+type NocoProjekt = {
+  Id?: number;
+  id?: string;
+  name: string;
+  emoji: string;
+  beschreibung?: string;
+  url?: string;
+  status?: string;
+  mcpServer?: string;
+  owner?: string;
+  uptime_pct?: number;
+  requests_heute?: number;
+  fehler_heute?: number;
+};
+
+type NocoMCPDienst = {
+  Id?: number;
+  id?: string;
+  name: string;
+  funktion: string;
+  dienstEmoji?: string;
+  projekt?: string;
+  status?: string;
+  seit?: string;
+  zuverlaessigkeit?: number;
+  healthScore?: number;
+  lastCheck?: string;
+  url?: string;
+};
+
+type NocoAudit = {
+  Id?: number;
+  id?: string;
+  ts?: string;
+  aktion: string;
+  akteur: string;
+  ressource: string;
+  ergebnis?: string;
+  details?: string;
+};
+
+function mapProjekt(r: NocoProjekt): Projekt {
+  return {
+    id:              String(r.id ?? r.Id ?? r.name),
+    name:            r.name,
+    emoji:           r.emoji ?? "⚙️",
+    beschreibung:    r.beschreibung ?? "",
+    url:             r.url ?? "",
+    status:          (r.status as Projekt["status"]) ?? "online",
+    mcpServer:       r.mcpServer ? r.mcpServer.split(",").map((s) => s.trim()) : [],
+    owner:           r.owner,
+    uptime_pct:      r.uptime_pct ?? 100,
+    requests_heute:  r.requests_heute ?? 0,
+    fehler_heute:    r.fehler_heute ?? 0,
+  };
+}
+
+function mapMCPDienst(r: NocoMCPDienst): MCPDienst {
+  return {
+    id:               String(r.id ?? r.Id ?? r.name),
+    name:             r.name,
+    funktion:         r.funktion,
+    dienstEmoji:      r.dienstEmoji ?? "⚙️",
+    projekt:          r.projekt ?? "infrastruktur",
+    status:           (r.status as MCPDienst["status"]) ?? "aktiv",
+    seit:             r.seit ?? new Date().toISOString().split("T")[0],
+    zuverlaessigkeit: r.zuverlaessigkeit ?? 0,
+    healthScore:      r.healthScore ?? 0,
+    lastCheck:        r.lastCheck ?? "",
+    url:              r.url,
+  };
+}
+
+function mapAudit(r: NocoAudit): AuditEintrag {
+  return {
+    id:       String(r.id ?? r.Id ?? Date.now()),
+    ts:       r.ts ?? new Date().toISOString(),
+    aktion:   r.aktion,
+    akteur:   r.akteur,
+    ressource: r.ressource,
+    ergebnis: (r.ergebnis as AuditEintrag["ergebnis"]) ?? "OK",
+    details:  r.details,
+  };
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
+
+export async function getProjekte(): Promise<Projekt[]> {
+  if (!TOKEN || !TABLE_PROJEKTE) return PROJEKTE_SEED;
+  try {
+    const rows = await nocoGet<NocoProjekt>(TABLE_PROJEKTE);
+    return rows.map(mapProjekt);
+  } catch (e) {
+    console.warn("[NocoDB] getProjekte Fehler, Fallback auf Seed:", e);
+    return PROJEKTE_SEED;
+  }
+}
+
+export async function getMCPDienste(): Promise<MCPDienst[]> {
+  if (!TOKEN || !TABLE_DIENSTE) return MCP_DIENSTE_SEED;
+  try {
+    const rows = await nocoGet<NocoMCPDienst>(TABLE_DIENSTE);
+    return rows.map(mapMCPDienst);
+  } catch (e) {
+    console.warn("[NocoDB] getMCPDienste Fehler, Fallback auf Seed:", e);
+    return MCP_DIENSTE_SEED;
+  }
+}
+
+export async function createMCPDienst(data: {
+  name: string;
+  funktion: string;
+  dienstEmoji: string;
+  projekt: string;
+}): Promise<MCPDienst> {
+  if (!TOKEN || !TABLE_DIENSTE) {
+    const d: MCPDienst = {
+      id: `d${Date.now()}`,
+      name: data.name,
+      funktion: data.funktion,
+      dienstEmoji: data.dienstEmoji,
+      projekt: data.projekt,
+      status: "onboarding",
+      seit: new Date().toISOString().split("T")[0],
+      zuverlaessigkeit: 0,
+      healthScore: 0,
+      lastCheck: "",
+    };
+    MCP_DIENSTE_SEED.push(d);
+    return d;
+  }
+  const row = await nocoPost<NocoMCPDienst>(TABLE_DIENSTE, {
+    name:             data.name,
+    funktion:         data.funktion,
+    dienstEmoji:      data.dienstEmoji,
+    projekt:          data.projekt,
+    status:           "onboarding",
+    seit:             new Date().toISOString().split("T")[0],
+    zuverlaessigkeit: 0,
+    healthScore:      0,
+  });
+  return mapMCPDienst(row);
+}
+
+export async function getAudit(): Promise<AuditEintrag[]> {
+  if (!TOKEN || !TABLE_AUDIT) return [...AUDIT_SEED].sort((a, b) => b.ts.localeCompare(a.ts));
+  try {
+    const rows = await nocoGet<NocoAudit>(TABLE_AUDIT, { sort: "-ts" });
+    return rows.map(mapAudit);
+  } catch (e) {
+    console.warn("[NocoDB] getAudit Fehler, Fallback auf Seed:", e);
+    return [...AUDIT_SEED].sort((a, b) => b.ts.localeCompare(a.ts));
+  }
+}
+
+export async function createAudit(data: Omit<AuditEintrag, "id" | "ts">): Promise<void> {
+  if (!TOKEN || !TABLE_AUDIT) {
+    AUDIT_SEED.unshift({ id: `a${Date.now()}`, ts: new Date().toISOString(), ...data });
+    return;
+  }
+  try {
+    await nocoPost(TABLE_AUDIT, {
+      ts:        new Date().toISOString(),
+      aktion:    data.aktion,
+      akteur:    data.akteur,
+      ressource: data.ressource,
+      ergebnis:  data.ergebnis,
+      details:   data.details ?? "",
+    });
+  } catch (e) {
+    console.warn("[NocoDB] createAudit Fehler:", e);
+  }
+}

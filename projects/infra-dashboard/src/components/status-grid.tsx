@@ -17,7 +17,7 @@ export function StatusGrid({ services, categories }: StatusGridProps) {
     try {
       const res = await fetch("/api/status");
       const data = await res.json();
-      setStatuses(data.statuses);
+      setStatuses(data.statuses ?? []);
     } catch {
       // keep previous statuses
     } finally {

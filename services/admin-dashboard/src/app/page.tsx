@@ -1,156 +1,307 @@
-import { Bot, CheckCircle2, Clock, Cpu, LayoutDashboard, Zap } from "lucide-react";
-import { fetchAgents, fetchHealth, fetchPrompts, fetchTasks } from "@/lib/api";
-import { ServiceLinks } from "@/components/ServiceLinks";
-import { StatusBadge } from "@/components/StatusBadge";
+import {
+  Activity, ShieldCheck, AlertTriangle, Globe, GitBranch,
+  Cpu, Server, LayoutGrid, ExternalLink,
+} from "lucide-react";
+import Link from "next/link";
+import { GitHubStatsWidget } from "@/components/GitHubStatsWidget";
+import { ActivityFeedWidget } from "@/components/ActivityFeedWidget";
+import { N8NWidget } from "@/components/N8NWidget";
+import { DockerControlWidget } from "@/components/DockerControlWidget";
+import { CloudflareWidget } from "@/components/CloudflareWidget";
 
 export const dynamic = "force-dynamic";
 
-async function getData() {
-  try {
-    const [health, agents, tasks, prompts] = await Promise.allSettled([
-      fetchHealth(),
-      fetchAgents(),
-      fetchTasks(),
-      fetchPrompts(),
-    ]);
-    return {
-      health:  health.status  === "fulfilled" ? health.value  : null,
-      agents:  agents.status  === "fulfilled" ? agents.value  : [],
-      tasks:   tasks.status   === "fulfilled" ? tasks.value   : [],
-      prompts: prompts.status === "fulfilled" ? prompts.value : [],
-    };
-  } catch {
-    return { health: null, agents: [], tasks: [], prompts: [] };
-  }
-}
-
-export default async function Dashboard() {
-  const { health, agents, tasks, prompts } = await getData();
-
-  const runningAgents = agents.filter((a: { status: string }) => a.status === "running").length;
-  const pendingTasks  = tasks.filter((t: { status: string }) => t.status === "pending").length;
-
+export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-[#0a0f1a] p-6 space-y-8">
+    <main className="p-5 min-h-screen bg-[#070b14]">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <LayoutDashboard className="text-sky-400 w-7 h-7" />
-          <h1 className="text-2xl font-bold tracking-tight">AIOS Admin Dashboard</h1>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <span className={`w-2 h-2 rounded-full ${health ? "bg-emerald-400" : "bg-red-400"}`} />
-          {health ? "Nexus-Core online" : "Nexus-Core nicht erreichbar"}
-        </div>
-      </div>
+      {/* ── Bento Grid ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 auto-rows-min">
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard icon={<Cpu className="w-5 h-5 text-sky-400" />}   label="Agents"          value={agents.length}    sub="registriert" />
-        <KpiCard icon={<Zap className="w-5 h-5 text-yellow-400" />} label="Aktiv"           value={runningAgents}    sub="laufen gerade" />
-        <KpiCard icon={<Clock className="w-5 h-5 text-purple-400" />} label="Tasks offen"   value={pendingTasks}     sub="pending" />
-        <KpiCard icon={<Bot className="w-5 h-5 text-green-400" />}  label="Prompt-Registry" value={prompts.length}   sub="Agenten-YAMLs" />
-      </div>
+        {/* ── Row 1 ─────────────────────────────────────────────────── */}
 
-      {/* Service Links */}
-      <section>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Plattform-Dienste</h2>
-        <ServiceLinks />
-      </section>
-
-      {/* Agents */}
-      <section>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Agents</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {agents.map((agent: { id: string; name: string; model: string; status: string }) => (
-            <div key={agent.id} className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">{agent.name}</span>
-                <StatusBadge status={agent.status} />
-              </div>
-              <p className="text-xs text-slate-500 font-mono truncate">{agent.model}</p>
+        {/* Core Infrastructure — 2 col */}
+        <div className="md:col-span-2 bento-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Server className="w-4 h-4 text-[#1d6ef5]" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#1d6ef5]">
+                Core Infrastructure
+              </h2>
             </div>
-          ))}
-          {agents.length === 0 && <EmptyState text="Keine Agents — Nexus-Core erreichbar?" />}
+            <span className="text-[10px] bg-cyan-400/10 text-cyan-400 px-2 py-0.5 rounded font-semibold">
+              Hetzner 46.224.145.109
+            </span>
+          </div>
+          <div className="space-y-2">
+            {INFRA_SERVICES.map((s) => (
+              <ServiceRow key={s.name} {...s} />
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Tasks */}
-      <section>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Letzte Tasks</h2>
-        <div className="bg-[#111827] border border-[#1f2937] rounded-xl overflow-hidden">
-          {tasks.length === 0 ? (
-            <EmptyState text="Noch keine Tasks erstellt" />
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1f2937] text-slate-400 text-xs uppercase tracking-wider">
-                  <th className="text-left px-4 py-3">Titel</th>
-                  <th className="text-left px-4 py-3">Agent</th>
-                  <th className="text-left px-4 py-3">Priorität</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Erstellt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.slice(-10).reverse().map((t: { id: string; title: string; agent_id: string; priority: string; status: string; created_at: string }) => (
-                  <tr key={t.id} className="border-b border-[#1f2937] last:border-0 hover:bg-[#1a2332] transition-colors">
-                    <td className="px-4 py-3 font-medium">{t.title}</td>
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{t.agent_id}</td>
-                    <td className="px-4 py-3"><StatusBadge status={t.priority} /></td>
-                    <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{new Date(t.created_at).toLocaleString("de-DE")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      {/* Prompt Registry */}
-      {prompts.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Prompt-Registry</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {prompts.map((p: { id: string; name: string; category: string; model: string; description: string }) => (
-              <div key={p.id} className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{p.name}</span>
-                  <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">{p.category}</span>
+        {/* AI Agents — 1 col */}
+        <div className="bento-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <LayoutGrid className="w-4 h-4 text-slate-400" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              AI Projects
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {AI_PROJECTS.map((p) => (
+              <a
+                key={p.name}
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-2.5 bg-[#070b14] border border-[#1a2540] rounded-lg hover:border-[#1d6ef5]/30 transition-colors group"
+              >
+                <div>
+                  <div className="text-xs font-semibold text-zinc-200 group-hover:text-white">{p.name}</div>
+                  <div className="text-[9px] text-zinc-600 font-mono mt-0.5">{p.stack}</div>
                 </div>
-                <p className="text-xs text-slate-500 font-mono truncate">{p.model}</p>
-                {p.description && <p className="text-xs text-slate-400">{p.description}</p>}
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${p.status === "online" ? "status-online live-dot" : "status-warn"}`} />
+                  <ExternalLink className="w-2.5 h-2.5 text-zinc-700 group-hover:text-zinc-400" />
+                </div>
+              </a>
+            ))}
+          </div>
+          <Link
+            href="/agentic-os/engine-room/agents"
+            className="mt-3 flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-[#1d6ef5]/10 border border-[#1d6ef5]/20 text-[10px] text-[#1d6ef5] font-semibold hover:bg-[#1d6ef5]/15 transition-colors"
+          >
+            🚀 Crew starten
+          </Link>
+        </div>
+
+        {/* Security Checklist — 1 col */}
+        <div className="bento-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-500">
+              Security
+            </h2>
+          </div>
+          <ul className="space-y-2.5">
+            {SECURITY_CHECKS.map((c) => (
+              <SecurityItem key={c.label} {...c} />
+            ))}
+          </ul>
+        </div>
+
+        {/* ── Row 2 ─────────────────────────────────────────────────── */}
+
+        {/* GitHub Stats — 1 col */}
+        <div className="bento-card overflow-hidden">
+          <GitHubStatsWidget />
+        </div>
+
+        {/* Activity Feed — 2 col */}
+        <div className="md:col-span-2 bento-card overflow-hidden">
+          <ActivityFeedWidget />
+        </div>
+
+        {/* Critical Issues — 1 col */}
+        <div className="bento-card p-5 border-red-500/20 bg-red-500/[0.03]">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-red-500">
+              Critical Issues
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {CRITICAL_ISSUES.map((issue) => (
+              <div
+                key={issue.service}
+                className="p-2.5 bg-red-500/5 border border-red-500/15 rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full status-offline shrink-0" />
+                  <span className="text-[10px] font-semibold text-red-400">{issue.service}</span>
+                </div>
+                <p className="text-[9px] text-red-500/60 mt-0.5 ml-3.5">{issue.detail}</p>
+              </div>
+            ))}
+            {CRITICAL_ISSUES.length === 0 && (
+              <p className="text-[10px] text-zinc-600 text-center py-4">Keine kritischen Issues</p>
+            )}
+          </div>
+          <Link
+            href="/mcp-plattform"
+            className="mt-3 text-[10px] text-zinc-600 hover:text-zinc-400 block text-center transition-colors"
+          >
+            MCP-Plattform öffnen →
+          </Link>
+        </div>
+
+        {/* ── Row 3 ─────────────────────────────────────────────────── */}
+
+        {/* Docker Control — 1 col */}
+        <div className="bento-card overflow-hidden">
+          <DockerControlWidget />
+        </div>
+
+        {/* Cloudflare — 1 col */}
+        <div className="bento-card overflow-hidden">
+          <CloudflareWidget />
+        </div>
+
+        {/* n8n Workflows — 1 col */}
+        <div className="bento-card overflow-hidden">
+          <N8NWidget />
+        </div>
+
+        {/* MCP Server Status — 1 col */}
+        <div className="bento-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="w-4 h-4 text-purple-400" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-purple-400">
+              MCP Status
+            </h2>
+          </div>
+          <div className="space-y-1.5">
+            {MCP_STATUS.map((m) => (
+              <div key={m.name} className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-400">{m.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono text-zinc-500">{m.health}%</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${m.health >= 90 ? "status-online" : m.health >= 50 ? "status-warn" : "status-offline"} ${m.health >= 90 ? "live-dot" : ""}`} />
+                </div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+          <Link
+            href="/mcp-plattform"
+            className="mt-4 text-[10px] text-[#1d6ef5]/60 hover:text-[#1d6ef5] block text-center transition-colors"
+          >
+            Alle MCP-Dienste →
+          </Link>
+        </div>
 
-      <footer className="text-center text-xs text-slate-600 pt-4">
-        AIOS · {health?.environment ?? "–"} · {health?.timestamp ? new Date(health.timestamp).toLocaleString("de-DE") : "–"}
+        {/* ── Row 4 — Tools & Quick Links ───────────────────────────── */}
+        <div className="md:col-span-4 bento-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Cpu className="w-3.5 h-3.5 text-zinc-600" />
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+              Quick Access — Infrastruktur
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_LINKS.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                target={l.url.startsWith("http") ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#070b14] border border-[#1a2540] rounded-lg text-[10px] text-zinc-500 hover:text-zinc-200 hover:border-[#1d6ef5]/30 transition-colors font-medium"
+              >
+                <span>{l.icon}</span>
+                {l.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      <footer className="text-center text-[10px] text-zinc-800 pt-6 pb-2">
+        automation-plus-ki.de · Hetzner 46.224.145.109 · {new Date().getFullYear()}
       </footer>
-    </div>
+    </main>
   );
 }
 
-function KpiCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number; sub: string }) {
+// ── Sub-Komponenten ─────────────────────────────────────────────────────────
+
+function ServiceRow({ name, status, url, icon }: {
+  name: string; status: "online" | "degraded" | "offline"; url?: string; icon: string;
+}) {
+  const statusColor = status === "online" ? "text-cyan-400" : status === "degraded" ? "text-amber-400" : "text-red-400";
   return (
-    <div className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 flex items-center gap-4">
-      <div className="p-2 rounded-lg bg-[#0a0f1a]">{icon}</div>
-      <div>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-xs text-slate-400">{label} <span className="text-slate-600">· {sub}</span></p>
+    <div className="flex items-center justify-between p-2.5 bg-[#070b14]/80 border border-[#1a2540]/50 rounded-lg hover:bg-[#0d1321] transition-all group">
+      <div className="flex items-center gap-2.5">
+        <span className="text-sm">{icon}</span>
+        <div>
+          <div className="text-xs font-semibold text-zinc-200">{name}</div>
+          {url && <div className="text-[9px] text-zinc-600 font-mono">{url}</div>}
+        </div>
+      </div>
+      <div className={`text-[9px] font-black uppercase ${statusColor} flex items-center gap-1`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${status === "online" ? "status-online live-dot" : status === "degraded" ? "status-warn" : "status-offline"}`} />
+        {status}
       </div>
     </div>
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function SecurityItem({ label, checked }: { label: string; checked: boolean }) {
   return (
-    <div className="flex items-center justify-center py-10 text-slate-600 text-sm">
-      <CheckCircle2 className="w-4 h-4 mr-2" /> {text}
-    </div>
+    <li className="flex items-center gap-2">
+      <div className={`w-3 h-3 rounded border flex items-center justify-center shrink-0 ${
+        checked ? "bg-cyan-400/15 border-cyan-400/50" : "bg-red-500/15 border-red-500/40"
+      }`}>
+        {checked && <div className="w-1.5 h-1.5 bg-cyan-400 rounded-sm" />}
+      </div>
+      <span className={`text-[10px] ${checked ? "text-zinc-300" : "text-zinc-600"}`}>{label}</span>
+    </li>
   );
 }
+
+// ── Statische Daten ──────────────────────────────────────────────────────────
+
+const INFRA_SERVICES = [
+  { name: "Coolify",       status: "online"   as const, url: "coolify.automation-plus-ki.de",    icon: "🚀" },
+  { name: "Authentik SSO", status: "online"   as const, url: "auth.automation-plus-ki.de",       icon: "🔐" },
+  { name: "Grafana",       status: "online"   as const, url: "grafana.automation-plus-ki.de",    icon: "📊" },
+  { name: "n8n",           status: "online"   as const, url: "n8n.automation-plus-ki.de",        icon: "⚡" },
+  { name: "NocoDB",        status: "online"   as const, url: "nocodb.automation-plus-ki.de",     icon: "🗃️" },
+  { name: "Prometheus",    status: "online"   as const, url: "prometheus.automation-plus-ki.de", icon: "🔥" },
+];
+
+const AI_PROJECTS = [
+  { name: "AI Agent Platform", stack: "Next.js + FastAPI", status: "online",   url: "https://agents.automation-plus-ki.de" },
+  { name: "AI Voice Platform", stack: "Voice AI · STT/TTS", status: "online",  url: "https://voice.automation-plus-ki.de" },
+];
+
+const SECURITY_CHECKS = [
+  { label: "Authentik SSO aktiv",         checked: true  },
+  { label: "Cloudflare Tunnel",           checked: true  },
+  { label: "Coolify Tailscale-only",      checked: true  },
+  { label: "HTTPS überall",               checked: true  },
+  { label: "Backup-Strategie",            checked: false },
+  { label: "MCP Vaultwarden healthy",     checked: false },
+];
+
+const CRITICAL_ISSUES = [
+  { service: "MCP Nextcloud",    detail: "Container unhealthy — health check failed" },
+  { service: "MCP Vaultwarden", detail: "Container unhealthy — health check failed" },
+];
+
+const MCP_STATUS = [
+  { name: "MCP GitHub",     health: 99 },
+  { name: "MCP Postgres",   health: 98 },
+  { name: "MCP Coolify",    health: 99 },
+  { name: "MCP Grafana",    health: 97 },
+  { name: "MCP Nextcloud",  health: 41 },
+  { name: "MCP Vaultwarden", health: 38 },
+];
+
+const QUICK_LINKS = [
+  { icon: "🚀", label: "Coolify",     url: "https://coolify.automation-plus-ki.de" },
+  { icon: "🔐", label: "Authentik",   url: "https://auth.automation-plus-ki.de" },
+  { icon: "📊", label: "Grafana",     url: "https://grafana.automation-plus-ki.de" },
+  { icon: "⚡", label: "n8n",         url: "https://n8n.automation-plus-ki.de" },
+  { icon: "🗃️", label: "NocoDB",      url: "https://nocodb.automation-plus-ki.de" },
+  { icon: "🧪", label: "Hoppscotch",  url: "https://hoppscotch.automation-plus-ki.de" },
+  { icon: "📝", label: "AppFlowy",    url: "https://appflowy.automation-plus-ki.de" },
+  { icon: "☁️", label: "Nextcloud",   url: "https://nextcloud.automation-plus-ki.de" },
+  { icon: "🖥️", label: "Hetzner",     url: "https://console.hetzner.cloud" },
+  { icon: "🤖", label: "Agents",      url: "https://agents.automation-plus-ki.de" },
+  { icon: "🎙️", label: "Voice",       url: "https://voice.automation-plus-ki.de" },
+  { icon: "🗺️", label: "Agentic OS",  url: "/agentic-os" },
+  { icon: "⚙️", label: "MCP-Plattform", url: "/mcp-plattform" },
+  { icon: "🐻", label: "Bruno Tests", url: "/agentic-os/management/ai-ops" },
+  { icon: "🎭", label: "Playwright",  url: "https://playwright.dev" },
+];

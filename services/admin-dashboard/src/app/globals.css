@@ -2,17 +2,175 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Corporate Dark Mode Design System ───────────────────────────────────── */
 :root {
-  --bg: #0a0f1a;
-  --surface: #111827;
-  --border: #1f2937;
-  --text: #f1f5f9;
-  --muted: #64748b;
-  --accent: #0ea5e9;
+  /* Base layers */
+  --bg:          #070b14;
+  --surface:     #0d1321;
+  --surface-2:   #111827;
+  --border:      #1a2540;
+  --border-soft: #0f1a2e;
+
+  /* Typografie */
+  --text:        #e8edf5;
+  --text-muted:  #4a5a7a;
+  --text-dim:    #2a3a55;
+
+  /* Accent-System */
+  --accent:      #1d6ef5;   /* Corporate Blue */
+  --accent-glow: rgba(29,110,245,0.15);
+  --accent-cyan: #22d3ee;   /* Cyan für Live-Indikatoren */
+
+  /* Status — Cyan statt Emerald für Online-Status */
+  --success:     #22d3ee;   /* cyan-400 */
+  --warning:     #f59e0b;
+  --danger:      #ef4444;
 }
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-font-smoothing: antialiased; }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(29,110,245,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(34,211,238,0.03) 0%, transparent 60%);
 }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3a55; }
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Cards & Surfaces ────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* Bento-Card mit Glasmorphismus */
+.bento-card {
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+.bento-card:hover { border-color: rgba(29,110,245,0.25); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* ── Metric Bar (Bento) ──────────────────────────────────────────────────── */
+.metric-bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.7s ease-out;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-ghost {
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.85; }
+
+/* Tool-Pill für Nav-Links (Playwright, Bruno etc.) */
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.tool-pill:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(29,110,245,0.3);
+  color: var(--text);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.corp-table thead tr {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.corp-table tbody tr {
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.1s;
+}
+.corp-table tbody tr:last-child { border-bottom: none; }
+.corp-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+/* ── Utility ─────────────────────────────────────────────────────────────── */
+.glow-accent {
+  box-shadow: 0 0 0 1px var(--border), 0 0 20px var(--accent-glow);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+/* Live-Dot — jetzt Cyan */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+.live-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* Status-Dot Cyan für Online */
+.status-online  { background: #22d3ee; }
+.status-warn    { background: #f59e0b; }
+.status-offline { background: #ef4444; }
