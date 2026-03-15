@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyApiKey, unauthorizedResponse } from "@/lib/auth";
 import { syncProjects, type MacSyncPayload } from "@/lib/mac-store";
+import { pushEvent } from "@/lib/activity-store";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
   }
 
   const imported = syncProjects(payload);
+  pushEvent("mac-sync", `Mac Scan: ${imported} Projekte`, `Host: ${payload.host ?? "mac"}`);
 
   return NextResponse.json({
     ok: true,

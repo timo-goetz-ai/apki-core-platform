@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyApiKey, unauthorizedResponse } from "@/lib/auth";
+import { pushEvent } from "@/lib/activity-store";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,10 @@ export async function POST(request: NextRequest) {
       signal: AbortSignal.timeout(15_000),
     });
     const data = await res.json();
+    pushEvent("deploy", `Deploy: ${serviceId}`, res.ok ? "gestartet" : "fehlgeschlagen", res.ok);
     return NextResponse.json({ ok: res.ok, deploymentId: data.deploymentId ?? null, raw: data });
   } catch (e) {
+    pushEvent("deploy", `Deploy: ${serviceId}`, String(e), false);
     return NextResponse.json({ error: String(e) }, { status: 503 });
   }
 }

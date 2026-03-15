@@ -8,6 +8,8 @@ import { CloudflareWidget } from "@/components/CloudflareWidget";
 import { CoolifyWidget } from "@/components/CoolifyWidget";
 import { GitHubStatsWidget } from "@/components/GitHubStatsWidget";
 import { CorporatePromptWidget } from "@/components/CorporatePromptWidget";
+import { N8NWidget } from "@/components/N8NWidget";
+import { ActivityFeedWidget } from "@/components/ActivityFeedWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -158,6 +160,15 @@ export default async function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <GitHubStatsWidget />
           <CorporatePromptWidget />
+        </div>
+      </section>
+
+      {/* Automationen & Activity */}
+      <section>
+        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Automationen & Aktivität</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <N8NWidget />
+          <ActivityFeedWidget />
         </div>
       </section>
 

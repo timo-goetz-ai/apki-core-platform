@@ -1,0 +1,58 @@
+{
+  "name": "aios-dashboard",
+  "title": "AIOS Dashboard",
+  "description": "Steuere deine lokalen Projekte und das AIOS Dashboard direkt aus Raycast",
+  "icon": "extension-icon.png",
+  "author": "TimoGoetz1988",
+  "categories": ["Developer Tools", "Productivity"],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "search-projects",
+      "title": "Projekt öffnen",
+      "description": "Durchsuche und öffne lokale Mac-Projekte",
+      "mode": "view"
+    },
+    {
+      "name": "deploy-service",
+      "title": "Service deployen",
+      "description": "Coolify Service direkt aus Raycast deployen",
+      "mode": "view"
+    },
+    {
+      "name": "copy-prompt",
+      "title": "Corporate Prompt kopieren",
+      "description": "System-Prompt aus dem Prompt-Speicher kopieren",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "dashboardUrl",
+      "title": "Dashboard URL",
+      "description": "z.B. https://agents.automation-plus-ki.de",
+      "type": "textfield",
+      "required": true
+    },
+    {
+      "name": "apiKey",
+      "title": "API Key",
+      "description": "DASHBOARD_API_KEY aus Coolify",
+      "type": "password",
+      "required": true
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.68.0",
+    "@raycast/utils": "^1.15.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.11",
+    "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "lint": "ray lint"
+  }
+}
