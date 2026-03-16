@@ -32,10 +32,10 @@ export default function TopBar({ apiStatus, currentTime }: TopBarProps) {
         left: 0,
         right: 0,
         zIndex: 50,
-        background: "rgba(255,255,255,0.92)",
+        background: "rgba(10,14,26,0.85)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid #e2e8f0",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
       }}
     >
       <div style={{
@@ -58,7 +58,7 @@ export default function TopBar({ apiStatus, currentTime }: TopBarProps) {
           }}>
             <Zap size={15} color="white" />
           </div>
-          <span style={{ fontWeight: 600, fontSize: 14, color: "#0f172a", letterSpacing: "-0.01em" }}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: "#e2e8f0", letterSpacing: "-0.01em" }}>
             Automation + KI
           </span>
         </Link>
@@ -76,9 +76,9 @@ export default function TopBar({ apiStatus, currentTime }: TopBarProps) {
                   borderRadius: 7,
                   fontSize: 13,
                   fontWeight: active ? 500 : 400,
-                  color: active ? "#0f172a" : "#64748b",
+                  color: active ? "#e2e8f0" : "#64748b",
                   textDecoration: "none",
-                  background: active ? "#f1f5f9" : "transparent",
+                  background: active ? "rgba(255,255,255,0.08)" : "transparent",
                   transition: "color 0.15s, background 0.15s",
                 }}
               >
