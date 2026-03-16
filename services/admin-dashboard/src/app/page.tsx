@@ -9,9 +9,7 @@ import { N8NWidget } from "@/components/N8NWidget";
 import { DockerControlWidget } from "@/components/DockerControlWidget";
 import { CloudflareWidget } from "@/components/CloudflareWidget";
 import { ServiceLinks } from "@/components/ServiceLinks";
-import { LeadFeedWidget } from "@/components/LeadFeedWidget";
-import { ProjektKanban } from "@/components/ProjektKanban";
-import { SecurityCheckWidget } from "@/components/SecurityCheckWidget";
+import { AgentOrchestratorWidget } from "@/components/AgentOrchestratorWidget";
 import { MCPHealthDashboard } from "@/components/MCPHealthDashboard";
 import { CrewLauncher } from "@/components/CrewLauncher";
 import { CoolifyWidget } from "@/components/CoolifyWidget";
@@ -296,20 +294,13 @@ export default function OverviewPage() {
           </motion.div>
         </motion.div>
 
-        {/* ── Row 3: Leads + Kanban + Security ─────────────────────────────── */}
+        {/* ── Row 3: Agent Orchestrator ─────────────────────────────────────── */}
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-20px" }} variants={stagger}
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}
-          className="aios-grid-r3"
+          style={{ marginBottom: 10 }}
         >
           <motion.div variants={fadeUp} className="bento-card" style={{ padding: "16px 18px" }}>
-            <LeadFeedWidget />
-          </motion.div>
-          <motion.div variants={fadeUp} className="bento-card" style={{ padding: "16px 18px" }}>
-            <ProjektKanban />
-          </motion.div>
-          <motion.div variants={fadeUp} className="bento-card" style={{ padding: "16px 18px" }}>
-            <SecurityCheckWidget />
+            <AgentOrchestratorWidget />
           </motion.div>
         </motion.div>
 
