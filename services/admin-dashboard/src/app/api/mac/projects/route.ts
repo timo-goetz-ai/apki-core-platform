@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyApiKey, unauthorizedResponse } from "@/lib/auth";
 import { macStore } from "@/lib/mac-store";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +9,6 @@ export const dynamic = "force-dynamic";
  * Header: Authorization: Bearer <DASHBOARD_API_KEY>
  */
 export async function GET(request: NextRequest) {
-  if (!verifyApiKey(request)) return unauthorizedResponse();
-
   const { searchParams } = new URL(request.url);
   const activity = searchParams.get("activity"); // filter: active | recent | slow | archived
   const type = searchParams.get("type");         // filter: node | python | go | ...

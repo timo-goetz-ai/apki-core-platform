@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyApiKey, unauthorizedResponse } from "@/lib/auth";
 import { promptStore, generateId, type CorporatePrompt, type PromptCategory } from "@/lib/prompt-store";
 
 export const dynamic = "force-dynamic";
 
 /** GET /api/corporate-prompts?category=coding&pinned=true */
 export async function GET(request: NextRequest) {
-  if (!verifyApiKey(request)) return unauthorizedResponse();
-
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category") as PromptCategory | null;
   const pinned   = searchParams.get("pinned");
