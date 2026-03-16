@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Send, Bot, User, Loader2, Zap, RotateCcw } from "lucide-react";
+import { Send, Bot, User, Loader2, Zap, RotateCcw, ChevronDown } from "lucide-react";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  model?: string;
   ts: Date;
 }
+
+interface ModelInfo {
+  id: string;
+  label: string;
+  free: boolean;
+  tools: boolean;
+}
+type ModelMap = Record<string, ModelInfo>;
 
 const QUICK_COMMANDS = [
   { label: "🟢 Service-Status", prompt: "Zeige mir den Status aller Services." },
@@ -118,14 +127,22 @@ export function CorpChatWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [models, setModels] = useState<ModelMap>({});
+  const [selectedModel, setSelectedModel] = useState("deepseek-chat");
+  const [showModelMenu, setShowModelMenu] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Check if chat API is configured
+  // Load models + check config
   useEffect(() => {
-    fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [{ role: "user", content: "ping" }] }),
-    }).then(r => setConfigured(r.status !== 503)).catch(() => setConfigured(false));
+    fetch("/api/chat")
+      .then(r => r.json())
+      .then((d: { models: ModelMap; default: string }) => {
+        setModels(d.models ?? {});
+        setSelectedModel(d.default ?? "deepseek-chat");
+        setConfigured(true);
+      })
+      .catch(() => setConfigured(false));
   }, []);
 
   useEffect(() => {
@@ -146,13 +163,13 @@ export function CorpChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({ messages: allMessages, modelKey: selectedModel }),
       });
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
       const assistantId = (Date.now() + 1).toString();
-      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", ts: new Date() }]);
+      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", model: selectedModel, ts: new Date() }]);
       setLoading(false);
 
       // Stream SSE
@@ -199,19 +216,55 @@ export function CorpChatWidget() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 440 }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>
-            KI-Steuerung
-          </p>
-          <p style={{ fontSize: 11, color: "var(--text2)", margin: "2px 0 0" }}>
-            {configured === null ? "Verbinde…"
-              : configured ? "Claude 3.5 · OpenRouter · Tool-Calling aktiv"
-              : "⚠️ OPENROUTER_API_KEY fehlt"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>KI-Steuerung</p>
+          <p style={{ fontSize: 11, color: configured === false ? "var(--warn)" : "var(--text2)", margin: "2px 0 0" }}>
+            {configured === null ? "Verbinde…" : configured ? "OpenRouter · Tool-Calling aktiv" : "⚠️ OPENROUTER_API_KEY fehlt"}
           </p>
         </div>
-        <button onClick={reset} title="Chat zurücksetzen" style={{
-          padding: 5, borderRadius: 6, background: "transparent",
+
+        {/* Model selector */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <button onClick={() => setShowModelMenu(v => !v)} style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "4px 9px", borderRadius: 7, fontSize: 11, fontWeight: 500, cursor: "pointer",
+            background: "var(--surface2)", color: "var(--text2)",
+            border: "1px solid var(--border)", whiteSpace: "nowrap",
+          }}>
+            {models[selectedModel]?.free && <span style={{ color: "#22c55e", fontSize: 9, fontWeight: 700 }}>FREE</span>}
+            {models[selectedModel]?.label ?? selectedModel}
+            <ChevronDown size={10} />
+          </button>
+          {showModelMenu && (
+            <div style={{
+              position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50,
+              background: "var(--surface)", border: "1px solid var(--border2)",
+              borderRadius: 9, overflow: "hidden", minWidth: 190,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            }}>
+              {Object.entries(models).map(([key, m]) => (
+                <button key={key} onClick={() => { setSelectedModel(key); setShowModelMenu(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    width: "100%", padding: "7px 12px", fontSize: 12, textAlign: "left",
+                    background: key === selectedModel ? "var(--accent-bg)" : "transparent",
+                    color: key === selectedModel ? "var(--accent)" : "var(--text2)",
+                    border: "none", cursor: "pointer", gap: 8,
+                  }}>
+                  <span>{m.label}</span>
+                  <span style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                    {m.free && <span style={{ fontSize: 9, color: "#22c55e", fontWeight: 700, background: "rgba(34,197,94,0.1)", padding: "1px 4px", borderRadius: 3 }}>FREE</span>}
+                    {m.tools && <span style={{ fontSize: 9, color: "#4f9cf9", background: "rgba(79,156,249,0.1)", padding: "1px 4px", borderRadius: 3 }}>TOOLS</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button onClick={reset} title="Reset" style={{
+          padding: 5, borderRadius: 6, background: "transparent", flexShrink: 0,
           border: "1px solid var(--border)", cursor: "pointer", color: "var(--muted)",
           display: "flex", alignItems: "center",
         }}>
