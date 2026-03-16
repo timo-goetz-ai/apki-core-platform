@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyApiKey, unauthorizedResponse } from "@/lib/auth";
 import { promptStore, generateId, type CorporatePrompt, type PromptCategory } from "@/lib/prompt-store";
 
 export const dynamic = "force-dynamic";
