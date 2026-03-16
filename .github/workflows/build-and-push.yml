@@ -28,18 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load secrets from 1Password
-        uses: 1password/load-secrets-action@v2
-        continue-on-error: true
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OPENROUTER_API_KEY: op://AIOS/AI-APIs/openrouter_api_key
-          ANTHROPIC_API_KEY: op://AIOS/AI-APIs/anthropic_api_key
-          JWT_SECRET: op://AIOS/Core/jwt_secret
-          POSTGRES_PASSWORD: op://AIOS/Core/postgres_password
-
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -77,25 +65,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load secrets from 1Password
-        uses: 1password/load-secrets-action@v2
-        continue-on-error: true
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          NOCODB_URL: op://AIOS/NocoDB/url
-          NOCODB_API_KEY: op://AIOS/NocoDB/api_key
-          NOCODB_MCP_PROJEKTE_TABLE_ID: op://AIOS/NocoDB/mcp_projekte_table_id
-          NOCODB_MCP_DIENSTE_TABLE_ID: op://AIOS/NocoDB/mcp_dienste_table_id
-          NOCODB_MCP_AUDIT_TABLE_ID: op://AIOS/NocoDB/mcp_audit_table_id
-          COOLIFY_URL: op://AIOS/Coolify/url
-          COOLIFY_TOKEN: op://AIOS/Coolify/token
-          COOLIFY_API_KEY: op://AIOS/Coolify/token
-          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare/api_token
-          DASHBOARD_API_KEY: op://AIOS/Core/dashboard_api_key
-          AGENTIC_OS_BASE_PATH: op://AIOS/AgenticOS/base_path
-
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -119,8 +88,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            NEXT_PUBLIC_NEXUS_API_URL=https://api.aios.automation-plus-ki.de
-            NEXT_PUBLIC_WS_URL=wss://api.aios.automation-plus-ki.de
+            NEXT_PUBLIC_NEXUS_API_URL=https://api.automation-plus-ki.de
+            NEXT_PUBLIC_WS_URL=wss://api.automation-plus-ki.de
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -134,18 +103,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Load secrets from 1Password
-        uses: 1password/load-secrets-action@v2
-        continue-on-error: true
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OPENROUTER_API_KEY: op://AIOS/AI-APIs/openrouter_api_key
-          ANTHROPIC_API_KEY: op://AIOS/AI-APIs/anthropic_api_key
-          N8N_API_KEY: op://AIOS/N8N/api_key
-          NOCODB_API_KEY: op://AIOS/NocoDB/api_key
 
       - uses: docker/login-action@v3
         with:
