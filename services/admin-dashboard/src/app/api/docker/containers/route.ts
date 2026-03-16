@@ -1,35 +1,40 @@
 import { NextResponse } from "next/server";
+import http from "http";
 
 export const dynamic = "force-dynamic";
 
-const DOCKER_HOST = process.env.DOCKER_HOST ?? "tcp://localhost:2375";
+const DOCKER_HOST = process.env.DOCKER_HOST ?? "unix:///var/run/docker.sock";
 
-function dockerBaseUrl(): string {
-  if (DOCKER_HOST.startsWith("tcp://")) {
-    return DOCKER_HOST.replace("tcp://", "http://");
-  }
-  // unix socket not supported in Edge/Node fetch — use tcp
-  return "http://localhost:2375";
+function dockerRequest(path: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const isUnix = DOCKER_HOST.startsWith("unix://");
+    const socketPath = isUnix ? DOCKER_HOST.replace("unix://", "") : undefined;
+    const tcpHost = !isUnix ? DOCKER_HOST.replace("tcp://", "").split(":")[0] : undefined;
+    const tcpPort = !isUnix ? parseInt(DOCKER_HOST.split(":").pop() ?? "2375") : undefined;
+
+    const options: http.RequestOptions = isUnix
+      ? { socketPath, path, method: "GET", headers: { Host: "localhost" } }
+      : { hostname: tcpHost, port: tcpPort, path, method: "GET" };
+
+    const req = http.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error("Invalid JSON from Docker")); }
+      });
+    });
+    req.setTimeout(5000, () => { req.destroy(); reject(new Error("Docker timeout")); });
+    req.on("error", reject);
+    req.end();
+  });
 }
 
-/**
- * GET /api/docker/containers
- * Proxy zur Docker Remote API auf dem Mac.
- * Setzt DOCKER_HOST=tcp://mac-local-ip:2375 in Coolify.
- */
 export async function GET() {
   try {
-    const res = await fetch(`${dockerBaseUrl()}/containers/json?all=1`, {
-      next: { revalidate: 0 },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (!res.ok) throw new Error(`Docker API: ${res.status}`);
-    const containers = await res.json();
+    const containers = await dockerRequest("/containers/json?all=1");
     return NextResponse.json({ containers });
   } catch (e) {
-    return NextResponse.json(
-      { error: String(e), containers: [] },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: String(e), containers: [] }, { status: 503 });
   }
 }
