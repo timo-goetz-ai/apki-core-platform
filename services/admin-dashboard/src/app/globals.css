@@ -5,58 +5,94 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* ── Design System: Timo Götz / automation-plus-ki.de ───────────────────── */
+/* Dark:  Charcoal #2B2D31 base + Graphite #3C3F44 cards                     */
+/* Light: Zinc    #F4F4F5  base + White    #FFFFFF   cards                   */
+/* Accent: AI Blue #5B7FA8 — sparsam einsetzen                               */
+/* Typography: Inter + JetBrains Mono | Grid: 8px | Radius: 8px              */
+
+:root {
+  /* Dark theme (default) */
+  --bg:           #2B2D31;
+  --surface:      #3C3F44;
+  --surface2:     #45484F;
+  --border:       rgba(255,255,255,0.08);
+  --border2:      rgba(255,255,255,0.14);
+  --text:         #E8E8EC;
+  --text2:        #A0A0A8;
+  --muted:        #6B6E75;
+  --accent:       #5B7FA8;
+  --accent-h:     #7098C0;
+  --accent-bg:    rgba(91,127,168,0.12);
+  --accent-border:rgba(91,127,168,0.25);
+  --positive:     #4CAF72;
+  --warn:         #E8A838;
+  --danger:       #E05050;
+}
+
+:root[data-theme="light"] {
+  --bg:           #F4F4F5;
+  --surface:      #FFFFFF;
+  --surface2:     #F9F9FA;
+  --border:       rgba(0,0,0,0.08);
+  --border2:      rgba(0,0,0,0.14);
+  --text:         #18181B;
+  --text2:        #52525B;
+  --muted:        #A1A1AA;
+  --accent:       #5B7FA8;
+  --accent-h:     #4A6E97;
+  --accent-bg:    rgba(91,127,168,0.10);
+  --accent-border:rgba(91,127,168,0.22);
+  --positive:     #16A34A;
+  --warn:         #CA8A04;
+  --danger:       #DC2626;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background: #0a0e1a;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Segoe UI", system-ui, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.25s, color 0.25s;
 }
 
-/* CSS Variables für alle Widgets */
-:root {
-  --surface:  #111827;
-  --surface2: #1a2235;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.12);
-  --text:     #e2e8f0;
-  --muted:    #64748b;
-  --accent:   #1d6ef5;
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 }
 
-/* Bento Card */
+/* ── Bento Card ────────────────────────────────────────────────────────── */
 .bento-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 8px;
+  transition: background 0.25s, border-color 0.25s;
 }
 
-/* Status dots */
-.status-online  { background: #22c55e; }
-.status-warn    { background: #f59e0b; }
-.status-offline { background: #ef4444; }
+/* ── Status dots ───────────────────────────────────────────────────────── */
+.status-online  { background: var(--positive); }
+.status-warn    { background: var(--warn); }
+.status-offline { background: var(--danger); }
 
-.live-dot {
-  animation: live-pulse 2s ease-in-out infinite;
-}
+.live-dot { animation: live-pulse 2s ease-in-out infinite; }
 
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+  50%       { opacity: 0.3; }
 }
 
-::-webkit-scrollbar       { width: 5px; }
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-::selection { background: rgba(29,110,245,0.3); color: #f1f5f9; }
+::selection { background: var(--accent-bg); color: var(--text); }
 
 :focus-visible {
-  outline: 2px solid rgba(29,110,245,0.6);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
