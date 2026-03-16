@@ -7,17 +7,21 @@ import { NextRequest } from "next/server";
  */
 export function verifyApiKey(request: NextRequest): boolean {
   const apiKey = process.env.DASHBOARD_API_KEY;
-  if (!apiKey) {
-    console.warn("DASHBOARD_API_KEY ist nicht gesetzt – API ist ungeschützt!");
-    return false;
+  // Wenn kein Key gesetzt → offen (interne Nutzung, hinter Traefik-Auth)
+  if (!apiKey) return true;
+
+  // Bearer Token im Authorization-Header
+  const authHeader = request.headers.get("authorization") ?? "";
+  if (authHeader.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    if (token && timingSafeEqual(token, apiKey)) return true;
   }
 
-  const authHeader = request.headers.get("authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) return false;
+  // Alternativ: X-API-Key Header (für Server-Side-Calls)
+  const xKey = request.headers.get("x-api-key") ?? "";
+  if (xKey && timingSafeEqual(xKey, apiKey)) return true;
 
-  const token = authHeader.slice(7).trim();
-  // Constant-time comparison um Timing-Attacks zu verhindern
-  return timingSafeEqual(token, apiKey);
+  return false;
 }
 
 function timingSafeEqual(a: string, b: string): boolean {

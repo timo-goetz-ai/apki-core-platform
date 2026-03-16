@@ -42,9 +42,7 @@ if (!g.__n8nWebhooks) {
   ] as N8NWebhook[]).filter(w => w.url);
 }
 
-export async function GET(request: NextRequest) {
-  if (!verifyApiKey(request)) return unauthorizedResponse();
-
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     webhooks: (g.__n8nWebhooks ?? []).map(w => ({
       id: w.id, name: w.name, method: w.method, description: w.description,
