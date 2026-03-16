@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
 const HEALTH_CHECKS = [
-  { id: "nexus-core",     url: "https://api.automation-plus-ki.de/health" },
-  { id: "infra",          url: "https://infra.automation-plus-ki.de/api/health" },
+  // Interne Docker-Hostnamen für Services auf demselben Server (kein Cloudflare-Loop)
+  { id: "nexus-core",     url: "http://aios-nexus-core:8000/health" },
+  { id: "infra",          url: "http://046279494c60465d88e337efb54d5504-211054072190:3000/api/health" },
+  { id: "voice",          url: "http://voice-api-ckgw404o88ow0ccs00cow8k8:8000/health" },
+  // Homestack-Services via öffentliche URL (eigenes Netzwerk)
   { id: "n8n",            url: "https://n8n.automation-plus-ki.de/healthz" },
   { id: "grafana",        url: "https://grafana.automation-plus-ki.de/api/health" },
   { id: "prometheus",     url: "https://prometheus.automation-plus-ki.de/-/healthy" },
@@ -11,7 +14,6 @@ const HEALTH_CHECKS = [
   { id: "appflowy",       url: "https://appflowy.automation-plus-ki.de" },
   { id: "mailpit",        url: "https://mail.automation-plus-ki.de" },
   { id: "agents",         url: "https://agents.automation-plus-ki.de" },
-  { id: "voice",          url: "https://voice.automation-plus-ki.de" },
   { id: "qdrant",         url: "https://qdrant.automation-plus-ki.de/healthz" },
   { id: "homepage",       url: "https://dashboard.automation-plus-ki.de" },
   { id: "mcp-grafana",    url: "https://mcp-grafana.automation-plus-ki.de/health" },
