@@ -74,26 +74,6 @@
       "headers": {}
     },
     {
-      "id": "hoppscotch",
-      "name": "Hoppscotch",
-      "url": "https://hoppscotch.automation-plus-ki.de",
-      "icon": "zap",
-      "category": "homestack",
-      "healthEndpoint": "https://hoppscotch.automation-plus-ki.de",
-      "description": "API Client",
-      "headers": {}
-    },
-    {
-      "id": "browserless",
-      "name": "Browserless",
-      "url": "https://browserless.automation-plus-ki.de",
-      "icon": "globe",
-      "category": "homestack",
-      "healthEndpoint": "https://browserless.automation-plus-ki.de/pressure",
-      "description": "Browser Automation",
-      "headers": {}
-    },
-    {
       "id": "mailpit",
       "name": "Mailpit",
       "url": "https://mail.automation-plus-ki.de",
@@ -111,6 +91,16 @@
       "category": "homestack",
       "healthEndpoint": "https://appflowy.automation-plus-ki.de",
       "description": "Notes & Projects",
+      "headers": {}
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage",
+      "url": "https://dashboard.automation-plus-ki.de",
+      "icon": "home",
+      "category": "homestack",
+      "healthEndpoint": "https://dashboard.automation-plus-ki.de",
+      "description": "Service Dashboard (gluetun)",
       "headers": {}
     },
     {
@@ -262,35 +252,15 @@
       "healthEndpoint": "https://mcp-nocodb.automation-plus-ki.de/health",
       "description": "NocoDB MCP Server",
       "headers": {}
-    },
-    {
-      "id": "mcp-nextcloud",
-      "name": "MCP Nextcloud",
-      "url": "https://mcp-nextcloud.automation-plus-ki.de",
-      "icon": "cpu",
-      "category": "mcp",
-      "healthEndpoint": "https://mcp-nextcloud.automation-plus-ki.de/health",
-      "description": "Nextcloud MCP Server ⚠️",
-      "headers": {}
-    },
-    {
-      "id": "mcp-vaultwarden",
-      "name": "MCP Vaultwarden",
-      "url": "https://mcp-vaultwarden.automation-plus-ki.de",
-      "icon": "cpu",
-      "category": "mcp",
-      "healthEndpoint": "https://mcp-vaultwarden.automation-plus-ki.de/health",
-      "description": "Vaultwarden MCP Server ⚠️",
-      "headers": {}
     }
   ],
   "categories": [
-    { "id": "infrastructure", "label": "Infrastruktur", "icon": "server" },
-    { "id": "auth", "label": "Auth & SSO", "icon": "shield" },
-    { "id": "monitoring", "label": "Monitoring", "icon": "activity" },
-    { "id": "automation", "label": "Automation", "icon": "workflow" },
-    { "id": "ai", "label": "AI Projects", "icon": "bot" },
-    { "id": "homestack", "label": "Homestack", "icon": "home" },
-    { "id": "mcp", "label": "MCP Server", "icon": "cpu" }
+    { "id": "infrastructure", "label": "Infrastruktur",  "icon": "server"   },
+    { "id": "auth",           "label": "Auth & SSO",     "icon": "shield"   },
+    { "id": "monitoring",     "label": "Monitoring",     "icon": "activity" },
+    { "id": "automation",     "label": "Automation",     "icon": "workflow" },
+    { "id": "ai",             "label": "AI Projects",    "icon": "bot"      },
+    { "id": "homestack",      "label": "Homestack",      "icon": "home"     },
+    { "id": "mcp",            "label": "MCP Server",     "icon": "cpu"      }
   ]
 }
