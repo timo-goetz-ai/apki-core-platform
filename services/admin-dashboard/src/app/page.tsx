@@ -15,9 +15,9 @@ import { MCPHealthDashboard } from "@/components/MCPHealthDashboard";
 import { CrewLauncher } from "@/components/CrewLauncher";
 import { CoolifyWidget } from "@/components/CoolifyWidget";
 import {
-  Server, Activity, Bot, Database, Shield, ExternalLink,
+  Server, Activity, Bot, Database, Shield,
   Cpu, BarChart2, Terminal, Network, Mic, Home, Mail,
-  RefreshCw, Workflow, Layers, Boxes, GitBranch,
+  RefreshCw, Workflow, Layers, Boxes,
 } from "lucide-react";
 
 // ── Animation ──────────────────────────────────────────────────────────────
@@ -118,21 +118,15 @@ export default function OverviewPage() {
   const onlineCount = Object.values(serviceHealth).filter(s => s.status === "online").length;
   const totalChecked = Object.keys(serviceHealth).length;
 
-  const renderServiceCard = (svc: { id: string; name: string; role?: string; url: string; icon?: React.ReactNode }) => {
+  const renderServiceCard = (svc: { id: string; name: string; role?: string; url?: string; icon?: React.ReactNode }) => {
     const st = getStatus(svc.id);
     const sc = STATUS_CFG[st];
     const lat = getLatency(svc.id);
     return (
-      <a key={svc.id} href={svc.url} target="_blank" rel="noopener noreferrer"
-        style={{
-          display: "flex", flexDirection: "column", gap: 5, padding: "9px 10px",
-          borderRadius: 8, textDecoration: "none",
-          background: "var(--surface2)", border: "1px solid var(--border)",
-          transition: "border-color 0.15s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--border2)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--border)"; }}
-      >
+      <div key={svc.id} style={{
+        display: "flex", flexDirection: "column", gap: 5, padding: "9px 10px",
+        borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border)",
+      }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ color: "var(--muted)" }}>{svc.icon ?? <Cpu size={13} />}</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10 }}>
@@ -149,7 +143,7 @@ export default function OverviewPage() {
             {lat ?? (svc.role ?? "MCP")}
           </p>
         </div>
-      </a>
+      </div>
     );
   };
 
@@ -355,49 +349,6 @@ export default function OverviewPage() {
           </motion.div>
         </motion.section>
 
-        {/* ── Externe Services ──────────────────────────────────────────────── */}
-        <motion.section
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-20px" }} variants={stagger}
-          style={{ marginBottom: 36 }}
-        >
-          <motion.div variants={fadeUp}>
-            <SectionHeader label="Externe Services" />
-          </motion.div>
-          <motion.div variants={fadeUp} className="bento-card" style={{ padding: "14px 18px" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[
-                { label: "Swagger UI",   url: "https://api.automation-plus-ki.de/docs" },
-                { label: "Grafana",      url: "https://grafana.automation-plus-ki.de" },
-                { label: "n8n",          url: "https://n8n.automation-plus-ki.de" },
-                { label: "Coolify",      url: "https://coolify.automation-plus-ki.de" },
-                { label: "NocoDB",       url: "https://nocodb.automation-plus-ki.de" },
-                { label: "Authentik",    url: "https://auth.automation-plus-ki.de" },
-                { label: "AppFlowy",     url: "https://appflowy.automation-plus-ki.de" },
-                { label: "Prometheus",   url: "https://prometheus.automation-plus-ki.de" },
-                { label: "Mailpit",      url: "https://mail.automation-plus-ki.de" },
-                { label: "Qdrant",       url: "https://qdrant.automation-plus-ki.de" },
-                { label: "Alertmanager", url: "https://alertmanager.automation-plus-ki.de" },
-                { label: "Voice AI",     url: "https://voice.automation-plus-ki.de" },
-                { label: "Agents",       url: "https://agents.automation-plus-ki.de" },
-                { label: "Homepage",     url: "https://dashboard.automation-plus-ki.de" },
-              ].map(link => (
-                <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 500,
-                    textDecoration: "none", color: "var(--text2)",
-                    background: "var(--surface2)", border: "1px solid var(--border)",
-                  }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.color = "var(--accent)"; el.style.borderColor = "var(--accent-border)"; }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.color = "var(--text2)"; el.style.borderColor = "var(--border)"; }}
-                >
-                  <ExternalLink size={10} />
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </motion.div>
-        </motion.section>
 
         {/* Footer */}
         <motion.footer
