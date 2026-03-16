@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "CLOUDFLARE_API_TOKEN nicht gesetzt", zones: [] }, { status: 200 });
   }
 
-  const authHeaders = email
+  const authHeaders: Record<string, string> = email
     ? { "X-Auth-Key": token, "X-Auth-Email": email, "Content-Type": "application/json" }
     : { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
