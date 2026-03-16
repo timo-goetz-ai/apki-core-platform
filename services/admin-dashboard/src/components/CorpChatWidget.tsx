@@ -11,12 +11,7 @@ interface Message {
   ts: Date;
 }
 
-interface ModelInfo {
-  id: string;
-  label: string;
-  free: boolean;
-  tools: boolean;
-}
+import type { ModelInfo } from "@/lib/chat-models";
 type ModelMap = Record<string, ModelInfo>;
 
 const QUICK_COMMANDS = [

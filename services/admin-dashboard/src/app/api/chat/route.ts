@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { MODELS, DEFAULT_MODEL } from "@/lib/chat-models";
 
 export const dynamic = "force-dynamic";
 
@@ -6,19 +7,6 @@ const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? "";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_DOMAIN
   ? `https://admin.${process.env.NEXT_PUBLIC_BASE_DOMAIN}`
   : "http://localhost:3000";
-
-// ── Available models ──────────────────────────────────────────────────────────
-export const MODELS: Record<string, { id: string; label: string; free: boolean; tools: boolean }> = {
-  "deepseek-chat":    { id: "deepseek/deepseek-chat",                   label: "DeepSeek V3",        free: false, tools: true  },
-  "deepseek-r1-free": { id: "deepseek/deepseek-r1:free",                label: "DeepSeek R1 (free)", free: true,  tools: false },
-  "deepseek-r1":      { id: "deepseek/deepseek-r1",                     label: "DeepSeek R1",        free: false, tools: false },
-  "gemini-flash":     { id: "google/gemini-flash-1.5",                  label: "Gemini Flash",       free: false, tools: true  },
-  "gemini-free":      { id: "google/gemini-2.0-flash-exp:free",         label: "Gemini 2.0 (free)",  free: true,  tools: true  },
-  "claude-haiku":     { id: "anthropic/claude-3-haiku",                 label: "Claude 3 Haiku",     free: false, tools: true  },
-  "claude-sonnet":    { id: "anthropic/claude-3.5-sonnet",              label: "Claude 3.5 Sonnet",  free: false, tools: true  },
-  "llama-free":       { id: "meta-llama/llama-3.3-70b-instruct:free",   label: "Llama 3.3 (free)",   free: true,  tools: true  },
-};
-const DEFAULT_MODEL = "deepseek-chat";
 
 // ── Tool definitions the LLM can call ────────────────────────────────────────
 const TOOLS = [
