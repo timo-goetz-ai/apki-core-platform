@@ -26,12 +26,6 @@ const NAV = [
   },
 ];
 
-const EXTERNAL = [
-  { label: "n8n",      url: "https://n8n.automation-plus-ki.de" },
-  { label: "Grafana",  url: "https://grafana.automation-plus-ki.de" },
-  { label: "NocoDB",   url: "https://nocodb.automation-plus-ki.de" },
-  { label: "Coolify",  url: "https://coolify.automation-plus-ki.de" },
-];
 
 export default function TopBar({ apiStatus, currentTime }: TopBarProps) {
   const pathname = usePathname();
@@ -159,33 +153,6 @@ export default function TopBar({ apiStatus, currentTime }: TopBarProps) {
             );
           })}
         </nav>
-
-        {/* External Quick Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
-          {EXTERNAL.map(ext => (
-            <a key={ext.label} href={ext.url} target="_blank" rel="noopener noreferrer"
-              style={{
-                padding: "3px 9px", borderRadius: 5, fontSize: 11, fontWeight: 500,
-                color: muted, textDecoration: "none",
-                border: `1px solid transparent`,
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = txt;
-                el.style.borderColor = dropBorder;
-                el.style.background = activeBg;
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = muted;
-                el.style.borderColor = "transparent";
-                el.style.background = "transparent";
-              }}
-            >
-              {ext.label}
-            </a>
-          ))}
-        </div>
 
         {/* Right: time + status + theme */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
