@@ -10,6 +10,7 @@ import { DockerControlWidget } from "@/components/DockerControlWidget";
 import { CloudflareWidget } from "@/components/CloudflareWidget";
 import { ServiceLinks } from "@/components/ServiceLinks";
 import { AgentOrchestratorWidget } from "@/components/AgentOrchestratorWidget";
+import { CorpChatWidget } from "@/components/CorpChatWidget";
 import { MCPHealthDashboard } from "@/components/MCPHealthDashboard";
 import { CrewLauncher } from "@/components/CrewLauncher";
 import { CoolifyWidget } from "@/components/CoolifyWidget";
@@ -328,6 +329,16 @@ export default function OverviewPage() {
         >
           <motion.div variants={fadeUp} className="bento-card" style={{ padding: "16px 18px" }}>
             <CrewLauncher onExecutionStart={() => {}} />
+          </motion.div>
+        </motion.div>
+
+        {/* ── Row 5b: KI-Steuerung (Corporate Chat) ────────────────────────── */}
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-20px" }} variants={stagger}
+          style={{ marginBottom: 10 }}
+        >
+          <motion.div variants={fadeUp} className="bento-card" style={{ padding: "16px 18px" }}>
+            <CorpChatWidget />
           </motion.div>
         </motion.div>
 
