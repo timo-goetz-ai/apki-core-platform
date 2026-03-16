@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 const CF_BASE = "https://api.cloudflare.com/client/v4";
 
 export async function GET() {
-  const token = process.env.CLOUDFLARE_API_TOKEN;
+  const token = process.env.CLOUDFLARE_API_TOKEN ?? process.env.CLOUDFLARE_API_KEY;
+  const email = process.env.CLOUDFLARE_EMAIL;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   if (!token || !accountId) {
     return NextResponse.json({
@@ -14,11 +15,15 @@ export async function GET() {
     }, { status: 200 });
   }
 
+  const authHeaders = email
+    ? { "X-Auth-Key": token, "X-Auth-Email": email, "Content-Type": "application/json" }
+    : { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
   try {
     const res = await fetch(
       `${CF_BASE}/accounts/${accountId}/cfd_tunnel?is_deleted=false&per_page=50`,
       {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: authHeaders,
         next: { revalidate: 0 },
         signal: AbortSignal.timeout(8000),
       }
