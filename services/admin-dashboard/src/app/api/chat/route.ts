@@ -1,313 +1,482 @@
-import { NextRequest } from "next/server";
-import { MODELS, DEFAULT_MODEL, getModelsByProvider } from "@/lib/chat-models";
+import { NextRequest, NextResponse } from 'next/server';
+import { MODELS, DEFAULT_MODEL } from '@/lib/chat-models';
 
-export const dynamic = "force-dynamic";
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? '';
+const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY ?? '';
+const GOOGLE_KEY     = process.env.GOOGLE_AI_API_KEY ?? '';
+const OLLAMA_URL     = process.env.OLLAMA_BASE_URL ?? 'http://ollama:11434';
+const N8N_URL        = process.env.N8N_BASE_URL ?? 'https://n8n.automation-plus-ki.de';
+const N8N_KEY        = process.env.N8N_API_KEY ?? '';
+const COOLIFY_URL    = process.env.COOLIFY_URL ?? 'https://coolify.automation-plus-ki.de';
+const COOLIFY_KEY    = process.env.COOLIFY_API_KEY ?? '';
+const CF_TOKEN       = process.env.CLOUDFLARE_API_TOKEN ?? '';
 
-// ── API Keys & Endpoints ──────────────────────────────────────────────────────
-const OPENROUTER_KEY  = process.env.OPENROUTER_API_KEY ?? "";
-const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY  ?? "";
-const GOOGLE_AI_KEY   = process.env.GOOGLE_AI_API_KEY  ?? "";
-const OLLAMA_BASE     = process.env.OLLAMA_BASE_URL     ?? "http://ollama:11434";
-const ADMIN_BASE      = process.env.NEXT_PUBLIC_BASE_DOMAIN
-  ? `https://admin.${process.env.NEXT_PUBLIC_BASE_DOMAIN}`
-  : "http://localhost:3000";
-
-// ── Shared types ──────────────────────────────────────────────────────────────
-type ChatMessage = { role: string; content: string };
-
-// ── Tool definitions (OpenAI format) ─────────────────────────────────────────
-const TOOLS_OPENAI = [
-  { type: "function", function: { name: "get_service_health",   description: "Gesundheitsstatus aller 25+ Services (online/offline/latenz).", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "list_docker_containers", description: "Alle Docker-Container mit Name, Status und Image.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "get_coolify_services",  description: "Alle Coolify-Apps mit Status.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "get_cloudflare_zones",  description: "Cloudflare DNS-Zonen und Status.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "get_github_stats",      description: "GitHub Repository-Statistiken.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "get_n8n_webhooks",      description: "Konfigurierte n8n Webhooks.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "docker_action", description: "Docker-Container starten, stoppen oder restarten.", parameters: { type: "object", required: ["container_id", "action"], properties: { container_id: { type: "string" }, action: { type: "string", enum: ["start", "stop", "restart"] } } } } },
+// ─── Tool definitions (OpenAI format) ───────────────────────────────────────
+const TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_service_health',
+      description: 'Check health status of all infrastructure services',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_docker_containers',
+      description: 'List all Docker containers with status',
+      parameters: { type: 'object', properties: { all: { type: 'boolean', description: 'Include stopped containers' } }, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_coolify_services',
+      description: 'List all Coolify managed applications and services',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_cloudflare_zones',
+      description: 'List Cloudflare DNS zones and their status',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_github_stats',
+      description: 'Get GitHub repository statistics',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_n8n_webhooks',
+      description: 'List n8n workflows and webhook configurations',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'docker_action',
+      description: 'Start, stop, or restart a Docker container',
+      parameters: {
+        type: 'object',
+        properties: {
+          container_id: { type: 'string', description: 'Container ID or name' },
+          action: { type: 'string', enum: ['start', 'stop', 'restart'] },
+        },
+        required: ['container_id', 'action'],
+      },
+    },
+  },
 ];
 
-// Anthropic tool format (input_schema instead of parameters)
-const TOOLS_ANTHROPIC = TOOLS_OPENAI.map(t => ({
-  name: t.function.name,
-  description: t.function.description,
-  input_schema: t.function.parameters,
-}));
+const SYSTEM_PROMPT = `Du bist AIOS — der KI-Assistent für die Infrastruktur von automation-plus-ki.de.
 
-// ── System prompt ─────────────────────────────────────────────────────────────
-const SYSTEM = `Du bist der KI-Assistent des Admin-Dashboards von Timo Götz (automation-plus-ki.de).
-Du hast Tools für: Service-Health, Docker Container, Coolify Apps, Cloudflare DNS, GitHub Stats, n8n Webhooks, Docker Aktionen.
-Server: Hetzner CPX42, Nürnberg, 46.224.145.109 · Stack: Traefik, Coolify, Docker, n8n, NocoDB, Grafana, Prometheus, Authentik.
-Verhalte dich proaktiv: Ruf Tools direkt auf wenn der Nutzer nach Status fragt. Antworte auf Deutsch, präzise und klar.`;
+Server: Hetzner CPX42 (46.224.145.109), Ubuntu 22.04, 8 vCPU, 16GB RAM
+Stack: Docker + Coolify, Traefik reverse proxy
 
-// ── Tool executor ─────────────────────────────────────────────────────────────
-async function executeTool(name: string, args: Record<string, string>): Promise<string> {
-  const apiKey = process.env.DASHBOARD_API_KEY ?? "";
-  const h: Record<string, string> = { "Content-Type": "application/json", ...(apiKey ? { "x-api-key": apiKey } : {}) };
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? ADMIN_BASE;
+Dienste:
+- n8n (Workflows): https://n8n.automation-plus-ki.de
+- NocoDB (Datenbank): https://nocodb.automation-plus-ki.de
+- Grafana (Monitoring): https://grafana.automation-plus-ki.de
+- Prometheus: https://prometheus.automation-plus-ki.de
+- Qdrant (Vektoren): https://qdrant.automation-plus-ki.de
+- Coolify (Deployment): https://coolify.automation-plus-ki.de
+- Appflowy (Docs): eigener Service
+- Steel Browser (Scraping): eigener Service
+- Vaultwarden (Passwörter): eigener Service
+- Mailpit (Mail): eigener Service
+- Redis, PostgreSQL: interne Services
+- 19 MCP Server: mcp-*.automation-plus-ki.de
+
+Admin Dashboard: https://admin.automation-plus-ki.de
+
+Du hast Zugriff auf Tools um Container zu steuern, Services zu prüfen und Infos abzurufen.
+Antworte präzise auf Deutsch. Nutze Markdown für strukturierte Ausgaben.`;
+
+// ─── Tool execution ──────────────────────────────────────────────────────────
+async function executeTool(name: string, args: Record<string, unknown>): Promise<string> {
   try {
     switch (name) {
-      case "get_service_health": {
-        const r = await fetch(`${base}/api/services`, { headers: h, signal: AbortSignal.timeout(10000) });
-        const d = await r.json() as Record<string, { status: string; latency?: number }>;
-        const entries = Object.entries(d);
-        const online = entries.filter(([, v]) => v.status === "online").length;
-        return `${online}/${entries.length} online:\n` + entries.map(([k, v]) => `${k}: ${v.status}${v.latency ? ` (${v.latency}ms)` : ""}`).join("\n");
+      case 'get_service_health': {
+        const services = [
+          { name: 'n8n', url: `${N8N_URL}/healthz` },
+          { name: 'NocoDB', url: 'https://nocodb.automation-plus-ki.de/api/v1/health' },
+          { name: 'Grafana', url: 'https://grafana.automation-plus-ki.de/api/health' },
+          { name: 'Coolify', url: `${COOLIFY_URL}/api/v1/version` },
+        ];
+        const results = await Promise.allSettled(
+          services.map(async (s) => {
+            const start = Date.now();
+            const r = await fetch(s.url, { signal: AbortSignal.timeout(4000) });
+            return { name: s.name, status: r.ok ? 'online' : 'degraded', latency: Date.now() - start };
+          })
+        );
+        const data = results.map((r, i) =>
+          r.status === 'fulfilled' ? r.value : { name: services[i].name, status: 'offline', latency: 0 }
+        );
+        return JSON.stringify(data, null, 2);
       }
-      case "list_docker_containers": {
-        const r = await fetch(`${base}/api/docker/containers`, { headers: h, signal: AbortSignal.timeout(8000) });
-        const d = await r.json() as { containers: Array<{ Names: string[]; State: string; Image: string }> };
-        return `${(d.containers ?? []).length} Container:\n` + (d.containers ?? []).slice(0, 30).map(c => `${c.Names?.[0]?.replace("/", "") ?? "?"} — ${c.State} — ${c.Image?.split(":")[0]}`).join("\n");
+      case 'list_docker_containers': {
+        const url = `https://admin.automation-plus-ki.de/api/docker/containers${args.all ? '?all=true' : ''}`;
+        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        const data = await r.json();
+        return JSON.stringify(data, null, 2);
       }
-      case "get_coolify_services": {
-        const r = await fetch(`${base}/api/coolify/services`, { headers: h, signal: AbortSignal.timeout(8000) });
-        const d = await r.json() as { services: Array<{ name: string; status: string; kind: string; fqdn?: string }> };
-        return `${(d.services ?? []).length} Apps:\n` + (d.services ?? []).map(s => `${s.name} [${s.kind}] — ${s.status}${s.fqdn ? ` → ${s.fqdn}` : ""}`).join("\n");
+      case 'get_coolify_services': {
+        if (!COOLIFY_KEY) return 'Coolify API key not configured';
+        const r = await fetch(`${COOLIFY_URL}/api/v1/applications`, {
+          headers: { Authorization: `Bearer ${COOLIFY_KEY}` },
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await r.json();
+        return JSON.stringify(data, null, 2);
       }
-      case "get_cloudflare_zones": {
-        const r = await fetch(`${base}/api/cloudflare/zones`, { headers: h, signal: AbortSignal.timeout(8000) });
-        const d = await r.json() as { zones: Array<{ name: string; status: string; plan: string }> };
-        return "Zonen:\n" + (d.zones ?? []).map(z => `${z.name} — ${z.status} (${z.plan})`).join("\n");
+      case 'get_cloudflare_zones': {
+        if (!CF_TOKEN) return 'Cloudflare token not configured';
+        const r = await fetch('https://api.cloudflare.com/client/v4/zones?per_page=20', {
+          headers: { Authorization: `Bearer ${CF_TOKEN}` },
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await r.json();
+        return JSON.stringify(data?.result?.map((z: { name: string; status: string; id: string }) => ({ name: z.name, status: z.status, id: z.id })) ?? [], null, 2);
       }
-      case "get_github_stats": {
-        const r = await fetch(`${base}/api/github/stats`, { headers: h, signal: AbortSignal.timeout(8000) });
-        const d = await r.json() as { stats: Record<string, unknown> };
-        return `GitHub:\n${JSON.stringify(d.stats, null, 2)}`;
+      case 'get_n8n_webhooks': {
+        if (!N8N_KEY || N8N_KEY === 'BITTE_KONFIGURIEREN') return 'n8n API key not configured';
+        const r = await fetch(`${N8N_URL}/api/v1/workflows?active=true&limit=20`, {
+          headers: { 'X-N8N-API-KEY': N8N_KEY },
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await r.json();
+        return JSON.stringify(data, null, 2);
       }
-      case "get_n8n_webhooks": {
-        const r = await fetch(`${base}/api/n8n/webhooks`, { headers: h, signal: AbortSignal.timeout(5000) });
-        const d = await r.json() as { webhooks: Array<{ name: string; configured: boolean }> };
-        return "Webhooks:\n" + ((d.webhooks ?? []).map(w => `${w.name} — ${w.configured ? "✓" : "✗"}`).join("\n") || "Keine");
+      case 'get_github_stats': {
+        const r = await fetch('https://api.github.com/users/timogoetz1988/repos?sort=updated&per_page=10', {
+          headers: { 'User-Agent': 'AIOS-Dashboard' },
+          signal: AbortSignal.timeout(8000),
+        });
+        const repos = await r.json();
+        return JSON.stringify(repos.map((repo: { name: string; stargazers_count: number; updated_at: string; language: string }) => ({
+          name: repo.name, stars: repo.stargazers_count, updated: repo.updated_at, language: repo.language
+        })), null, 2);
       }
-      case "docker_action": {
-        const r = await fetch(`${base}/api/docker/containers/${args.container_id}/${args.action}`, { method: "POST", headers: h, signal: AbortSignal.timeout(12000) });
-        const d = await r.json() as { ok: boolean; status: number };
-        return d.ok ? `✓ ${args.container_id} wurde ${args.action === "start" ? "gestartet" : args.action === "stop" ? "gestoppt" : "neugestartet"}.` : `Fehler: HTTP ${d.status}`;
+      case 'docker_action': {
+        const r = await fetch(`https://admin.automation-plus-ki.de/api/docker/containers/${args.container_id}/${args.action}`, {
+          method: 'POST',
+          headers: { 'X-API-Key': process.env.DASHBOARD_API_KEY ?? '' },
+          signal: AbortSignal.timeout(10000),
+        });
+        return r.ok ? `✅ ${args.action} erfolgreich für ${args.container_id}` : `❌ Fehler: ${r.status}`;
       }
-      default: return `Unbekanntes Tool: ${name}`;
+      default:
+        return `Unknown tool: ${name}`;
     }
-  } catch (e) { return `Fehler: ${String(e)}`; }
-}
-
-// ── OpenAI-compatible call (OpenRouter + Google AI Studio) ────────────────────
-async function* callOpenAICompat(opts: {
-  baseUrl: string;
-  authHeader: string;
-  extraHeaders?: Record<string, string>;
-  modelId: string;
-  messages: ChatMessage[];
-  useTools: boolean;
-}): AsyncGenerator<string> {
-  const history = [{ role: "system", content: SYSTEM }, ...opts.messages];
-
-  for (let round = 0; round < 5; round++) {
-    const res = await fetch(`${opts.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { "Authorization": opts.authHeader, "Content-Type": "application/json", ...opts.extraHeaders },
-      body: JSON.stringify({
-        model: opts.modelId,
-        messages: history,
-        ...(opts.useTools ? { tools: TOOLS_OPENAI, tool_choice: "auto" } : {}),
-        max_tokens: 2048,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!res.ok) { yield `\n[Fehler: ${res.status} ${await res.text()}]`; return; }
-
-    const data = await res.json() as {
-      choices: Array<{
-        finish_reason: string;
-        message: {
-          role: string; content: string | null;
-          tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
-        };
-      }>;
-    };
-    const choice = data.choices?.[0];
-    if (!choice) return;
-    const msg = choice.message;
-
-    if (msg.content) yield msg.content;
-
-    if (choice.finish_reason === "tool_calls" && msg.tool_calls?.length) {
-      history.push({ role: "assistant", content: JSON.stringify(msg) });
-      for (const tc of msg.tool_calls) {
-        yield `\n\n🔧 *${tc.function.name}*…\n`;
-        const result = await executeTool(tc.function.name, JSON.parse(tc.function.arguments || "{}") as Record<string, string>);
-        yield result;
-        history.push({ role: "tool", content: JSON.stringify({ tool_call_id: tc.id, content: result }) });
-      }
-      continue;
-    }
-    return;
+  } catch (e) {
+    return `Tool error: ${(e as Error).message}`;
   }
 }
 
-// ── Anthropic Messages API ─────────────────────────────────────────────────────
-async function* callAnthropic(modelId: string, messages: ChatMessage[]): AsyncGenerator<string> {
-  // Anthropic only accepts 'user' and 'assistant' roles (no 'system' in messages)
-  const anthropicMessages = messages.filter(m => m.role === "user" || m.role === "assistant");
+// ─── OpenAI-compatible call (OpenRouter + Google AI Studio) ─────────────────
+async function callOpenAICompat(config: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  useTools: boolean;
+  extraHeaders?: Record<string, string>;
+}): Promise<Response> {
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages: config.messages,
+    stream: true,
+    max_tokens: 2048,
+  };
+  if (config.useTools) {
+    body.tools = TOOLS;
+    body.tool_choice = 'auto';
+  }
+  return fetch(`${config.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.apiKey}`,
+      ...config.extraHeaders,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+// ─── Ollama call ─────────────────────────────────────────────────────────────
+async function callOllama(model: string, messages: Array<{ role: string; content: string }>): Promise<Response> {
+  return fetch(`${OLLAMA_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, stream: true }),
+  });
+}
+
+// ─── Anthropic native call with agentic loop ─────────────────────────────────
+async function* callAnthropicStream(
+  model: string,
+  messages: Array<{ role: string; content: string }>
+): AsyncGenerator<string> {
+  // Convert tools to Anthropic format
+  const anthropicTools = TOOLS.map((t) => ({
+    name: t.function.name,
+    description: t.function.description,
+    input_schema: t.function.parameters,
+  }));
+
+  // Anthropic messages (no system role in messages array)
+  let anthropicMessages: Array<{ role: string; content: unknown }> = messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
 
   for (let round = 0; round < 5; round++) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: modelId,
-        system: SYSTEM,
+        model,
+        system: SYSTEM_PROMPT,
         messages: anthropicMessages,
-        tools: TOOLS_ANTHROPIC,
+        tools: anthropicTools,
         max_tokens: 2048,
       }),
-      signal: AbortSignal.timeout(30000),
     });
 
-    if (!res.ok) { yield `\n[Anthropic Fehler: ${res.status} ${await res.text()}]`; return; }
-
-    const data = await res.json() as {
-      stop_reason: string;
-      content: Array<
-        | { type: "text"; text: string }
-        | { type: "tool_use"; id: string; name: string; input: Record<string, string> }
-      >;
-    };
-
-    // Stream text blocks
-    for (const block of data.content) {
-      if (block.type === "text" && block.text) yield block.text;
+    if (!resp.ok) {
+      const err = await resp.text();
+      yield `❌ Anthropic Fehler: ${resp.status} — ${err}`;
+      return;
     }
 
-    if (data.stop_reason !== "tool_use") return;
+    const data = await resp.json();
+    const textParts = data.content?.filter((c: { type: string }) => c.type === 'text') ?? [];
+    const toolParts = data.content?.filter((c: { type: string }) => c.type === 'tool_use') ?? [];
 
-    // Collect tool_use blocks
-    const toolUseBlocks = data.content.filter(b => b.type === "tool_use") as Array<{ type: "tool_use"; id: string; name: string; input: Record<string, string> }>;
-    if (!toolUseBlocks.length) return;
+    // Yield text
+    for (const part of textParts) {
+      yield part.text;
+    }
 
-    // Append assistant turn with the full content array
-    anthropicMessages.push({ role: "assistant", content: JSON.stringify(data.content) });
+    if (data.stop_reason !== 'tool_use' || toolParts.length === 0) break;
 
+    // Execute tools
+    yield '\n';
+    anthropicMessages.push({ role: 'assistant', content: data.content });
     const toolResults: Array<{ type: string; tool_use_id: string; content: string }> = [];
-    for (const tu of toolUseBlocks) {
-      yield `\n\n🔧 *${tu.name}*…\n`;
-      const result = await executeTool(tu.name, tu.input);
-      yield result;
-      toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: result });
+
+    for (const toolUse of toolParts) {
+      yield `\n🔧 *${toolUse.name}*…\n`;
+      const result = await executeTool(toolUse.name, toolUse.input ?? {});
+      toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: result });
     }
 
-    // Append user turn with tool results
-    anthropicMessages.push({ role: "user", content: JSON.stringify(toolResults) });
+    anthropicMessages.push({ role: 'user', content: toolResults });
   }
 }
 
-// ── Ollama ────────────────────────────────────────────────────────────────────
-async function* callOllama(modelId: string, messages: ChatMessage[]): AsyncGenerator<string> {
-  yield `*[${modelId} · Lokal auf Hetzner]*\n\n`;
-  const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: modelId,
-      messages: [{ role: "system", content: SYSTEM }, ...messages],
-      stream: false,
-      options: { num_predict: 1024 },
-    }),
-    signal: AbortSignal.timeout(60000),
-  });
-  if (!res.ok) { yield `\n[Ollama Fehler: ${res.status}]`; return; }
-  const data = await res.json() as { message?: { content?: string }; error?: string };
-  if (data.error) { yield `\n[Ollama Fehler: ${data.error}]`; return; }
-  yield data.message?.content ?? "";
-}
-
-// ── GET /api/chat → model list + availability ─────────────────────────────────
+// ─── GET — return available models ──────────────────────────────────────────
 export async function GET() {
-  let ollamaAvailable: string[] = [];
-  try {
-    const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    if (r.ok) {
-      const d = await r.json() as { models?: Array<{ name: string }> };
-      ollamaAvailable = (d.models ?? []).map(m => m.name);
-    }
-  } catch { /* offline */ }
-
-  const modelsWithStatus = Object.fromEntries(
-    Object.entries(MODELS).map(([key, m]) => {
-      let available = false;
-      if (m.provider === "openrouter") available = !!OPENROUTER_KEY;
-      else if (m.provider === "anthropic") available = !!ANTHROPIC_KEY;
-      else if (m.provider === "google")    available = !!GOOGLE_AI_KEY;
-      else if (m.provider === "ollama")    available = ollamaAvailable.some(n => n.startsWith(m.id.split(":")[0]));
-      return [key, { ...m, available }];
-    })
-  );
-
-  return new Response(JSON.stringify({ models: modelsWithStatus, default: DEFAULT_MODEL }), {
-    headers: { "Content-Type": "application/json" },
+  const available = Object.entries(MODELS).map(([key, m]) => {
+    let isAvailable = false;
+    if (m.provider === 'openrouter') isAvailable = !!OPENROUTER_KEY;
+    else if (m.provider === 'anthropic') isAvailable = !!ANTHROPIC_KEY;
+    else if (m.provider === 'google') isAvailable = !!GOOGLE_KEY;
+    else if (m.provider === 'ollama') isAvailable = true; // always try
+    return { key, ...m, available: isAvailable };
   });
+  return NextResponse.json({ models: available });
 }
 
-// ── POST /api/chat ─────────────────────────────────────────────────────────────
+// ─── POST — chat ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const { messages, modelKey } = await req.json() as { messages: ChatMessage[]; modelKey?: string };
-  const modelCfg = MODELS[modelKey ?? DEFAULT_MODEL] ?? MODELS[DEFAULT_MODEL];
+  const { messages, modelKey } = await req.json();
 
-  // Guard: check required key per provider
-  if (modelCfg.provider === "openrouter" && !OPENROUTER_KEY)
-    return new Response(JSON.stringify({ error: "OPENROUTER_API_KEY nicht gesetzt" }), { status: 503 });
-  if (modelCfg.provider === "anthropic" && !ANTHROPIC_KEY)
-    return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY nicht gesetzt. Bitte in den Settings hinterlegen." }), { status: 503 });
-  if (modelCfg.provider === "google" && !GOOGLE_AI_KEY)
-    return new Response(JSON.stringify({ error: "GOOGLE_AI_API_KEY nicht gesetzt. Bitte in den Settings hinterlegen." }), { status: 503 });
+  const key = modelKey ?? DEFAULT_MODEL;
+  const model = MODELS[key];
+  if (!model) {
+    return NextResponse.json({ error: `Unknown model: ${key}` }, { status: 400 });
+  }
 
   const encoder = new TextEncoder();
+
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (chunk: string) =>
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
+      const send = (text: string) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+      };
+      const sendTool = (text: string) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ tool: text })}\n\n`));
+      };
 
       try {
-        let gen: AsyncGenerator<string>;
-
-        if (modelCfg.provider === "openrouter") {
-          gen = callOpenAICompat({
-            baseUrl: "https://openrouter.ai/api/v1",
-            authHeader: `Bearer ${OPENROUTER_KEY}`,
-            extraHeaders: { "HTTP-Referer": "https://admin.automation-plus-ki.de", "X-Title": "AIOS Admin" },
-            modelId: modelCfg.id,
-            messages,
-            useTools: modelCfg.tools,
-          });
-        } else if (modelCfg.provider === "google") {
-          // Google supports OpenAI-compatible endpoint since 2024
-          gen = callOpenAICompat({
-            baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-            authHeader: `Bearer ${GOOGLE_AI_KEY}`,
-            modelId: modelCfg.id,
-            messages,
-            useTools: modelCfg.tools,
-          });
-        } else if (modelCfg.provider === "anthropic") {
-          gen = callAnthropic(modelCfg.id, messages);
-        } else {
-          gen = callOllama(modelCfg.id, messages);
+        // ── Anthropic ───────────────────────────────────────────────────
+        if (model.provider === 'anthropic') {
+          if (!ANTHROPIC_KEY) {
+            send('❌ Anthropic API Key nicht konfiguriert. Bitte in den Einstellungen hinterlegen.');
+            controller.close();
+            return;
+          }
+          for await (const chunk of callAnthropicStream(model.id, messages)) {
+            send(chunk);
+          }
+          controller.close();
+          return;
         }
 
-        for await (const chunk of gen) send(chunk);
-      } catch (e) {
-        send(`\n[Fehler: ${String(e)}]`);
-      }
+        // ── Ollama ──────────────────────────────────────────────────────
+        if (model.provider === 'ollama') {
+          const resp = await callOllama(model.id, [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...messages,
+          ]);
+          if (!resp.ok || !resp.body) {
+            send(`❌ Ollama nicht erreichbar (${resp.status}). Läuft der Ollama-Container?`);
+            controller.close();
+            return;
+          }
+          const reader = resp.body.getReader();
+          const dec = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const lines = dec.decode(value).split('\n').filter(Boolean);
+            for (const line of lines) {
+              try {
+                const json = JSON.parse(line);
+                if (json.message?.content) send(json.message.content);
+              } catch { /* ignore */ }
+            }
+          }
+          controller.close();
+          return;
+        }
 
-      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      controller.close();
+        // ── OpenRouter / Google (OpenAI-compatible, with agentic loop) ──
+        const baseUrl = model.provider === 'google'
+          ? 'https://generativelanguage.googleapis.com/v1beta/openai'
+          : 'https://openrouter.ai/api/v1';
+        const apiKey = model.provider === 'google' ? GOOGLE_KEY : OPENROUTER_KEY;
+        const extraHeaders = model.provider === 'openrouter'
+          ? { 'HTTP-Referer': 'https://admin.automation-plus-ki.de', 'X-Title': 'AIOS Dashboard' }
+          : {};
+
+        if (!apiKey) {
+          const providerName = model.provider === 'google' ? 'Google AI Studio' : 'OpenRouter';
+          send(`❌ ${providerName} API Key nicht konfiguriert.`);
+          controller.close();
+          return;
+        }
+
+        const chatMessages: Array<{ role: string; content: string }> = [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...messages,
+        ];
+
+        // Agentic loop (max 5 rounds)
+        for (let round = 0; round < 5; round++) {
+          const resp = await callOpenAICompat({
+            baseUrl, apiKey, model: model.id,
+            messages: chatMessages,
+            useTools: model.tools,
+            extraHeaders,
+          });
+
+          if (!resp.ok || !resp.body) {
+            const errText = await resp.text().catch(() => String(resp.status));
+            send(`❌ API Fehler (${resp.status}): ${errText.slice(0, 200)}`);
+            break;
+          }
+
+          const reader = resp.body.getReader();
+          const dec = new TextDecoder();
+          let buffer = '';
+          let assistantContent = '';
+          const toolCalls: Record<string, { name: string; args: string }> = {};
+          let finishReason = '';
+
+          // Parse SSE stream
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += dec.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') { finishReason = finishReason || 'stop'; continue; }
+              try {
+                const chunk = JSON.parse(data);
+                const delta = chunk.choices?.[0]?.delta;
+                const fr = chunk.choices?.[0]?.finish_reason;
+                if (fr) finishReason = fr;
+
+                if (delta?.content) {
+                  send(delta.content);
+                  assistantContent += delta.content;
+                }
+
+                // Collect tool call chunks
+                if (delta?.tool_calls) {
+                  for (const tc of delta.tool_calls) {
+                    const idx = String(tc.index ?? 0);
+                    if (!toolCalls[idx]) toolCalls[idx] = { name: '', args: '' };
+                    if (tc.function?.name) toolCalls[idx].name += tc.function.name;
+                    if (tc.function?.arguments) toolCalls[idx].args += tc.function.arguments;
+                  }
+                }
+              } catch { /* ignore parse errors */ }
+            }
+          }
+
+          const hasCalls = Object.keys(toolCalls).length > 0;
+          if (!hasCalls || finishReason === 'stop') break;
+
+          // Execute tools and continue loop
+          chatMessages.push({ role: 'assistant', content: assistantContent || '' });
+
+          const toolResults: Array<{ role: string; content: string; tool_call_id?: string; name?: string }> = [];
+          for (const [, tc] of Object.entries(toolCalls)) {
+            let args: Record<string, unknown> = {};
+            try { args = JSON.parse(tc.args || '{}'); } catch { /* ignore */ }
+            sendTool(`🔧 ${tc.name}…`);
+            const result = await executeTool(tc.name, args);
+            toolResults.push({ role: 'tool', content: result, name: tc.name });
+          }
+          chatMessages.push(...toolResults);
+        }
+
+        controller.close();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: `❌ Fehler: ${msg}` })}\n\n`));
+        controller.close();
+      }
     },
   });
 
   return new Response(stream, {
-    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" },
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
   });
 }

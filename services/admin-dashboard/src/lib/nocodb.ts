@@ -20,11 +20,32 @@ import {
 } from "./mcp-plattform-data";
 
 const BASE  = process.env.NOCODB_URL        ?? "https://nocodb.automation-plus-ki.de";
-const TOKEN = process.env.NOCODB_API_TOKEN  ?? "";
+const TOKEN = process.env.NOCODB_API_TOKEN  ?? "***REDACTED_NOCODB_TOKEN***";
 
 const TABLE_PROJEKTE = process.env.NOCODB_MCP_PROJEKTE_TABLE_ID ?? "";
 const TABLE_DIENSTE  = process.env.NOCODB_MCP_DIENSTE_TABLE_ID  ?? "";
 const TABLE_AUDIT    = process.env.NOCODB_MCP_AUDIT_TABLE_ID    ?? "";
+
+// ── Base & Table IDs (AI_SYSTEM + Dashboard bases) ──────────────────────────
+const AI_SYSTEM_BASE_ID  = process.env.NOCODB_AI_SYSTEM_BASE_ID  ?? 'pfx0ca6docorj8n';
+const DASHBOARD_BASE_ID  = process.env.NOCODB_DASHBOARD_BASE_ID  ?? 'pwxfagcnm6bru9w';
+
+const TABLE_AGENTS         = process.env.NOCODB_AGENTS_TABLE_ID         ?? 'mjdp54ldeoxlb8s';
+const TABLE_TASKS          = process.env.NOCODB_TASKS_TABLE_ID          ?? 'mrt4iah96z7za7t';
+const TABLE_AGENT_RUNS     = process.env.NOCODB_AGENT_RUNS_TABLE_ID     ?? 'm0245soubmzha5r';
+const TABLE_PROMPTS        = process.env.NOCODB_PROMPTS_TABLE_ID        ?? 'mijlvsujsgqa92m';
+const TABLE_MCP_CONFIGS    = process.env.NOCODB_MCP_CONFIGS_TABLE_ID    ?? 'm128afvs767oxqa';
+const TABLE_KNOWLEDGE      = process.env.NOCODB_KNOWLEDGE_TABLE_ID      ?? 'm9hgs3y3iz9xtgl';
+const TABLE_PROJEKTE_NEW   = process.env.NOCODB_PROJEKTE_TABLE_ID       ?? 'mn4fqldtnb4f1qn';
+const TABLE_WORKFLOW_INDEX = process.env.NOCODB_WORKFLOW_INDEX_TABLE_ID ?? 'mlfy9vbmvhjt7si';
+const TABLE_LEADS          = process.env.NOCODB_LEADS_TABLE_ID          ?? 'm3y2aylkfn3ha0n';
+
+// suppress unused-variable warnings for IDs not yet used in queries
+void AI_SYSTEM_BASE_ID;
+void DASHBOARD_BASE_ID;
+void TABLE_AGENT_RUNS;
+void TABLE_MCP_CONFIGS;
+void TABLE_LEADS;
 
 export const isConfigured = () => !!TOKEN && !!TABLE_DIENSTE;
 
@@ -227,5 +248,61 @@ export async function createAudit(data: Omit<AuditEintrag, "id" | "ts">): Promis
     });
   } catch (e) {
     console.warn("[NocoDB] createAudit Fehler:", e);
+  }
+}
+
+// ── NocoDB client helper ─────────────────────────────────────────────────────
+
+export function getNocoDBClient() {
+  return {
+    baseUrl: BASE,
+    token: TOKEN,
+  };
+}
+
+// ── AI System & Dashboard table queries ──────────────────────────────────────
+
+export async function getAgents(): Promise<Record<string, unknown>[]> {
+  try {
+    return await nocoGet<Record<string, unknown>>(TABLE_AGENTS);
+  } catch (e) {
+    console.warn("[NocoDB] getAgents Fehler:", e);
+    return [];
+  }
+}
+
+export async function getTasks(): Promise<Record<string, unknown>[]> {
+  try {
+    return await nocoGet<Record<string, unknown>>(TABLE_TASKS);
+  } catch (e) {
+    console.warn("[NocoDB] getTasks Fehler:", e);
+    return [];
+  }
+}
+
+export async function getPrompts(): Promise<Record<string, unknown>[]> {
+  try {
+    return await nocoGet<Record<string, unknown>>(TABLE_PROMPTS);
+  } catch (e) {
+    console.warn("[NocoDB] getPrompts Fehler:", e);
+    return [];
+  }
+}
+
+export async function getKnowledgeItems(): Promise<Record<string, unknown>[]> {
+  try {
+    return await nocoGet<Record<string, unknown>>(TABLE_KNOWLEDGE);
+  } catch (e) {
+    console.warn("[NocoDB] getKnowledgeItems Fehler:", e);
+    return [];
+  }
+}
+
+export async function getWorkflowIndex(): Promise<Record<string, unknown>[]> {
+  try {
+    return await nocoGet<Record<string, unknown>>(TABLE_WORKFLOW_INDEX);
+  } catch (e) {
+    console.warn("[NocoDB] getWorkflowIndex Fehler:", e);
+    return [];
   }
 }
