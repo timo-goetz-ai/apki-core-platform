@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Automation + KI – Control Center",
+  title: "AIOS Admin",
   description:
     "Zentrale Steuereinheit für KI-Agents, Workflows und Infrastruktur auf automation-plus-ki.de",
 };
