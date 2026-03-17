@@ -1,0 +1,144 @@
+{
+  "platform": "automation-plus-ki",
+  "updated": "2026-03-17",
+  "transport": "streamable-http",
+  "base_domain": "automation-plus-ki.de",
+  "mcpServers": {
+    "mcp-authentik": {
+      "url": "https://mcp-authentik.automation-plus-ki.de",
+      "coolify_id": "s0gkg4404wso8c00o80wc8w0",
+      "env_vars": {
+        "AUTHENTIK_URL": "https://auth.automation-plus-ki.de",
+        "AUTHENTIK_API_TOKEN": "<authentik-api-token>"
+      },
+      "category": "auth",
+      "status": "active",
+      "description": "Authentik SSO management — users, groups, OAuth2 providers"
+    },
+    "mcp-cloudflare": {
+      "url": "https://mcp-cloudflare.automation-plus-ki.de",
+      "coolify_id": "lk448ww08sccc4wg8ccog8oo",
+      "env_vars": {
+        "CLOUDFLARE_API_TOKEN": "<cloudflare-api-token>"
+      },
+      "category": "infrastructure",
+      "status": "active",
+      "description": "Cloudflare DNS, zones, and records management"
+    },
+    "mcp-coolify": {
+      "url": "https://mcp-coolify.automation-plus-ki.de",
+      "coolify_id": "d8gwgokgk08w8wg00g48gkgo",
+      "env_vars": {
+        "COOLIFY_API_KEY": "<coolify-api-key>",
+        "COOLIFY_BASE_URL": "https://coolify.automation-plus-ki.de"
+      },
+      "category": "infrastructure",
+      "status": "active",
+      "description": "Coolify deployment management — apps, env vars, restarts"
+    },
+    "mcp-filesystem": {
+      "url": "https://mcp-filesystem.automation-plus-ki.de",
+      "coolify_id": "so8ggg0wwc4k4k0o0cs8sgoo",
+      "env_vars": {},
+      "category": "utility",
+      "status": "active",
+      "description": "Server filesystem access within allowed directories"
+    },
+    "mcp-github": {
+      "url": "https://mcp-github.automation-plus-ki.de",
+      "coolify_id": "n0wg88os8g04g84c08w4g8gw",
+      "env_vars": {
+        "GITHUB_TOKEN": "<github-pat-token>"
+      },
+      "category": "devops",
+      "status": "active",
+      "description": "GitHub repos, issues, PRs, and code search"
+    },
+    "mcp-google": {
+      "url": "https://mcp-google.automation-plus-ki.de",
+      "coolify_id": "jokwo0ws4owcc4ssww0co4s0",
+      "env_vars": {
+        "GOOGLE_CLIENT_ID": "<google-oauth2-client-id>",
+        "GOOGLE_CLIENT_SECRET": "<google-oauth2-client-secret>",
+        "GOOGLE_REFRESH_TOKEN": "<google-oauth2-refresh-token>"
+      },
+      "category": "productivity",
+      "status": "active",
+      "description": "Google Workspace — Drive, Sheets, Calendar, Gmail, Docs"
+    },
+    "mcp-grafana": {
+      "url": "https://mcp-grafana.automation-plus-ki.de",
+      "coolify_id": "oc0kwwkws0844o04wc8448kw",
+      "env_vars": {
+        "GRAFANA_URL": "https://grafana.automation-plus-ki.de",
+        "GRAFANA_API_KEY": "<grafana-service-account-token>"
+      },
+      "category": "observability",
+      "status": "active",
+      "description": "Grafana dashboards, alerts, datasources, incidents"
+    },
+    "mcp-hetzner": {
+      "url": "https://mcp-hetzner.automation-plus-ki.de",
+      "coolify_id": "nos84kwk80ckw04gw844s4w8",
+      "env_vars": {
+        "HETZNER_API_TOKEN": "<hetzner-cloud-api-token>"
+      },
+      "category": "infrastructure",
+      "status": "active",
+      "description": "Hetzner Cloud server management — servers, volumes, firewalls"
+    },
+    "mcp-n8n": {
+      "url": "https://mcp-n8n.automation-plus-ki.de",
+      "coolify_id": "qoo8sww8s4swwskkwkc0s0gw",
+      "env_vars": {
+        "N8N_API_KEY": "<n8n-api-key>",
+        "N8N_BASE_URL": "https://n8n.automation-plus-ki.de"
+      },
+      "category": "automation",
+      "status": "active",
+      "description": "n8n workflow management — executions, webhooks, credentials"
+    },
+    "mcp-nocodb": {
+      "url": "https://mcp-nocodb.automation-plus-ki.de",
+      "coolify_id": "igs4cckosw0go4scgwoso48w",
+      "env_vars": {
+        "NOCODB_API_TOKEN": "<nocodb-api-token>",
+        "NOCODB_BASE_URL": "https://nocodb.automation-plus-ki.de"
+      },
+      "category": "data",
+      "status": "active",
+      "description": "NocoDB database operations — tables, records, search"
+    },
+    "mcp-postgres": {
+      "url": "https://mcp-postgres.automation-plus-ki.de",
+      "coolify_id": "xsw0co8wsgog8kwkg40s0oow",
+      "env_vars": {
+        "DATABASE_URL": "postgresql://aios_user:<password>@homestack-postgres:5432/aios_db"
+      },
+      "category": "data",
+      "status": "active",
+      "description": "Direct PostgreSQL query access"
+    },
+    "mcp-prometheus": {
+      "url": "https://mcp-prometheus.automation-plus-ki.de",
+      "coolify_id": "hgsokgoccg0cw88okw44ggk0",
+      "env_vars": {
+        "PROMETHEUS_URL": "http://homestack-prometheus:9090"
+      },
+      "category": "observability",
+      "status": "active",
+      "description": "Prometheus metrics queries, targets, alert rules"
+    },
+    "mcp-qdrant": {
+      "url": "https://mcp-qdrant.automation-plus-ki.de",
+      "coolify_id": "yswo4w8ggs0kg8o8g4sogk88",
+      "env_vars": {
+        "QDRANT_URL": "http://homestack-qdrant:6333",
+        "QDRANT_API_KEY": "<qdrant-api-key>"
+      },
+      "category": "ai",
+      "status": "active",
+      "description": "Qdrant vector database — collections, upsert, search"
+    }
+  }
+}
