@@ -4,6 +4,7 @@ import { MODELS, DEFAULT_MODEL } from "@/lib/chat-models";
 export const dynamic = "force-dynamic";
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? "";
+const OLLAMA_BASE    = process.env.OLLAMA_BASE_URL ?? "http://ollama:11434";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_DOMAIN
   ? `https://admin.${process.env.NEXT_PUBLIC_BASE_DOMAIN}`
   : "http://localhost:3000";
@@ -165,30 +166,80 @@ Verhalte dich proaktiv: Wenn der Nutzer nach dem Status fragt, ruf direkt das To
 Antworte präzise und auf Deutsch. Bei Aktionen (Container stoppen etc.) frag kurz nach Bestätigung.
 Fasse Ergebnisse klar zusammen, verwende Emojis sparsam für Übersicht.`;
 
+// ── Ollama chat completion (no streaming, no tool calls) ──────────────────────
+async function callOllama(
+  modelId: string,
+  history: Array<{ role: string; content: string }>,
+  signal?: AbortSignal,
+): Promise<string> {
+  const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: modelId,
+      messages: history,
+      stream: false,
+      options: { num_predict: 1024 },
+    }),
+    signal: signal ?? AbortSignal.timeout(60000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Ollama ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json() as { message?: { content?: string }; error?: string };
+  if (data.error) throw new Error(data.error);
+  return data.message?.content ?? "";
+}
+
 // ── GET /api/chat → model list ────────────────────────────────────────────────
 export async function GET() {
-  return new Response(JSON.stringify({ models: MODELS, default: DEFAULT_MODEL }), {
+  // Check which Ollama models are actually available
+  let ollamaAvailable: string[] = [];
+  try {
+    const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      const d = await r.json() as { models?: Array<{ name: string }> };
+      ollamaAvailable = (d.models ?? []).map(m => m.name);
+    }
+  } catch { /* Ollama offline */ }
+
+  const modelsWithStatus = Object.fromEntries(
+    Object.entries(MODELS).map(([key, m]) => [
+      key,
+      {
+        ...m,
+        available: m.provider === 'openrouter'
+          ? !!OPENROUTER_KEY
+          : ollamaAvailable.some(name => name.startsWith(m.id.split(':')[0])),
+      },
+    ])
+  );
+
+  return new Response(JSON.stringify({ models: modelsWithStatus, default: DEFAULT_MODEL }), {
     headers: { "Content-Type": "application/json" },
   });
 }
 
 // ── POST /api/chat ────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  if (!OPENROUTER_KEY) {
-    return new Response(
-      JSON.stringify({ error: "OPENROUTER_API_KEY nicht gesetzt" }),
-      { status: 503, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
   const { messages, modelKey } = await req.json() as {
     messages: Array<{ role: string; content: string }>;
     modelKey?: string;
   };
 
   const modelCfg = MODELS[modelKey ?? DEFAULT_MODEL] ?? MODELS[DEFAULT_MODEL];
+  const isOllama = modelCfg.provider === 'ollama';
 
-  // Agentic loop: up to 5 tool-call rounds
+  // Reject OpenRouter requests if no key
+  if (!isOllama && !OPENROUTER_KEY) {
+    return new Response(
+      JSON.stringify({ error: "OPENROUTER_API_KEY nicht gesetzt" }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const history = [
     { role: "system", content: SYSTEM_PROMPT },
     ...messages,
@@ -197,76 +248,81 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (chunk: string) => controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
+      const send = (chunk: string) =>
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
 
       try {
-        for (let round = 0; round < 5; round++) {
-          const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://admin.automation-plus-ki.de",
-              "X-Title": "AIOS Admin Dashboard",
-            },
-            body: JSON.stringify({
-              model: modelCfg.id,
-              messages: history,
-              ...(modelCfg.tools ? { tools: TOOLS, tool_choice: "auto" } : {}),
-              max_tokens: 2048,
-              stream: false,
-            }),
-            signal: AbortSignal.timeout(30000),
-          });
+        // ── Ollama path (no tool calling, direct response) ──────────────────
+        if (isOllama) {
+          send(`*[${modelCfg.label} · Lokal auf Hetzner]*\n\n`);
+          const response = await callOllama(modelCfg.id, history);
+          send(response);
+        }
+        // ── OpenRouter path (with agentic tool loop) ────────────────────────
+        else {
+          for (let round = 0; round < 5; round++) {
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${OPENROUTER_KEY}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://admin.automation-plus-ki.de",
+                "X-Title": "AIOS Admin Dashboard",
+              },
+              body: JSON.stringify({
+                model: modelCfg.id,
+                messages: history,
+                ...(modelCfg.tools ? { tools: TOOLS, tool_choice: "auto" } : {}),
+                max_tokens: 2048,
+                stream: false,
+              }),
+              signal: AbortSignal.timeout(30000),
+            });
 
-          if (!res.ok) {
-            send(`\n[Fehler: OpenRouter ${res.status}]`);
+            if (!res.ok) {
+              send(`\n[Fehler: OpenRouter ${res.status}]`);
+              break;
+            }
+
+            const data = await res.json() as {
+              choices: Array<{
+                finish_reason: string;
+                message: {
+                  role: string;
+                  content: string | null;
+                  tool_calls?: Array<{
+                    id: string;
+                    function: { name: string; arguments: string };
+                  }>;
+                };
+              }>;
+            };
+
+            const choice = data.choices?.[0];
+            if (!choice) break;
+
+            const msg = choice.message;
+
+            if (msg.content) send(msg.content);
+
+            if (choice.finish_reason === "tool_calls" && msg.tool_calls?.length) {
+              history.push({ role: "assistant", content: JSON.stringify(msg) });
+
+              for (const tc of msg.tool_calls) {
+                send(`\n\n🔧 *${tc.function.name}*…\n`);
+                const args = JSON.parse(tc.function.arguments || "{}") as Record<string, string>;
+                const result = await executeTool(tc.function.name, args);
+                send(result);
+                history.push({
+                  role: "tool",
+                  content: JSON.stringify({ tool_call_id: tc.id, content: result }),
+                });
+              }
+              continue;
+            }
+
             break;
           }
-
-          const data = await res.json() as {
-            choices: Array<{
-              finish_reason: string;
-              message: {
-                role: string;
-                content: string | null;
-                tool_calls?: Array<{
-                  id: string;
-                  function: { name: string; arguments: string };
-                }>;
-              };
-            }>;
-          };
-
-          const choice = data.choices?.[0];
-          if (!choice) break;
-
-          const msg = choice.message;
-
-          // Stream text content
-          if (msg.content) {
-            send(msg.content);
-          }
-
-          // Handle tool calls
-          if (choice.finish_reason === "tool_calls" && msg.tool_calls?.length) {
-            history.push({ role: "assistant", content: JSON.stringify(msg) });
-
-            for (const tc of msg.tool_calls) {
-              send(`\n\n🔧 *${tc.function.name}*…\n`);
-              const args = JSON.parse(tc.function.arguments || "{}") as Record<string, string>;
-              const result = await executeTool(tc.function.name, args);
-              send(result);
-              history.push({
-                role: "tool",
-                content: JSON.stringify({ tool_call_id: tc.id, content: result }),
-              });
-            }
-            // Continue loop for follow-up response
-            continue;
-          }
-
-          break; // done
         }
       } catch (e) {
         send(`\n[Fehler: ${String(e)}]`);
