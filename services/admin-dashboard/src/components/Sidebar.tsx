@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Bot, Workflow,
   Database, BarChart2, Monitor, Bell,
   Settings, Activity, Server,
-  Code2, ChevronRight, FileText,
+  Code2, ChevronRight, FileText, BookOpen,
 } from 'lucide-react';
 
 interface NavItem {
@@ -44,6 +44,7 @@ const NAV: NavSection[] = [
       { label: 'Agenten',      href: '/agents',               icon: <Bot size={14} />,             ready: true },
       { label: 'Workflows',    href: '/workflows',            icon: <Workflow size={14} />,         ready: true },
       { label: 'Datenbanken',  href: '/databases',            icon: <Database size={14} />,         ready: true },
+      { label: 'Knowledge Base', href: '/knowledge',          icon: <BookOpen size={14} />,         ready: true },
     ],
   },
   {
