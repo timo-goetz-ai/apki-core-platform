@@ -49,24 +49,20 @@ export default function TopBar() {
           </button>
 
           {/* Bruno */}
-          <a
-            href="https://Bruno.automation-plus-ki.de"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/tools"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors no-underline"
           >
             Bruno
-          </a>
+          </Link>
 
           {/* Playwright */}
-          <a
-            href="https://playwright.automation-plus-ki.de"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/tools"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors no-underline"
           >
             Playwright
-          </a>
+          </Link>
         </div>
 
         {/* Spacer */}
