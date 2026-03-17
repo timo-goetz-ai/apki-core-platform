@@ -109,10 +109,13 @@ function EmptyState({ tab }: { tab: string }) {
 
 function RowItem({ row, index }: { row: Row; index: number }) {
   // Derive the most useful columns dynamically
-  const name = row.Name ?? row.name ?? row.Titel ?? row.title ?? row.Title ?? '—';
-  const status = row.Status ?? row.status ?? row.active ?? undefined;
-  const desc = row.Beschreibung ?? row.description ?? row.Description ?? row.content ?? row.Content ?? '';
-  const badge = statusColor(typeof status === 'boolean' ? (status ? 'active' : 'disabled') : status);
+  const name = String(row.Name ?? row.name ?? row.Titel ?? row.title ?? row.Title ?? '—');
+  const statusRaw = row.Status ?? row.status ?? row.active;
+  const statusStr: string | undefined = typeof statusRaw === 'boolean'
+    ? (statusRaw ? 'Aktiv' : 'Inaktiv')
+    : typeof statusRaw === 'string' ? statusRaw : undefined;
+  const desc = String(row.Beschreibung ?? row.description ?? row.Description ?? row.content ?? row.Content ?? '');
+  const badge = statusColor(statusStr);
 
   return (
     <div style={{
