@@ -6,6 +6,22 @@ import { store } from "@/lib/mcp-plattform-data";
 
 export const dynamic = "force-dynamic";
 
+const MCP_SERVERS = [
+  { name: 'authentik',   label: 'Authentik',   desc: 'SSO & Identity Provider' },
+  { name: 'cloudflare',  label: 'Cloudflare',  desc: 'DNS & Routing' },
+  { name: 'coolify',     label: 'Coolify',     desc: 'Deployment-Plattform' },
+  { name: 'filesystem',  label: 'Filesystem',  desc: 'Lokaler Dateizugriff' },
+  { name: 'github',      label: 'GitHub',      desc: 'Code & PRs' },
+  { name: 'google',      label: 'Google',      desc: 'Drive, Calendar, Sheets' },
+  { name: 'grafana',     label: 'Grafana',     desc: 'Monitoring & Alerts' },
+  { name: 'hetzner',     label: 'Hetzner',     desc: 'Cloud Infrastructure' },
+  { name: 'n8n',         label: 'n8n',         desc: 'Workflow Automation' },
+  { name: 'nocodb',      label: 'NocoDB',      desc: 'Datenbank-Backend' },
+  { name: 'postgres',    label: 'PostgreSQL',  desc: 'Relationale Datenbank' },
+  { name: 'prometheus',  label: 'Prometheus',  desc: 'Metriken & Alerting' },
+  { name: 'qdrant',      label: 'Qdrant',      desc: 'Vektor-Datenbank' },
+];
+
 export default function MCPPlattformPage() {
   const projekte = store.getProjekte();
   const dienste  = store.getMCPDienste();
@@ -24,10 +40,10 @@ export default function MCPPlattformPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
             <LayoutGrid className="w-7 h-7 text-[#1d6ef5]" />
-            MCP-Plattform
+            MCP Plattform
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Hetzner 46.224.145.109 · Coolify · Authentik SSO · {projekte.length} Projekte · {dienste.length} MCP-Dienste
+            19 Model Context Protocol Server · Hetzner 46.224.145.109 · Coolify · {projekte.length} Projekte
           </p>
         </div>
         <a
@@ -40,6 +56,42 @@ export default function MCPPlattformPage() {
           Coolify öffnen
         </a>
       </div>
+
+      {/* MCP Server Cards */}
+      <section>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+          MCP Server — {MCP_SERVERS.length} konfiguriert
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {MCP_SERVERS.map((mcp) => {
+            const url = `https://mcp-${mcp.name}.automation-plus-ki.de`;
+            return (
+              <div
+                key={mcp.name}
+                className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 flex flex-col gap-3 hover:border-[#1d6ef5]/40 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" style={{ boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
+                    <span className="text-sm font-semibold text-slate-100">{mcp.label}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 leading-snug m-0">{mcp.desc}</p>
+                <p className="text-[10px] font-mono text-slate-700 truncate m-0">mcp-{mcp.name}.automation-plus-ki.de</p>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors no-underline"
+                  style={{ background: 'rgba(29,110,245,0.1)', color: '#1d6ef5', border: '1px solid rgba(29,110,245,0.2)' }}
+                >
+                  Details <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
