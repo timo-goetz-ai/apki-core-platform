@@ -416,7 +416,7 @@ export default function KnowledgePage() {
         ) : (
           <div>
             {currentRows.map((row, i) => (
-              <RowItem key={row.Id ?? row.id ?? i} row={row} index={i} />
+              <RowItem key={String(row.Id ?? row.id ?? i)} row={row} index={i} />
             ))}
           </div>
         )}
