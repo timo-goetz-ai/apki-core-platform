@@ -1,0 +1,187 @@
+{
+  "platform": "automation-plus-ki",
+  "updated": "2026-03-17",
+  "server": {
+    "provider": "Hetzner",
+    "type": "CPX42",
+    "ip": "46.224.145.109",
+    "os": "Ubuntu 22.04 LTS",
+    "cpu": "8 vCPU",
+    "ram": "16 GB",
+    "disk": "240 GB SSD"
+  },
+  "dns": {
+    "provider": "Cloudflare",
+    "zone": "automation-plus-ki.de",
+    "pattern": "*.automation-plus-ki.de → A → 46.224.145.109"
+  },
+  "proxy": {
+    "type": "Traefik",
+    "managed_by": "Coolify",
+    "tls": "Let's Encrypt (ACME)",
+    "config_path": "/data/coolify/proxy/dynamic/"
+  },
+  "services": [
+    {
+      "name": "Admin Dashboard",
+      "id": "admin-dashboard",
+      "url": "https://admin.automation-plus-ki.de",
+      "internal": "homestack-admin:3000",
+      "image": "ghcr.io/timogoetz1988/aios-admin-dashboard:latest",
+      "deployment": "coolify",
+      "coolify_id": "046279494c60465d88e337efb54d5504",
+      "category": "core",
+      "status": "active",
+      "port": 3000,
+      "source": "github:TimoGoetz1988/aios"
+    },
+    {
+      "name": "Nexus-Core API",
+      "id": "nexus-core",
+      "url": "https://api.automation-plus-ki.de",
+      "internal": "aios-nexus-core:8000",
+      "image": "aios-nexus-core",
+      "deployment": "homestack",
+      "category": "core",
+      "status": "active",
+      "port": 8000,
+      "source": "github:TimoGoetz1988/aios services/nexus-core"
+    },
+    {
+      "name": "Crew API",
+      "id": "crew-api",
+      "url": null,
+      "internal": "aios-crew-api:8001",
+      "image": "aios-crew-api",
+      "deployment": "homestack",
+      "category": "core",
+      "status": "active",
+      "port": 8001,
+      "source": "github:TimoGoetz1988/aios services/crew-api"
+    },
+    {
+      "name": "n8n",
+      "id": "n8n",
+      "url": "https://n8n.automation-plus-ki.de",
+      "internal": "homestack-n8n:5678",
+      "image": "n8nio/n8n:latest",
+      "deployment": "homestack",
+      "category": "automation",
+      "status": "active",
+      "port": 5678
+    },
+    {
+      "name": "NocoDB",
+      "id": "nocodb",
+      "url": "https://nocodb.automation-plus-ki.de",
+      "internal": "nocodb:8080",
+      "image": "nocodb/nocodb:latest",
+      "deployment": "coolify",
+      "coolify_id": "sow4k0go0swkssgokk84wwwg",
+      "category": "data",
+      "status": "active",
+      "port": 8080
+    },
+    {
+      "name": "AppFlowy",
+      "id": "appflowy",
+      "url": "https://appflowy.automation-plus-ki.de",
+      "internal": "appflowy:443",
+      "deployment": "coolify",
+      "coolify_id": "o8cgss00s00swcckwccs8skc",
+      "category": "productivity",
+      "status": "active"
+    },
+    {
+      "name": "Grafana",
+      "id": "grafana",
+      "url": "https://grafana.automation-plus-ki.de",
+      "internal": "homestack-grafana:3000",
+      "image": "grafana/grafana:latest",
+      "deployment": "homestack",
+      "category": "observability",
+      "status": "active",
+      "port": 3000
+    },
+    {
+      "name": "Prometheus",
+      "id": "prometheus",
+      "url": "https://prometheus.automation-plus-ki.de",
+      "internal": "homestack-prometheus:9090",
+      "image": "prom/prometheus:latest",
+      "deployment": "homestack",
+      "category": "observability",
+      "status": "active",
+      "port": 9090
+    },
+    {
+      "name": "Authentik SSO",
+      "id": "authentik",
+      "url": "https://auth.automation-plus-ki.de",
+      "internal": "homestack-authentik-server:9000",
+      "image": "ghcr.io/goauthentik/server:latest",
+      "deployment": "homestack",
+      "category": "auth",
+      "status": "active",
+      "port": 9000,
+      "containers": ["homestack-authentik-server", "homestack-authentik-worker"]
+    },
+    {
+      "name": "Qdrant",
+      "id": "qdrant",
+      "url": "https://qdrant.automation-plus-ki.de",
+      "internal": "homestack-qdrant:6333",
+      "image": "qdrant/qdrant:latest",
+      "deployment": "homestack",
+      "category": "ai",
+      "status": "active",
+      "port": 6333
+    },
+    {
+      "name": "Ollama",
+      "id": "ollama",
+      "url": null,
+      "internal": "ollama:11434",
+      "image": "ollama/ollama:latest",
+      "deployment": "standalone",
+      "category": "ai",
+      "status": "active",
+      "port": 11434
+    },
+    {
+      "name": "Coolify",
+      "id": "coolify",
+      "url": "https://coolify.automation-plus-ki.de",
+      "internal": "coolify:8000",
+      "image": "ghcr.io/coollabsio/coolify:latest",
+      "deployment": "self-managed",
+      "category": "infrastructure",
+      "status": "active",
+      "port": 8000
+    }
+  ],
+  "databases": [
+    {
+      "id": "postgres",
+      "type": "PostgreSQL",
+      "internal": "homestack-postgres:5432",
+      "deployment": "homestack",
+      "databases": ["aios_db", "n8n", "nocodb", "grafana", "authentik", "vaultwarden"]
+    },
+    {
+      "id": "redis",
+      "type": "Redis",
+      "internal": "homestack-redis:6379",
+      "deployment": "homestack",
+      "used_by": ["n8n", "authentik", "crew-api"]
+    }
+  ],
+  "storage": {
+    "provider": "Hetzner Object Storage",
+    "region": "fsn1",
+    "endpoint": "https://fsn1.your-objectstorage.com",
+    "buckets": [
+      {"name": "noco-aios", "used_by": "nocodb"}
+    ]
+  }
+}
