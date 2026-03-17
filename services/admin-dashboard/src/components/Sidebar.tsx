@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Bot, Workflow, Wrench,
-  Database, FolderOpen, ScrollText,
-  BarChart2, Container, Bell,
-  Settings, Plug, ChevronRight, Activity,
+  LayoutDashboard, Bot, Workflow,
+  Database, BarChart2, Monitor, Bell,
+  Settings, Activity, Server,
+  Code2, ChevronRight, FileText,
 } from 'lucide-react';
 
 interface NavItem {
@@ -14,49 +14,51 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   ready: boolean;
+  divider?: false;
 }
+
+interface NavDivider {
+  divider: true;
+}
+
+type NavEntry = NavItem | NavDivider;
 
 interface NavSection {
   title: string;
-  items: NavItem[];
+  items: NavEntry[];
 }
 
 const NAV: NavSection[] = [
   {
     title: 'OVERVIEW',
     items: [
-      { label: 'Cockpit',       href: '/',                    icon: <LayoutDashboard size={14} />, ready: true },
+      { label: 'Cockpit',      href: '/',                     icon: <LayoutDashboard size={14} />, ready: true },
+      { label: 'Services',     href: '/services',             icon: <Server size={14} />,          ready: true },
+      { label: 'API Explorer', href: '/api-explorer',         icon: <Code2 size={14} />,           ready: true },
+      { label: 'Aktivität',   href: '/activity',             icon: <Activity size={14} />,        ready: true },
     ],
   },
   {
     title: 'KI-SYSTEM',
     items: [
-      { label: 'Agenten-Fabrik',href: '/agents',              icon: <Bot size={14} />,             ready: true },
-      { label: 'Workflows',     href: '/workflows',           icon: <Workflow size={14} />,         ready: true },
-      { label: 'Tools & Skills',href: '/tools',               icon: <Wrench size={14} />,           ready: true },
-    ],
-  },
-  {
-    title: 'DATEN',
-    items: [
-      { label: 'Datenbanken',   href: '/databases',           icon: <Database size={14} />,         ready: true },
-      { label: 'File Browser',  href: '/files',               icon: <FolderOpen size={14} />,       ready: true },
-      { label: 'Logs',          href: '/logs',                icon: <ScrollText size={14} />,       ready: true },
+      { label: 'Agenten',      href: '/agents',               icon: <Bot size={14} />,             ready: true },
+      { label: 'Workflows',    href: '/workflows',            icon: <Workflow size={14} />,         ready: true },
+      { label: 'Datenbanken',  href: '/databases',            icon: <Database size={14} />,         ready: true },
     ],
   },
   {
     title: 'MONITORING',
     items: [
-      { label: 'Grafana',       href: '/monitoring/grafana',  icon: <BarChart2 size={14} />,        ready: true },
-      { label: 'Container',     href: '/monitoring/containers',icon: <Container size={14} />,       ready: true },
-      { label: 'Alerts',        href: '/monitoring/alerts',   icon: <Bell size={14} />,             ready: true },
+      { label: 'Container',    href: '/monitoring/containers', icon: <Monitor size={14} />,        ready: true },
+      { label: 'Grafana',      href: '/monitoring/grafana',   icon: <BarChart2 size={14} />,       ready: true },
+      { label: 'Logs',         href: '/logs',                 icon: <FileText size={14} />,        ready: true },
+      { label: 'Alerts',       href: '/monitoring/alerts',    icon: <Bell size={14} />,            ready: true },
     ],
   },
   {
     title: 'SYSTEM',
     items: [
-      { label: 'MCP Platform',  href: '/mcp-plattform',       icon: <Plug size={14} />,            ready: true },
-      { label: 'Settings',      href: '/settings',            icon: <Settings size={14} />,         ready: true },
+      { label: 'Einstellungen', href: '/settings', icon: <Settings size={14} />, ready: true },
     ],
   },
 ];
@@ -70,7 +72,7 @@ export default function Sidebar() {
       top: 0,
       left: 0,
       bottom: 0,
-      width: 240,
+      width: 220,
       zIndex: 40,
       display: 'flex',
       flexDirection: 'column',
@@ -82,7 +84,7 @@ export default function Sidebar() {
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 10px 16px' }}>
         {NAV.map((section) => (
-          <div key={section.title} style={{ marginBottom: 22 }}>
+          <div key={section.title} style={{ marginBottom: 20 }}>
 
             {/* Section label */}
             <p style={{
@@ -98,7 +100,11 @@ export default function Sidebar() {
               {section.title}
             </p>
 
-            {section.items.map((item) => {
+            {section.items.map((entry, idx) => {
+              if ('divider' in entry && entry.divider) {
+                return <div key={idx} style={{ height: 1, background: 'var(--border)', margin: '6px 8px' }} />;
+              }
+              const item = entry as NavItem;
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/' && pathname.startsWith(item.href));

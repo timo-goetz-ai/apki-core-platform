@@ -137,3 +137,57 @@ body::after {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ── Glass card effect ──────────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  border-radius: 12px;
+}
+
+.glass-card:hover {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+/* ── Status dot indicators ───────────────────────────────────────────────── */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.status-dot-green {
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+  animation: status-pulse 2.5s ease-in-out infinite;
+}
+
+.status-dot-amber {
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
+
+.status-dot-red {
+  background: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+.status-dot-muted {
+  background: #475569;
+}
+
+/* ── Page fade-in ────────────────────────────────────────────────────────── */
+.page-enter {
+  animation: fade-up 0.3s ease both;
+}
+
+/* ── Method badge colors ─────────────────────────────────────────────────── */
+.method-get    { background: rgba(56,189,248,0.12);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); }
+.method-post   { background: rgba(52,211,153,0.12);  color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+.method-put    { background: rgba(251,191,36,0.12);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+.method-delete { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+.method-ws     { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
