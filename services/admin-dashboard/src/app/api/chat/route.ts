@@ -372,7 +372,7 @@ export async function POST(req: NextRequest) {
           ? 'https://generativelanguage.googleapis.com/v1beta/openai'
           : 'https://openrouter.ai/api/v1';
         const apiKey = model.provider === 'google' ? GOOGLE_KEY : OPENROUTER_KEY;
-        const extraHeaders = model.provider === 'openrouter'
+        const extraHeaders: Record<string, string> = model.provider === 'openrouter'
           ? { 'HTTP-Referer': 'https://admin.automation-plus-ki.de', 'X-Title': 'AIOS Dashboard' }
           : {};
 
