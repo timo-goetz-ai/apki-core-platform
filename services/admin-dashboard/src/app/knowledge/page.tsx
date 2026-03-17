@@ -37,8 +37,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'knowledge_items', label: 'Knowledge',      icon: <Brain size={13} /> },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 async function fetchTable(tableId: string): Promise<Row[]> {
