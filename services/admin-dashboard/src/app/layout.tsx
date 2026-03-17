@@ -1,16 +1,18 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
+import { LLMProvider } from '@/lib/llm-context';
+import TopBar from '@/components/TopBar';
+import Sidebar from '@/components/Sidebar';
 
 export const metadata: Metadata = {
-  title: "AIOS Admin",
+  title: 'AIOS Admin',
   description:
-    "Zentrale Steuereinheit für KI-Agents, Workflows und Infrastruktur auf automation-plus-ki.de",
+    'Zentrale Steuereinheit für KI-Agents, Workflows und Infrastruktur auf automation-plus-ki.de',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de">
-      {/* Prevent flash: read saved theme before first paint */}
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -18,8 +20,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body>
-        {children}
+      <body className="bg-slate-950 text-slate-100 min-h-screen">
+        <LLMProvider>
+          <TopBar />
+          <Sidebar />
+          <main
+            className="min-h-screen"
+            style={{ paddingTop: '52px', paddingLeft: '240px' }}
+          >
+            {children}
+          </main>
+        </LLMProvider>
       </body>
     </html>
   );
