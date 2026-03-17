@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { LLMProvider } from '@/lib/llm-context';
 import TopBar from '@/components/TopBar';
+import ModelBar from '@/components/ModelBar';
 import Sidebar from '@/components/Sidebar';
 
 export const metadata: Metadata = {
@@ -23,10 +24,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-slate-950 text-slate-100 min-h-screen">
         <LLMProvider>
           <TopBar />
+          <ModelBar />
           <Sidebar />
           <main
             className="min-h-screen"
-            style={{ paddingTop: '52px', paddingLeft: '240px' }}
+            style={{ paddingTop: '90px', paddingLeft: '240px' }}
           >
             {children}
           </main>
