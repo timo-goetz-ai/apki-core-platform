@@ -12,6 +12,8 @@ const COOLIFY_URL    = process.env.COOLIFY_URL ?? 'https://coolify.automation-pl
 const COOLIFY_KEY    = process.env.COOLIFY_API_KEY ?? '';
 const CF_TOKEN       = process.env.CLOUDFLARE_API_TOKEN ?? '';
 
+// ─── Model note: Claude Haiku (anthropic/claude-haiku-*) is recommended for tool-use tasks
+//     due to fast latency and strong function-calling reliability. ─────────────
 // ─── Tool definitions (OpenAI format) ───────────────────────────────────────
 const TOOLS = [
   {
@@ -99,6 +101,65 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'trigger_workflow',
+      description: 'Trigger an n8n workflow via webhook. Use this when the user wants to start a workflow, create content, process a topic, run a pipeline, or send something to n8n.',
+      parameters: {
+        type: 'object',
+        properties: {
+          workflow: {
+            type: 'string',
+            enum: ['content-pipeline', 'voice-tts', 'content-enrichment', 'apply-template', 'nische-aktiviert', 'lead-capture', 'wf1-test-run'],
+            description: 'Which webhook to trigger'
+          },
+          payload: {
+            type: 'object',
+            description: 'JSON payload to send. For content-pipeline: {thema: string}. For voice-tts: {text: string}. For content-enrichment: {content: string}. For apply-template: {content: string, template: string}. For nische-aktiviert: {nische: string}.'
+          }
+        },
+        required: ['workflow', 'payload']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_workflow_status',
+      description: 'Get the list of all n8n workflows with their status (active/inactive), trigger type, and last execution info.',
+      parameters: { type: 'object', properties: {} }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'send_telegram',
+      description: 'Send a Telegram message to the admin (Timo). Use when the user wants to send themselves a note, reminder, or result.',
+      parameters: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'The message text to send' }
+        },
+        required: ['message']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'deep_research',
+      description: 'Perform deep research on a topic by querying multiple sources: HackerNews, Reddit, GitHub trending, and NocoDB knowledge base. Returns a structured research report.',
+      parameters: {
+        type: 'object',
+        properties: {
+          topic: { type: 'string', description: 'The topic to research' },
+          depth: { type: 'string', enum: ['quick', 'deep'], description: 'quick = top results only, deep = full analysis with synthesis' }
+        },
+        required: ['topic']
+      }
+    }
+  }
 ];
 
 const SYSTEM_PROMPT = `Du bist AIOS — der KI-Assistent für die Infrastruktur von automation-plus-ki.de.
@@ -123,6 +184,7 @@ Dienste:
 Admin Dashboard: https://admin.automation-plus-ki.de
 
 Du hast Zugriff auf Tools um Container zu steuern, Services zu prüfen und Infos abzurufen.
+Du kannst n8n-Workflows direkt starten (trigger_workflow), alle Workflows auflisten (get_workflow_status), Telegram-Nachrichten senden (send_telegram) und Deep Research zu beliebigen Themen machen (deep_research). Nutze diese Tools proaktiv wenn der User etwas starten oder recherchieren möchte. Beispiele: "Starte die Content Pipeline für KI-Agenten" → trigger_workflow mit content-pipeline, "Was läuft in n8n?" → get_workflow_status, "Schick mir eine Zusammenfassung" → send_telegram, "Recherchiere Llama 4 Trends" → deep_research.
 Antworte präzise auf Deutsch. Nutze Markdown für strukturierte Ausgaben.`;
 
 // ─── NocoDB Knowledge Base table IDs ─────────────────────────────────────────
@@ -224,6 +286,101 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         });
         const data = await r.json();
         return JSON.stringify(data.list ?? data, null, 2);
+      }
+      case 'trigger_workflow': {
+        const webhook = args.workflow as string;
+        const payload = args.payload as Record<string, unknown>;
+        const url = `https://n8n.automation-plus-ki.de/webhook/${webhook}`;
+        try {
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(15000),
+          });
+          if (r.ok) {
+            const data = await r.json().catch(() => ({}));
+            return `✅ Workflow "${webhook}" erfolgreich gestartet.\n\nPayload: ${JSON.stringify(payload)}\n\nAntwort: ${JSON.stringify(data).slice(0, 500)}`;
+          }
+          return `❌ Workflow "${webhook}" Fehler: HTTP ${r.status}`;
+        } catch (e) {
+          return `❌ Webhook nicht erreichbar: ${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      case 'get_workflow_status': {
+        try {
+          const r = await fetch('https://n8n.automation-plus-ki.de/api/v1/workflows?limit=50', {
+            headers: { 'X-N8N-API-KEY': process.env.N8N_API_KEY || '***REDACTED_N8N_KEY***' },
+            signal: AbortSignal.timeout(8000),
+          });
+          const data = await r.json();
+          const workflows = (data.data || []).map((w: { name: string; active: boolean; id: string }) => ({
+            name: w.name,
+            active: w.active,
+            id: w.id,
+          }));
+          const active = workflows.filter((w: { active: boolean }) => w.active).length;
+          return `📋 n8n Workflows: ${workflows.length} gesamt, ${active} aktiv\n\n${workflows.map((w: { active: boolean; name: string }) => `${w.active ? '🟢' : '⚫'} ${w.name}`).join('\n')}`;
+        } catch (e) {
+          return `Fehler beim Abrufen: ${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      case 'send_telegram': {
+        const message = args.message as string;
+        const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
+        const chatId = '6495183720';
+        if (!botToken) return '❌ TELEGRAM_BOT_TOKEN nicht konfiguriert';
+        try {
+          const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' }),
+            signal: AbortSignal.timeout(8000),
+          });
+          const data = await r.json();
+          return data.ok ? `✅ Telegram-Nachricht gesendet: "${message.slice(0, 80)}..."` : `❌ Fehler: ${JSON.stringify(data)}`;
+        } catch (e) {
+          return `❌ Telegram Fehler: ${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      case 'deep_research': {
+        const topic = args.topic as string;
+        const depth = (args.depth as string) || 'quick';
+        const encoded = encodeURIComponent(topic);
+        const results: string[] = [];
+
+        // HackerNews
+        try {
+          const hn = await fetch(`https://hn.algolia.com/api/v1/search?query=${encoded}&tags=story&hitsPerPage=5`, { signal: AbortSignal.timeout(6000) });
+          const hnData = await hn.json();
+          const hits = (hnData.hits || []).slice(0, 5).map((h: { title: string; points: number; url?: string }) => `• ${h.title} (${h.points} pts)`).join('\n');
+          if (hits) results.push(`**HackerNews:**\n${hits}`);
+        } catch { results.push('HackerNews: nicht erreichbar'); }
+
+        // Reddit
+        try {
+          const reddit = await fetch(`https://www.reddit.com/search.json?q=${encoded}&sort=top&t=week&limit=5`, {
+            headers: { 'User-Agent': 'AIOS-Dashboard/1.0' },
+            signal: AbortSignal.timeout(6000),
+          });
+          const rdData = await reddit.json();
+          const posts = ((rdData.data?.children) || []).slice(0, 5).map((p: { data: { title: string; score: number; subreddit: string } }) => `• r/${p.data.subreddit}: ${p.data.title} (${p.data.score} 👍)`).join('\n');
+          if (posts) results.push(`**Reddit (diese Woche):**\n${posts}`);
+        } catch { results.push('Reddit: nicht erreichbar'); }
+
+        // GitHub Trending (via NocoDB trends table as fallback)
+        try {
+          const noco = await fetch(
+            `https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pfx0ca6docorj8n/trends?limit=5&sort=-CreatedAt`,
+            { headers: { 'xc-token': '***REDACTED_NOCODB_TOKEN***' }, signal: AbortSignal.timeout(5000) }
+          );
+          const nocoData = await noco.json();
+          const items = (nocoData.list || []).slice(0, 3).map((t: { Thema?: string; Name?: string; Beschreibung?: string }) => `• ${t.Thema ?? t.Name}: ${(t.Beschreibung ?? '').slice(0, 80)}`).join('\n');
+          if (items) results.push(`**Interne Trends (NocoDB):**\n${items}`);
+        } catch { /* silent */ }
+
+        const report = results.join('\n\n');
+        return `🔬 **Deep Research: "${topic}"** (${depth})\n\n${report}\n\n---\n*${results.length} Quellen abgefragt*`;
       }
       default:
         return `Unknown tool: ${name}`;

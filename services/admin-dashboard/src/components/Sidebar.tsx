@@ -52,6 +52,7 @@ const NAV: NavSection[] = [
     title: 'MONITORING',
     items: [
       { label: 'Container',    href: '/monitoring/containers', icon: <Monitor size={14} />,        ready: true },
+      { label: 'Metrics',      href: '/monitoring/metrics',   icon: <Activity size={14} />,        ready: true },
       { label: 'Grafana',      href: '/monitoring/grafana',   icon: <BarChart2 size={14} />,       ready: true },
       { label: 'Logs',         href: '/logs',                 icon: <FileText size={14} />,        ready: true },
       { label: 'Alerts',       href: '/monitoring/alerts',    icon: <Bell size={14} />,            ready: true },
