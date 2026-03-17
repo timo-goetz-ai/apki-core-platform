@@ -79,7 +79,6 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/infra-dashboard
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
