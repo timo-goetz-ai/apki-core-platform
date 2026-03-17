@@ -1,230 +1,241 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { ActivityFeedWidget } from '@/components/ActivityFeedWidget';
 import {
-  Server, Activity, Bot, Database, Shield,
-  Cpu, BarChart2, Terminal, Network, Mic, Home, Mail,
-  RefreshCw, Workflow, Layers, Boxes,
+  Server, Activity, Cpu, TrendingUp, TrendingDown,
+  Minus, CheckCircle2, AlertTriangle, XCircle,
+  RefreshCw, Zap, ArrowRight,
 } from 'lucide-react';
 
-const stagger = { visible: { transition: { staggerChildren: 0.05 } } };
-const fadeUp = {
-  hidden:  { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] as const } },
-};
-
+// ── Types ──────────────────────────────────────────────────────────────────
 type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
-interface ServiceHealth { status: ServiceStatus; latency?: number; }
 
-const CORE_SERVICES = [
-  { id: 'nexus-core',  name: 'Nexus API',   role: 'FastAPI',    url: 'https://api.automation-plus-ki.de',       icon: <Server size={13} /> },
-  { id: 'n8n',         name: 'n8n',         role: 'Automation', url: 'https://n8n.automation-plus-ki.de',       icon: <Workflow size={13} /> },
-  { id: 'nocodb',      name: 'NocoDB',      role: 'Database',   url: 'https://nocodb.automation-plus-ki.de',    icon: <Database size={13} /> },
-  { id: 'grafana',     name: 'Grafana',     role: 'Monitoring', url: 'https://grafana.automation-plus-ki.de',   icon: <BarChart2 size={13} /> },
-  { id: 'agents',      name: 'Agents',      role: 'AI Hub',     url: 'https://agents.automation-plus-ki.de',    icon: <Bot size={13} /> },
-  { id: 'voice',       name: 'Voice AI',    role: 'TTS',        url: 'https://voice.automation-plus-ki.de',     icon: <Mic size={13} /> },
-  { id: 'appflowy',    name: 'AppFlowy',    role: 'Notes',      url: 'https://appflowy.automation-plus-ki.de',  icon: <Terminal size={13} /> },
-  { id: 'authentik',   name: 'Authentik',   role: 'SSO',        url: 'https://auth.automation-plus-ki.de',      icon: <Shield size={13} /> },
-  { id: 'prometheus',  name: 'Prometheus',  role: 'Metrics',    url: 'https://prometheus.automation-plus-ki.de',icon: <Activity size={13} /> },
-  { id: 'qdrant',      name: 'Qdrant',      role: 'Vector DB',  url: 'https://qdrant.automation-plus-ki.de',    icon: <Database size={13} /> },
-  { id: 'infra',       name: 'Infra Mon.',  role: 'Status',     url: 'https://infra.automation-plus-ki.de',     icon: <Layers size={13} /> },
-  { id: 'homepage',    name: 'Homepage',    role: 'Dashboard',  url: 'https://dashboard.automation-plus-ki.de', icon: <Home size={13} /> },
-  { id: 'mailpit',     name: 'Mailpit',     role: 'SMTP',       url: 'https://mail.automation-plus-ki.de',      icon: <Mail size={13} /> },
-];
-
-const MCP_SERVICES = [
-  { id: 'mcp-grafana',    name: 'MCP Grafana',    url: 'https://mcp-grafana.automation-plus-ki.de' },
-  { id: 'mcp-nocodb',     name: 'MCP NocoDB',     url: 'https://mcp-nocodb.automation-plus-ki.de' },
-  { id: 'mcp-postgres',   name: 'MCP Postgres',   url: 'https://mcp-postgres.automation-plus-ki.de' },
-  { id: 'mcp-prometheus', name: 'MCP Prometheus', url: 'https://mcp-prometheus.automation-plus-ki.de' },
-  { id: 'mcp-qdrant',     name: 'MCP Qdrant',     url: 'https://mcp-qdrant.automation-plus-ki.de' },
-  { id: 'mcp-filesystem', name: 'MCP Filesystem', url: 'https://mcp-filesystem.automation-plus-ki.de' },
-  { id: 'mcp-authentik',  name: 'MCP Authentik',  url: 'https://mcp-authentik.automation-plus-ki.de' },
-  { id: 'mcp-n8n',        name: 'MCP n8n',        url: 'https://mcp-n8n.automation-plus-ki.de' },
-  { id: 'mcp-github',     name: 'MCP GitHub',     url: 'https://mcp-github.automation-plus-ki.de' },
-  { id: 'mcp-cloudflare', name: 'MCP Cloudflare', url: 'https://mcp-cloudflare.automation-plus-ki.de' },
-  { id: 'mcp-google',     name: 'MCP Google',     url: 'https://mcp-google.automation-plus-ki.de' },
-  { id: 'mcp-hetzner',    name: 'MCP Hetzner',    url: 'https://mcp-hetzner.automation-plus-ki.de' },
-  { id: 'mcp-coolify',    name: 'MCP Coolify',    url: 'https://mcp-coolify.automation-plus-ki.de' },
-];
-
-const STATUS_CFG = {
-  online:   { color: '#4ade80', label: 'online'   },
-  degraded: { color: '#fbbf24', label: 'degraded' },
-  offline:  { color: '#f87171', label: 'offline'  },
-  unknown:  { color: '#64748b', label: '…'        },
+const STATUS_COLOR: Record<ServiceStatus, string> = {
+  online:   'var(--accent-green)',
+  degraded: 'var(--accent-amber)',
+  offline:  'var(--accent-red)',
+  unknown:  'var(--text-muted)',
 };
 
-export default function CockpitPage() {
-  const [apiHealth, setApiHealth] = useState<{ status: string; timestamp: string } | null>(null);
-  const [serviceHealth, setServiceHealth] = useState<Record<string, ServiceHealth>>({});
-  const [lastChecked, setLastChecked] = useState('');
-  const [checking, setChecking] = useState(false);
-  const [time, setTime] = useState('');
+const STATUS_LABEL: Record<ServiceStatus, string> = {
+  online: 'online', degraded: 'degraded', offline: 'offline', unknown: 'unknown',
+};
 
-  const fetchHealth = useCallback(async () => {
-    setChecking(true);
+const STATUS_ICON: Record<ServiceStatus, React.ReactNode> = {
+  online:   <CheckCircle2 size={10} />,
+  degraded: <AlertTriangle size={10} />,
+  offline:  <XCircle size={10} />,
+  unknown:  <Minus size={10} />,
+};
+
+// ── KPI Card ───────────────────────────────────────────────────────────────
+function KPICard({ label, value, unit, trend, icon, accentColor }: {
+  label: string; value: string | number; unit?: string;
+  trend?: 'up' | 'down' | 'flat'; icon: React.ReactNode; accentColor: string;
+}) {
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const trendColor = trend === 'up' ? 'var(--accent-green)' : trend === 'down' ? 'var(--accent-red)' : 'var(--text-muted)';
+  return (
+    <div
+      style={{
+        background: 'var(--layer-2)', border: '1px solid var(--border)',
+        borderRadius: 12, padding: '20px 22px', position: 'relative',
+        overflow: 'hidden', transition: 'border-color 0.18s, transform 0.18s', cursor: 'default',
+      }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = accentColor; el.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(0)'; }}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`, opacity: 0.6 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+        <span style={{ color: accentColor, opacity: 0.65 }}>{icon}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 34, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</span>
+        {unit && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{unit}</span>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <TrendIcon size={10} style={{ color: trendColor }} />
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>live</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Status Dot ─────────────────────────────────────────────────────────────
+function StatusDot({ status }: { status: ServiceStatus }) {
+  const color = STATUS_COLOR[status];
+  return (
+    <span style={{
+      display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+      background: color, flexShrink: 0,
+      boxShadow: status === 'online' ? `0 0 7px ${color}` : 'none',
+      animation: status === 'online' ? 'status-pulse 2.5s ease-in-out infinite' : 'none',
+    }} />
+  );
+}
+
+// ── Service Card ───────────────────────────────────────────────────────────
+function ServiceCard({ name, role, status, latency }: {
+  name: string; role: string; status: ServiceStatus; latency?: string;
+}) {
+  return (
+    <div
+      style={{
+        background: 'var(--layer-2)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px',
+        display: 'flex', flexDirection: 'column', gap: 9,
+        transition: 'border-color 0.14s, background 0.14s', cursor: 'default',
+      }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = 'var(--border-bright)'; el.style.background = 'var(--layer-3)'; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = 'var(--border)'; el.style.background = 'var(--layer-2)'; }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <StatusDot status={status} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, fontFamily: 'var(--font-mono)', color: STATUS_COLOR[status] }}>
+          {STATUS_ICON[status]}{STATUS_LABEL[status]}
+        </span>
+      </div>
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>{name}</p>
+        <p style={{ fontSize: 10, margin: '3px 0 0', color: 'var(--text-muted)', fontFamily: latency ? 'var(--font-mono)' : 'var(--font-ui)' }}>{latency ?? role}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Section Header ─────────────────────────────────────────────────────────
+function SectionHeader({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{ marginBottom: 14, display: 'flex', alignItems: 'baseline', gap: 10 }}>
+      <h2 style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>{title}</h2>
+      {sub && <span style={{ fontSize: 11, color: 'var(--text-muted)', opacity: 0.7 }}>{sub}</span>}
+    </div>
+  );
+}
+
+// ── Data ───────────────────────────────────────────────────────────────────
+const SERVICES = [
+  { id: 'n8n',        name: 'n8n',        role: 'Workflows'  },
+  { id: 'nocodb',     name: 'NocoDB',     role: 'Datenbank'  },
+  { id: 'grafana',    name: 'Grafana',    role: 'Monitoring' },
+  { id: 'coolify',    name: 'Coolify',    role: 'Deployment' },
+  { id: 'authentik',  name: 'Authentik',  role: 'Auth / SSO' },
+  { id: 'qdrant',     name: 'Qdrant',     role: 'Vector DB'  },
+  { id: 'redis',      name: 'Redis',      role: 'Cache'      },
+  { id: 'postgres',   name: 'PostgreSQL', role: 'Database'   },
+  { id: 'prometheus', name: 'Prometheus', role: 'Metrics'    },
+  { id: 'traefik',    name: 'Traefik',    role: 'Proxy'      },
+  { id: 'cloudflare', name: 'Cloudflare', role: 'DNS / CDN'  },
+  { id: 'appflowy',   name: 'AppFlowy',   role: 'Workspace'  },
+];
+
+const QUICK_ACTIONS = [
+  { label: '+ Neuer Workflow',  href: '/workflows',           accent: 'var(--accent-blue)'  },
+  { label: '+ Agent erstellen', href: '/agents',              accent: 'var(--accent-green)' },
+  { label: 'Datenbanken',       href: '/databases',           accent: 'var(--accent-amber)' },
+  { label: 'Grafana öffnen',    href: '/monitoring/grafana',  accent: 'var(--accent-red)'   },
+];
+
+// ── Page ───────────────────────────────────────────────────────────────────
+export default function CockpitPage() {
+  const [statuses, setStatuses] = useState<Record<string, { status: ServiceStatus; latency?: string }>>({});
+  const [spinning, setSpinning] = useState(false);
+
+  const fetchStatuses = useCallback(async () => {
+    setSpinning(true);
     try {
-      const res = await fetch('/api/services', { cache: 'no-store' });
-      const data = await res.json();
-      setServiceHealth(data);
-      setLastChecked(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    } catch { /* ignore */ }
-    finally { setChecking(false); }
+      const res = await fetch('/api/services');
+      if (res.ok) setStatuses(await res.json());
+    } catch { /* silent */ }
+    setTimeout(() => setSpinning(false), 700);
   }, []);
 
   useEffect(() => {
-    fetch('https://api.automation-plus-ki.de/health').then(r => r.json()).then(setApiHealth).catch(() => {});
-    fetchHealth();
-    const iv = setInterval(fetchHealth, 60_000);
-    const tick = () => setTime(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    tick();
-    const clockIv = setInterval(tick, 1000);
-    return () => { clearInterval(iv); clearInterval(clockIv); };
-  }, [fetchHealth]);
+    fetchStatuses();
+    const t = setInterval(fetchStatuses, 30_000);
+    return () => clearInterval(t);
+  }, [fetchStatuses]);
 
-  const getStatus = (id: string): ServiceStatus => (serviceHealth[id]?.status as ServiceStatus) ?? 'unknown';
-  const getLatency = (id: string) => serviceHealth[id]?.latency ? `${serviceHealth[id].latency}ms` : undefined;
-  const allServices = [...CORE_SERVICES, ...MCP_SERVICES];
-  const onlineCount = Object.values(serviceHealth).filter(s => s.status === 'online').length;
-  const totalChecked = Object.keys(serviceHealth).length;
-
-  const renderServiceCard = (svc: { id: string; name: string; role?: string; url?: string; icon?: React.ReactNode }) => {
-    const st = getStatus(svc.id);
-    const sc = STATUS_CFG[st];
-    const lat = getLatency(svc.id);
-    return (
-      <div key={svc.id} className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-slate-800/70 border border-slate-700/50 hover:border-slate-600/50 transition-colors">
-        <div className="flex justify-between items-center">
-          <span className="text-slate-500">{svc.icon ?? <Cpu size={13} />}</span>
-          <span className="flex items-center gap-1 text-[10px]">
-            <span style={{
-              width: 5, height: 5, borderRadius: '50%', background: sc.color, flexShrink: 0,
-              animation: st === 'online' ? 'live-pulse 2s ease-in-out infinite' : 'none',
-              display: 'inline-block',
-            }} />
-            <span style={{ color: sc.color }}>{sc.label}</span>
-          </span>
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold text-slate-200 m-0 leading-tight">{svc.name}</p>
-          <p className="text-[10px] text-slate-500 mt-0.5 m-0">
-            {lat ?? (svc.role ?? 'MCP')}
-          </p>
-        </div>
-      </div>
-    );
-  };
+  const getStatus  = (id: string): ServiceStatus => statuses[id]?.status  ?? 'unknown';
+  const getLatency = (id: string): string | undefined => statuses[id]?.latency;
+  const onlineCount = Object.values(statuses).filter(s => s.status === 'online').length;
+  const totalCount  = Object.keys(statuses).length || SERVICES.length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
-      <motion.section initial="hidden" animate="visible" variants={stagger} className="mb-6">
-        {/* Status badge */}
-        <motion.div variants={fadeUp} className="mb-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" style={{ animation: 'live-pulse 2s infinite' }} />
-            production · hetzner cpx42 · nürnberg · 46.224.145.109
-          </span>
-        </motion.div>
+    <div style={{ padding: '32px 32px 56px', position: 'relative', zIndex: 1, animation: 'fade-up 0.3s ease both' }}>
 
-        <motion.h1 variants={fadeUp} className="text-2xl font-bold tracking-tight mb-1.5">
-          Automation + KI
-          <span className="text-slate-500 font-normal"> · OS Control Center</span>
-        </motion.h1>
-        <motion.p variants={fadeUp} className="text-sm text-slate-400 mb-5 max-w-lg leading-relaxed">
-          KI-Agents · Automatisierung · Infrastruktur · Content · Monitoring — alles an einem Ort.
-        </motion.p>
+      {/* Hero */}
+      <div style={{ marginBottom: 40 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <Zap size={15} style={{ color: 'var(--accent-blue)' }} />
+          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>system / cockpit</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <h1 style={{
+            fontFamily: 'Outfit, var(--font-ui)', fontSize: 44, fontWeight: 700,
+            letterSpacing: '-0.03em', lineHeight: 1, margin: 0,
+            background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>COCKPIT</h1>
+          <button
+            onClick={fetchStatuses}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
+              cursor: 'pointer', background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-bright)'}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'}
+          >
+            <RefreshCw size={11} style={{ animation: spinning ? 'spin 0.7s linear infinite' : 'none' }} />
+            refresh
+          </button>
+        </div>
+        <p style={{ marginTop: 8, fontSize: 14, color: 'var(--text-muted)', fontWeight: 300, margin: '8px 0 0' }}>
+          KI-Agenten · Workflows · Infrastruktur — alles an einem Ort
+        </p>
+      </div>
 
-        {/* KPI Cards */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[
-            { label: 'Services',      value: totalChecked ? `${onlineCount}/${totalChecked}` : '—', sub: 'online · health live',    icon: <Server size={14} />,   positive: onlineCount > 0 },
-            { label: 'Container',     value: '63',                                                    sub: 'docker · hetzner',        icon: <Boxes size={14} />,    positive: true },
-            { label: 'n8n Workflows', value: '17',                                                    sub: '16 aktiv · 1 pausiert',   icon: <Workflow size={14} />, positive: true },
-            { label: 'MCP Server',    value: '19',                                                    sub: 'alle verbunden',          icon: <Cpu size={14} />,      positive: true },
-            { label: 'NocoDB',        value: '23',                                                    sub: 'Tabellen · 4 Bases',      icon: <Database size={14} />, positive: true },
-            { label: 'API Status',    value: apiHealth ? 'Healthy' : '—',                             sub: 'api.automation-plus-ki.de', icon: <Activity size={14} />, positive: !!apiHealth },
-          ].map(kpi => (
-            <div key={kpi.label} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-3.5">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider m-0">{kpi.label}</p>
-                <span className={kpi.positive ? 'text-emerald-400 opacity-70' : 'text-slate-500'}>{kpi.icon}</span>
-              </div>
-              <p className={`text-xl font-bold tracking-tight mb-0.5 ${kpi.positive ? 'text-slate-100' : 'text-amber-400'}`}>
-                {kpi.value}
-              </p>
-              <p className="text-[10px] text-slate-500 m-0">{kpi.sub}</p>
-            </div>
+      {/* KPI Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 40 }}>
+        <KPICard label="Services Online" value={onlineCount} unit={`/ ${totalCount}`} trend="flat" icon={<Server size={15} />} accentColor="rgba(52,211,153,0.5)" />
+        <KPICard label="Workflows" value="17" unit="aktiv" trend="up" icon={<Activity size={15} />} accentColor="rgba(56,189,248,0.5)" />
+        <KPICard label="MCP Server" value="19" unit="laufend" trend="flat" icon={<Cpu size={15} />} accentColor="rgba(251,191,36,0.5)" />
+        <KPICard label="Uptime" value="99.8" unit="%" trend="up" icon={<TrendingUp size={15} />} accentColor="rgba(52,211,153,0.5)" />
+      </div>
+
+      {/* Core Services */}
+      <div style={{ marginBottom: 40 }}>
+        <SectionHeader title="Core Services" sub="— live status" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 10 }}>
+          {SERVICES.map(svc => (
+            <ServiceCard key={svc.id} name={svc.name} role={svc.role} status={getStatus(svc.id)} latency={getLatency(svc.id)} />
           ))}
-        </motion.div>
-      </motion.section>
+        </div>
+      </div>
 
-      {/* System Health */}
-      <motion.section
-        initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-20px' }} variants={stagger}
-        className="mb-5"
-      >
-        <motion.div variants={fadeUp} className="mb-3">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider m-0">
-            System Health <span className="font-normal normal-case tracking-normal">— alle Services im Blick</span>
-          </p>
-        </motion.div>
+      {/* Quick Actions */}
+      <div>
+        <SectionHeader title="Quick Actions" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+          {QUICK_ACTIONS.map(action => (
+            <a key={action.href} href={action.href} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '13px 16px', borderRadius: 10, textDecoration: 'none',
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500, transition: 'all 0.14s',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = action.accent; el.style.color = action.accent; el.style.background = 'var(--layer-3)'; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-secondary)'; el.style.background = 'var(--layer-2)'; }}
+            >
+              {action.label}
+              <ArrowRight size={13} style={{ opacity: 0.5 }} />
+            </a>
+          ))}
+        </div>
+      </div>
 
-        <motion.div variants={fadeUp} className="grid gap-3" style={{ gridTemplateColumns: '1fr 280px' }}>
-          {/* Service Health Grid */}
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <p className="text-sm font-semibold text-slate-100 m-0">Platform Services</p>
-                <p className="text-[11px] text-slate-400 mt-0.5 m-0">automation-plus-ki.de · {allServices.length} Services</p>
-              </div>
-              <button
-                onClick={fetchHealth}
-                disabled={checking}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw size={10} style={{ animation: checking ? 'spin 1s linear infinite' : 'none' }} />
-                {checking ? 'Prüfe…' : 'Refresh'}
-              </button>
-            </div>
-
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Core</p>
-            <div className="grid gap-1.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}>
-              {CORE_SERVICES.map(renderServiceCard)}
-            </div>
-
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">MCP Server · 19 aktiv</p>
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}>
-              {MCP_SERVICES.map(renderServiceCard)}
-            </div>
-          </div>
-
-          {/* Activity Feed */}
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4">
-            <ActivityFeedWidget />
-          </div>
-        </motion.div>
-      </motion.section>
-
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-        className="pt-4 border-t border-slate-800 flex justify-between flex-wrap gap-2 mt-4"
-      >
-        <p className="text-[11px] text-slate-600 m-0">
-          Timo Götz · DEKRA-zertifizierter KI-Manager · automation-plus-ki.de
-        </p>
-        <p className="text-[11px] text-slate-600 m-0 font-mono">
-          {lastChecked ? `Geprüft: ${lastChecked}` : 'Verbinde…'}
-        </p>
-      </motion.footer>
-
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-      `}</style>
     </div>
   );
 }
