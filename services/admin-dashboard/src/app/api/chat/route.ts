@@ -77,6 +77,28 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'query_knowledge_base',
+      description: 'Query the NocoDB Knowledge Base. Can retrieve rules, skills, agents, subagents, plugins, hooks, or prompts from the AI_SYSTEM database.',
+      parameters: {
+        type: 'object',
+        properties: {
+          table: {
+            type: 'string',
+            enum: ['rules', 'skills', 'plugins', 'hooks', 'agents', 'subagents', 'prompts', 'knowledge_items'],
+            description: 'Which table to query',
+          },
+          filter: {
+            type: 'string',
+            description: 'Optional text filter for the Name/Titel column',
+          },
+        },
+        required: ['table'],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `Du bist AIOS — der KI-Assistent für die Infrastruktur von automation-plus-ki.de.
@@ -102,6 +124,20 @@ Admin Dashboard: https://admin.automation-plus-ki.de
 
 Du hast Zugriff auf Tools um Container zu steuern, Services zu prüfen und Infos abzurufen.
 Antworte präzise auf Deutsch. Nutze Markdown für strukturierte Ausgaben.`;
+
+// ─── NocoDB Knowledge Base table IDs ─────────────────────────────────────────
+const NOCO_TABLE_IDS: Record<string, string> = {
+  skills:          'mdkwfxgjg80tgjd',
+  rules:           'mcn1qpaapk5x849',
+  hooks:           'mgnxselg5bkglr8',
+  clients:         'mxfirejid6z3h5g',
+  subagents:       'm6kwm1cedzeou6w',
+  cursor_configs:  'mzzgzfzgatrauwy',
+  plugins:         'mbt77n1toqpa094',
+  agents:          'mjdp54ldeoxlb8s',
+  prompts:         'mijlvsujsgqa92m',
+  knowledge_items: 'm9hgs3y3iz9xtgl',
+};
 
 // ─── Tool execution ──────────────────────────────────────────────────────────
 async function executeTool(name: string, args: Record<string, unknown>): Promise<string> {
@@ -176,6 +212,18 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
           signal: AbortSignal.timeout(10000),
         });
         return r.ok ? `✅ ${args.action} erfolgreich für ${args.container_id}` : `❌ Fehler: ${r.status}`;
+      }
+      case 'query_knowledge_base': {
+        const table = args.table as string;
+        const tableId = NOCO_TABLE_IDS[table];
+        if (!tableId) return `Unknown table: ${table}`;
+        const url = `https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pfx0ca6docorj8n/${tableId}?limit=50`;
+        const r = await fetch(url, {
+          headers: { 'xc-token': '***REDACTED_NOCODB_TOKEN***' },
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await r.json();
+        return JSON.stringify(data.list ?? data, null, 2);
       }
       default:
         return `Unknown tool: ${name}`;
