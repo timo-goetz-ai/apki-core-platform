@@ -45,6 +45,7 @@ const NAV: NavSection[] = [
       { label: 'Workflows',    href: '/workflows',            icon: <Workflow size={14} />,         ready: true },
       { label: 'Datenbanken',  href: '/databases',            icon: <Database size={14} />,         ready: true },
       { label: 'Knowledge Base', href: '/knowledge',          icon: <BookOpen size={14} />,         ready: true },
+      { label: 'Templates',    href: '/templates',            icon: <FileText size={14} />,         ready: true },
     ],
   },
   {
