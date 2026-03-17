@@ -38,7 +38,7 @@ interface BrandItem {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function extractVariables(content: string): string[] {
   const matches = content.match(/\{\{([A-Z_0-9]+)\}\}/g) ?? [];
-  return [...new Set(matches.map(m => m.slice(2, -2)))];
+  return Array.from(new Set(matches.map(m => m.slice(2, -2))));
 }
 
 function fillTemplate(content: string, values: Record<string, string>): string {
