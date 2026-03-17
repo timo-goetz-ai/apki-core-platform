@@ -7,7 +7,7 @@ import {
   CheckCircle2, AlertTriangle, XCircle, Minus,
   Wrench, Sparkles, Bot,
 } from 'lucide-react';
-import { MODELS, DEFAULT_MODEL, getCloudModels, getOllamaModels, type ModelInfo } from '@/lib/chat-models';
+import { MODELS, DEFAULT_MODEL, getModelsByProvider, type ModelInfo } from '@/lib/chat-models';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
@@ -312,44 +312,41 @@ export default function CockpitPage() {
                 boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
                 maxHeight: 420, overflowY: 'auto',
               }}>
-                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 4px', marginBottom: 4 }}>☁ Cloud</p>
-                {getCloudModels().map(([key, m]) => (
-                  <button key={key} onClick={() => { setModelKey(key); setModelOpen(false); }} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '6px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 2,
-                    background: key === modelKey ? 'rgba(56,189,248,0.08)' : 'transparent',
-                    border: key === modelKey ? '1px solid rgba(56,189,248,0.2)' : '1px solid transparent',
-                    color: key === modelKey ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                    fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
-                  }}
-                  onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = 'var(--text-primary)'; } }}
-                  onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = 'var(--text-secondary)'; } }}
-                  >
-                    <span>{m.label}</span>
-                    <div style={{ display: 'flex', gap: 3 }}>
-                      {m.free && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: 'var(--accent-amber)' }}>FREE</span>}
-                      {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: 'var(--accent-blue)' }}>TOOLS</span>}
+                {([
+                  { provider: 'openrouter' as const, label: '⚡ Free Tier · OpenRouter', accent: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',   selBorder: 'rgba(56,189,248,0.2)',   selColor: 'var(--accent-blue)' },
+                  { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude',      accent: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',   selBorder: 'rgba(251,191,36,0.25)',  selColor: 'var(--accent-amber)' },
+                  { provider: 'google'     as const, label: '◈ Google · AI Studio',      accent: '#34d399',             selBg: 'rgba(52,211,153,0.08)',   selBorder: 'rgba(52,211,153,0.25)', selColor: '#34d399' },
+                  { provider: 'ollama'     as const, label: '⬡ Lokal · Hetzner',         accent: 'var(--accent-purple)', selBg: 'rgba(167,139,250,0.1)',  selBorder: 'rgba(167,139,250,0.3)',  selColor: 'var(--accent-purple)' },
+                ] as const).map(({ provider, label, accent, selBg, selBorder, selColor }) => {
+                  const entries = getModelsByProvider(provider);
+                  if (!entries.length) return null;
+                  return (
+                    <div key={provider}>
+                      <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: accent, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>{label}</p>
+                      {entries.map(([key, m]) => (
+                        <button key={key} onClick={() => { setModelKey(key); setModelOpen(false); }} style={{
+                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '5px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 2,
+                          background: key === modelKey ? selBg : 'transparent',
+                          border: key === modelKey ? `1px solid ${selBorder}` : '1px solid transparent',
+                          color: key === modelKey ? selColor : 'var(--text-secondary)',
+                          fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
+                        }}
+                        onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = 'var(--text-primary)'; } }}
+                        onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = 'var(--text-secondary)'; } }}
+                        >
+                          <span>{m.label}</span>
+                          <div style={{ display: 'flex', gap: 3 }}>
+                            {m.provider === 'ollama' && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: 'var(--accent-purple)' }}>LOCAL</span>}
+                            {m.free && m.provider !== 'ollama' && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: 'var(--accent-amber)' }}>FREE</span>}
+                            {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: 'var(--accent-blue)' }}>TOOLS</span>}
+                          </div>
+                        </button>
+                      ))}
+                      <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />
                     </div>
-                  </button>
-                ))}
-                <div style={{ height: 1, background: 'var(--border)', margin: '6px 0' }} />
-                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 4px', marginBottom: 4, opacity: 0.8 }}>⬡ Lokal · Hetzner</p>
-                {getOllamaModels().map(([key, m]) => (
-                  <button key={key} onClick={() => { setModelKey(key); setModelOpen(false); }} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '6px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 2,
-                    background: key === modelKey ? 'rgba(167,139,250,0.1)' : 'transparent',
-                    border: key === modelKey ? '1px solid rgba(167,139,250,0.3)' : '1px solid transparent',
-                    color: key === modelKey ? 'var(--accent-purple)' : 'var(--text-secondary)',
-                    fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
-                  }}
-                  onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = 'var(--text-primary)'; } }}
-                  onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = 'var(--text-secondary)'; } }}
-                  >
-                    <span>{m.label}</span>
-                    <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: 'var(--accent-purple)' }}>LOCAL</span>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -498,25 +495,27 @@ export default function CockpitPage() {
             </span>
           </div>
 
-          {/* Cloud models */}
-          <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5 }}>☁ Cloud</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-            {getCloudModels().map(([key, m]) => (
-              <div key={key} onClick={() => setModelKey(key)} style={{ cursor: 'pointer' }}>
-                <ModelBadge m={m} selected={key === modelKey} />
+          {([
+            { provider: 'openrouter' as const, label: '⚡ Free Tier · OpenRouter', color: 'var(--text-muted)' },
+            { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude',      color: 'var(--accent-amber)' },
+            { provider: 'google'     as const, label: '◈ Google · AI Studio',      color: '#34d399' },
+            { provider: 'ollama'     as const, label: '⬡ Lokal · Hetzner',         color: 'var(--accent-purple)' },
+          ] as const).map(({ provider, label, color }) => {
+            const entries = getModelsByProvider(provider);
+            if (!entries.length) return null;
+            return (
+              <div key={provider} style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.85 }}>{label}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {entries.map(([key, m]) => (
+                    <div key={key} onClick={() => setModelKey(key)} style={{ cursor: 'pointer' }}>
+                      <ModelBadge m={m} selected={key === modelKey} />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Local models */}
-          <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.8 }}>⬡ Lokal · Hetzner</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {getOllamaModels().map(([key, m]) => (
-              <div key={key} onClick={() => setModelKey(key)} style={{ cursor: 'pointer' }}>
-                <ModelBadge m={m} selected={key === modelKey} />
-              </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
         {/* Core Services */}
