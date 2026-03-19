@@ -12,7 +12,6 @@ const HEALTH_CHECKS = [
   { id: "prometheus",     url: "https://prometheus.automation-plus-ki.de/-/healthy" },
   { id: "authentik",      url: "https://auth.automation-plus-ki.de/-/health/ready/" },
   { id: "nocodb",         url: "https://nocodb.automation-plus-ki.de/api/v1/health" },
-  { id: "appflowy",       url: "https://appflowy.automation-plus-ki.de" },
   { id: "mailpit",        url: "https://mail.automation-plus-ki.de" },
   { id: "agents",         url: "https://agents.automation-plus-ki.de" },
   { id: "qdrant",         url: "https://qdrant.automation-plus-ki.de/healthz" },
@@ -30,6 +29,8 @@ const HEALTH_CHECKS = [
   { id: "mcp-google",     url: "https://mcp-google.automation-plus-ki.de/health" },
   { id: "mcp-hetzner",    url: "https://mcp-hetzner.automation-plus-ki.de/health" },
   { id: "mcp-coolify",    url: "https://mcp-coolify.automation-plus-ki.de/health" },
+  { id: "playwright",     url: "http://homestack-playwright-proxy:8080" },
+  { id: "fishaudio",      url: "https://api.fish.audio" },
 ];
 
 async function checkHealth(id: string, url: string): Promise<{ id: string; status: "online" | "degraded" | "offline"; latency?: number }> {

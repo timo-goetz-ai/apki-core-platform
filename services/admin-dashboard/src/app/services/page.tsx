@@ -10,7 +10,7 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ServiceStatus = 'online' | 'degraded' | 'offline';
-type Category = 'all' | 'core' | 'ai' | 'automation' | 'data' | 'monitoring' | 'security' | 'productivity' | 'infra';
+type Category = 'all' | 'core' | 'ai' | 'automation' | 'data' | 'monitoring' | 'security' | 'infra';
 
 interface Service {
   name: string;
@@ -32,11 +32,11 @@ const SERVICES: Service[] = [
   { name: 'Grafana',          desc: 'Monitoring & Dashboards',        url: 'grafana.automation-plus-ki.de',       status: 'online', latency: 28,  category: 'monitoring' },
   { name: 'Prometheus',       desc: 'Metriken & Alerting',            url: 'prometheus.automation-plus-ki.de',    status: 'online', latency: 15,  category: 'monitoring' },
   { name: 'Authentik SSO',    desc: 'Identity & Access Management',   url: 'auth.automation-plus-ki.de',          status: 'online', latency: 22,  category: 'security' },
-  { name: 'AppFlowy',         desc: 'Docs & Knowledge Base',          url: 'appflowy.automation-plus-ki.de',      status: 'online', latency: 56,  category: 'productivity' },
   { name: 'Coolify',          desc: 'Deployment & Infrastructure',    url: 'coolify.automation-plus-ki.de:8000',  status: 'online', latency: 19,  category: 'infra' },
-  { name: 'Ollama',           desc: 'Lokale LLM-Modelle',             url: 'ollama:11434',                        status: 'online', latency: 8,   category: 'ai', internal: true },
   { name: 'PostgreSQL',       desc: 'Primäre Datenbank',              url: 'homestack-postgres:5432',             status: 'online', latency: 4,   category: 'data', internal: true },
   { name: 'Qdrant',           desc: 'Vektor-Datenbank',               url: 'qdrant:6333',                        status: 'online', latency: 6,   category: 'ai', internal: true },
+  { name: 'Playwright Browser', desc: 'Browser Automation Service',   url: 'homestack-playwright-proxy:8080',    status: 'online', latency: 38,  category: 'automation', internal: true },
+  { name: 'FishAudio Voice API', desc: 'Voice Synthesis (external)',  url: 'api.fish.audio',                     status: 'online', latency: 120, category: 'ai' },
 ];
 
 const CATEGORIES: { key: Category; label: string }[] = [
@@ -47,7 +47,6 @@ const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'data',         label: 'Daten'          },
   { key: 'monitoring',   label: 'Monitoring'     },
   { key: 'security',     label: 'Security'       },
-  { key: 'productivity', label: 'Productivity'   },
   { key: 'infra',        label: 'Infra'          },
 ];
 
@@ -58,7 +57,6 @@ const CATEGORY_ICONS: Record<Exclude<Category, 'all'>, React.ReactNode> = {
   data:         <Database size={16} />,
   monitoring:   <BarChart2 size={16} />,
   security:     <ShieldCheck size={16} />,
-  productivity: <BookOpen size={16} />,
   infra:        <Rocket size={16} />,
 };
 
@@ -69,7 +67,6 @@ const CATEGORY_COLORS: Record<Exclude<Category, 'all'>, string> = {
   data:         '#34d399',
   monitoring:   '#f472b6',
   security:     '#f87171',
-  productivity: '#60a5fa',
   infra:        '#fb923c',
 };
 

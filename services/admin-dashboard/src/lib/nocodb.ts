@@ -306,3 +306,91 @@ export async function getWorkflowIndex(): Promise<Record<string, unknown>[]> {
     return [];
   }
 }
+
+export async function createProject(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  try {
+    return await nocoPost<Record<string, unknown>>(TABLE_PROJEKTE_NEW, data);
+  } catch (e) {
+    console.warn("[NocoDB] createProject Fehler:", e);
+    throw e;
+  }
+}
+
+// ── Resource Registry ────────────────────────────────────────────────────────
+
+const TABLE_RESOURCES   = process.env.NOCODB_RESOURCES_TABLE_ID   ?? 'me17pwfzfyy3u8g';
+const TABLE_ERROR_LOGS  = process.env.NOCODB_ERROR_LOGS_TABLE_ID  ?? 'm61q6c12uz6r2j9';
+
+export type ResourceType   = 'docker' | 'model' | 'coolify' | 'github' | 'mcp';
+export type ResourceStatus = 'discovered' | 'approved' | 'blocked';
+
+export interface Resource {
+  Id?: number | string;
+  name: string;
+  type: ResourceType;
+  source: string;
+  status: ResourceStatus;
+  metadata?: string;
+  discovered_at: string;
+  approved_by?: string;
+}
+
+export type LogLevel = 'info' | 'warn' | 'error' | 'critical';
+
+export interface ErrorLog {
+  Id?: number | string;
+  ts: string;
+  service: string;
+  level: LogLevel;
+  message: string;
+  details?: string;
+  resolved?: boolean;
+}
+
+export async function getResources(): Promise<Resource[]> {
+  try {
+    return await nocoGet<Resource>(TABLE_RESOURCES, { sort: '-discovered_at' });
+  } catch (e) {
+    console.warn("[NocoDB] getResources Fehler:", e);
+    return [];
+  }
+}
+
+export async function createResource(data: Partial<Resource>): Promise<Resource> {
+  return nocoPost<Resource>(TABLE_RESOURCES, data as Record<string, unknown>);
+}
+
+export async function updateResourceStatus(
+  id: string | number,
+  status: ResourceStatus
+): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_RESOURCES}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, status }),
+  });
+}
+
+export async function getErrorLogs(): Promise<ErrorLog[]> {
+  try {
+    return await nocoGet<ErrorLog>(TABLE_ERROR_LOGS, { sort: '-ts', limit: '500' });
+  } catch (e) {
+    console.warn("[NocoDB] getErrorLogs Fehler:", e);
+    return [];
+  }
+}
+
+export async function createErrorLog(data: Partial<ErrorLog>): Promise<void> {
+  await nocoPost<ErrorLog>(TABLE_ERROR_LOGS, {
+    ...data,
+    ts: data.ts ?? new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function resolveErrorLog(id: string | number): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_ERROR_LOGS}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, resolved: true }),
+  });
+}
