@@ -1,0 +1,152 @@
+{
+  "name": "AIOS Auto-Discovery Scanner",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule (alle 6h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://homestack-socket-proxy:2375/containers/json",
+        "options": {}
+      },
+      "id": "docker-scanner",
+      "name": "Docker Scanner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://openrouter.ai/api/v1/models",
+        "options": {}
+      },
+      "id": "openrouter-scanner",
+      "name": "OpenRouter Models",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.COOLIFY_BASE_URL }}/api/v1/applications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "coolify-scanner",
+      "name": "Coolify Apps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/user/repos?per_page=100&sort=updated",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "github-scanner",
+      "name": "GitHub Repos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 500]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.NOCODB_URL }}/api/v2/tables/me17pwfzfyy3u8g/records?limit=500",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "xc-auth", "value": "={{ $env.NOCODB_API_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "id": "get-existing-resources",
+      "name": "NocoDB: Bestehende Resources",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 350]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all scanned items\nconst existingItems = $('NocoDB: Bestehende Resources').item.json.list || [];\nconst existingKeys = new Set(existingItems.map(r => `${r.name}__${r.type}`));\n\nconst newItems = [];\n\n// Docker containers\nconst dockerItems = $('Docker Scanner').all();\nfor (const item of dockerItems) {\n  const containers = Array.isArray(item.json) ? item.json : [];\n  for (const c of containers) {\n    const name = (c.Names?.[0] || c.Image || 'unknown').replace('/', '');\n    const key = `${name}__docker`;\n    if (!existingKeys.has(key)) {\n      newItems.push({ name, type: 'docker', source: 'docker.local', status: 'discovered', metadata: JSON.stringify({ image: c.Image, state: c.State }), discovered_at: new Date().toISOString() });\n    }\n  }\n}\n\n// OpenRouter models (top 20 newest)\nconst orData = $('OpenRouter Models').item.json;\nconst models = (orData.data || []).slice(0, 20);\nfor (const m of models) {\n  const key = `${m.id}__model`;\n  if (!existingKeys.has(key)) {\n    newItems.push({ name: m.id, type: 'model', source: 'openrouter.ai', status: 'discovered', metadata: JSON.stringify({ context: m.context_length, pricing: m.pricing }), discovered_at: new Date().toISOString() });\n  }\n}\n\n// Coolify apps\nconst coolifyApps = Array.isArray($('Coolify Apps').item.json) ? $('Coolify Apps').item.json : [];\nfor (const app of coolifyApps) {\n  const key = `${app.name}__coolify`;\n  if (!existingKeys.has(key)) {\n    newItems.push({ name: app.name, type: 'coolify', source: 'coolify.automation-plus-ki.de', status: 'discovered', metadata: JSON.stringify({ status: app.status, fqdn: app.fqdn }), discovered_at: new Date().toISOString() });\n  }\n}\n\n// GitHub repos\nconst repos = Array.isArray($('GitHub Repos').item.json) ? $('GitHub Repos').item.json : [];\nfor (const repo of repos) {\n  const key = `${repo.full_name}__github`;\n  if (!existingKeys.has(key)) {\n    newItems.push({ name: repo.full_name, type: 'github', source: 'github.com', status: 'discovered', metadata: JSON.stringify({ stars: repo.stargazers_count, language: repo.language }), discovered_at: new Date().toISOString() });\n  }\n}\n\nreturn newItems.map(item => ({ json: item }));"
+      },
+      "id": "dedup-code",
+      "name": "Dedup & Filter Neue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [{ "value1": "={{ $items().length }}", "operation": "larger", "value2": 0 }]
+        }
+      },
+      "id": "if-has-new",
+      "name": "Neue gefunden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 350]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.AIOS_DASHBOARD_URL }}/api/nocodb/resources",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [{ "name": "=", "value": "={{ $json }}" }] },
+        "options": {}
+      },
+      "id": "create-resource",
+      "name": "NocoDB: Resource anlegen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 250]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group by type for Discord embeds\nconst items = $input.all();\nconst byType = {};\nfor (const item of items) {\n  const t = item.json.type || 'unknown';\n  if (!byType[t]) byType[t] = [];\n  byType[t].push(item.json.name);\n}\n\nconst webhookMap = {\n  docker: $env.DISCORD_WEBHOOK_DOCKER,\n  model: $env.DISCORD_WEBHOOK_MODELS,\n  github: $env.DISCORD_WEBHOOK_GITHUB,\n  coolify: $env.DISCORD_WEBHOOK_COOLIFY,\n};\n\nconst messages = [];\nfor (const [type, names] of Object.entries(byType)) {\n  if (webhookMap[type]) {\n    messages.push({\n      webhook: webhookMap[type],\n      payload: {\n        embeds: [{\n          title: `🔍 Neue ${type.toUpperCase()} Ressourcen entdeckt`,\n          description: names.slice(0, 10).join('\\n'),\n          color: type === 'docker' ? 3447003 : type === 'model' ? 15844367 : type === 'github' ? 5763719 : 10181046,\n          fields: [{ name: 'Anzahl', value: String(names.length), inline: true }, { name: 'Dashboard', value: '[Registry öffnen](https://aios.automation-plus-ki.de/agentic-os/registry)', inline: true }],\n          timestamp: new Date().toISOString()\n        }]\n      }\n    });\n  }\n}\nreturn messages.map(m => ({ json: m }));"
+      },
+      "id": "prepare-discord",
+      "name": "Discord Embeds vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 450]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.webhook }}",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "discord-notify",
+      "name": "Discord Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 450]
+    }
+  ],
+  "connections": {
+    "Schedule (alle 6h)": { "main": [[{ "node": "Docker Scanner", "type": "main", "index": 0 }, { "node": "OpenRouter Models", "type": "main", "index": 0 }, { "node": "Coolify Apps", "type": "main", "index": 0 }, { "node": "GitHub Repos", "type": "main", "index": 0 }]] },
+    "Docker Scanner": { "main": [[{ "node": "NocoDB: Bestehende Resources", "type": "main", "index": 0 }]] },
+    "OpenRouter Models": { "main": [[{ "node": "NocoDB: Bestehende Resources", "type": "main", "index": 0 }]] },
+    "Coolify Apps": { "main": [[{ "node": "NocoDB: Bestehende Resources", "type": "main", "index": 0 }]] },
+    "GitHub Repos": { "main": [[{ "node": "NocoDB: Bestehende Resources", "type": "main", "index": 0 }]] },
+    "NocoDB: Bestehende Resources": { "main": [[{ "node": "Dedup & Filter Neue", "type": "main", "index": 0 }]] },
+    "Dedup & Filter Neue": { "main": [[{ "node": "Neue gefunden?", "type": "main", "index": 0 }]] },
+    "Neue gefunden?": { "main": [[{ "node": "NocoDB: Resource anlegen", "type": "main", "index": 0 }, { "node": "Discord Embeds vorbereiten", "type": "main", "index": 0 }], []] },
+    "Discord Embeds vorbereiten": { "main": [[{ "node": "Discord Notification", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}

@@ -1,11 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { MODELS, DEFAULT_MODEL } from '@/lib/chat-models';
+import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, resolveOrchestratorModel } from '@/lib/chat-models';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? '';
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY ?? '';
 const GOOGLE_KEY     = process.env.GOOGLE_AI_API_KEY ?? '';
-const OLLAMA_URL     = process.env.OLLAMA_BASE_URL ?? 'http://ollama:11434';
 const N8N_URL        = process.env.N8N_BASE_URL ?? 'https://n8n.automation-plus-ki.de';
 const N8N_KEY        = process.env.N8N_API_KEY ?? '';
 const COOLIFY_URL    = process.env.COOLIFY_URL ?? 'https://coolify.automation-plus-ki.de';
@@ -174,7 +173,6 @@ Dienste:
 - Prometheus: https://prometheus.automation-plus-ki.de
 - Qdrant (Vektoren): https://qdrant.automation-plus-ki.de
 - Coolify (Deployment): https://coolify.automation-plus-ki.de
-- Appflowy (Docs): eigener Service
 - Steel Browser (Scraping): eigener Service
 - Vaultwarden (Passwörter): eigener Service
 - Mailpit (Mail): eigener Service
@@ -420,15 +418,6 @@ async function callOpenAICompat(config: {
   });
 }
 
-// ─── Ollama call ─────────────────────────────────────────────────────────────
-async function callOllama(model: string, messages: Array<{ role: string; content: string }>): Promise<Response> {
-  return fetch(`${OLLAMA_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages, stream: true }),
-  });
-}
-
 // ─── Anthropic native call with agentic loop ─────────────────────────────────
 async function* callAnthropicStream(
   model: string,
@@ -503,17 +492,38 @@ export async function GET() {
     if (m.provider === 'openrouter') isAvailable = !!OPENROUTER_KEY;
     else if (m.provider === 'anthropic') isAvailable = !!ANTHROPIC_KEY;
     else if (m.provider === 'google') isAvailable = !!GOOGLE_KEY;
-    else if (m.provider === 'ollama') isAvailable = true; // always try
     return { key, ...m, available: isAvailable };
   });
-  return NextResponse.json({ models: available });
+  const availableKeys = available.filter((a) => a.available).map((a) => a.key);
+  return NextResponse.json({
+    models: available,
+    orchestratorAuto: ORCHESTRATOR_AUTO,
+    availableForAuto: availableKeys,
+  });
 }
 
 // ─── POST — chat ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const { messages, modelKey } = await req.json();
 
-  const key = modelKey ?? DEFAULT_MODEL;
+  const lastUser = messages?.filter((m: { role: string }) => m.role === 'user').pop();
+  const lastContent = typeof lastUser?.content === 'string' ? lastUser.content : '';
+
+  const availableKeys = Object.entries(MODELS)
+    .filter(([, m]) => {
+      if (m.provider === 'openrouter') return !!OPENROUTER_KEY;
+      if (m.provider === 'anthropic') return !!ANTHROPIC_KEY;
+      if (m.provider === 'google') return !!GOOGLE_KEY;
+      return false;
+    })
+    .map(([k]) => k);
+
+  const resolvedKey = resolveOrchestratorModel(modelKey ?? DEFAULT_MODEL, {
+    lastUserMessage: lastContent,
+    hasToolUse: undefined,
+    availableModels: availableKeys,
+  });
+  const key = resolvedKey;
   const model = MODELS[key];
   if (!model) {
     return NextResponse.json({ error: `Unknown model: ${key}` }, { status: 400 });
@@ -540,34 +550,6 @@ export async function POST(req: NextRequest) {
           }
           for await (const chunk of callAnthropicStream(model.id, messages)) {
             send(chunk);
-          }
-          controller.close();
-          return;
-        }
-
-        // ── Ollama ──────────────────────────────────────────────────────
-        if (model.provider === 'ollama') {
-          const resp = await callOllama(model.id, [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...messages,
-          ]);
-          if (!resp.ok || !resp.body) {
-            send(`❌ Ollama nicht erreichbar (${resp.status}). Läuft der Ollama-Container?`);
-            controller.close();
-            return;
-          }
-          const reader = resp.body.getReader();
-          const dec = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const lines = dec.decode(value).split('\n').filter(Boolean);
-            for (const line of lines) {
-              try {
-                const json = JSON.parse(line);
-                if (json.message?.content) send(json.message.content);
-              } catch { /* ignore */ }
-            }
           }
           controller.close();
           return;

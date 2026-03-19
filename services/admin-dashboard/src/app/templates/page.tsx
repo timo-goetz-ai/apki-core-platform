@@ -6,8 +6,12 @@ import { useRouter } from 'next/navigation';
 import {
   FileText, Image, Youtube, Mail, Send, Plus, Copy, Check,
   ExternalLink, X, BookOpen, Megaphone, ChevronDown, ChevronUp,
-  Download, MessageSquare, Palette,
+  Download, MessageSquare, Palette, Package,
 } from 'lucide-react';
+import {
+  extractVariables, fillTemplate, initVariableValues, isSystemVar,
+  trackTemplateUse, exportTemplatesAsJson,
+} from '@/lib/template-engine';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const NOCO_TOKEN = '***REDACTED_NOCODB_TOKEN***';
@@ -35,25 +39,9 @@ interface BrandItem {
   Aktiv: boolean;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-function extractVariables(content: string): string[] {
-  const matches = content.match(/\{\{([A-Z_0-9]+)\}\}/g) ?? [];
-  return Array.from(new Set(matches.map(m => m.slice(2, -2))));
-}
-
-function fillTemplate(content: string, values: Record<string, string>): string {
-  return content.replace(/\{\{([A-Z_0-9]+)\}\}/g, (_, key) => values[key] || `{{${key}}}`);
-}
-
+// re-exported from template-engine for legacy inline use
 function initValues(vars: string[]): Record<string, string> {
-  return Object.fromEntries(
-    vars.map(v => [
-      v,
-      v === 'DATUM'  ? new Date().toLocaleDateString('de-DE') :
-      v === 'AUTOR'  ? 'Timo Götz' :
-      '',
-    ])
-  );
+  return initVariableValues(vars);
 }
 
 // ── Category config ────────────────────────────────────────────────────────────
@@ -159,6 +147,7 @@ export default function TemplatesPage() {
     setValues(initValues(vars));
     setSelected(tpl);
     setCopied(false);
+    trackTemplateUse(tpl);
   }, []);
 
   const closeTemplate = useCallback(() => setSelected(null), []);
@@ -225,23 +214,40 @@ export default function TemplatesPage() {
           </div>
         </div>
 
-        <a
-          href={`${NOCO_URL}/dashboard`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-            background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)',
-            color: '#38bdf8', fontSize: 12, fontWeight: 500, textDecoration: 'none',
-            transition: 'all 0.12s',
-          }}
-          onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(56,189,248,0.15)'; el.style.borderColor = 'rgba(56,189,248,0.35)'; }}
-          onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(56,189,248,0.08)'; el.style.borderColor = 'rgba(56,189,248,0.2)'; }}
-        >
-          <Plus size={13} /> Neu in NocoDB
-          <ExternalLink size={11} style={{ opacity: 0.6 }} />
-        </a>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => exportTemplatesAsJson(templates)}
+            disabled={templates.length === 0}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+              background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.12)',
+              color: '#94a3b8', fontSize: 12, fontWeight: 500,
+              transition: 'all 0.12s', opacity: templates.length === 0 ? 0.4 : 1,
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#f1f5f9'; el.style.borderColor = 'rgba(148,163,184,0.22)'; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = '#94a3b8'; el.style.borderColor = 'rgba(148,163,184,0.12)'; }}
+          >
+            <Package size={13} /> JSON Export
+          </button>
+          <a
+            href={`${NOCO_URL}/dashboard`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+              background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)',
+              color: '#38bdf8', fontSize: 12, fontWeight: 500, textDecoration: 'none',
+              transition: 'all 0.12s',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(56,189,248,0.15)'; el.style.borderColor = 'rgba(56,189,248,0.35)'; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(56,189,248,0.08)'; el.style.borderColor = 'rgba(56,189,248,0.2)'; }}
+          >
+            <Plus size={13} /> Neu in NocoDB
+            <ExternalLink size={11} style={{ opacity: 0.6 }} />
+          </a>
+        </div>
       </div>
 
       {/* ── Stats bar ── */}
@@ -464,8 +470,11 @@ export default function TemplatesPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {vars.map(v => (
                         <div key={v}>
-                          <label style={{ display: 'block', fontSize: 10, fontFamily: 'var(--font-mono)', color: '#64748b', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontFamily: 'var(--font-mono)', color: '#64748b', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             {v}
+                            {isSystemVar(v) && (
+                              <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)', color: '#38bdf8', letterSpacing: '0.04em' }}>AUTO</span>
+                            )}
                           </label>
                           <input
                             type="text"

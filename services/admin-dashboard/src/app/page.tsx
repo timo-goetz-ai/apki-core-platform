@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, XCircle, Minus,
   Sparkles, Bot, Workflow,
 } from 'lucide-react';
-import { MODELS, DEFAULT_MODEL, getModelsByProvider, type ModelInfo } from '@/lib/chat-models';
+import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, getModelsByProvider, type ModelInfo } from '@/lib/chat-models';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
@@ -44,7 +44,6 @@ const CORE_SERVICES = [
   { id: 'prometheus', name: 'Prometheus'     },
   { id: 'traefik',    name: 'Traefik'        },
   { id: 'cloudflare', name: 'Cloudflare'     },
-  { id: 'appflowy',   name: 'AppFlowy'       },
 ];
 
 const QUICK_PROMPTS = [
@@ -60,7 +59,6 @@ const PROVIDERS = [
   { provider: 'openrouter' as const, label: '⚡ Free · OpenRouter', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',   selBorder: 'rgba(56,189,248,0.2)',   selColor: '#38bdf8' },
   { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude', color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',   selBorder: 'rgba(251,191,36,0.25)',  selColor: '#fbbf24' },
   { provider: 'google'     as const, label: '◈ Google AI Studio',   color: '#34d399',              selBg: 'rgba(52,211,153,0.08)',   selBorder: 'rgba(52,211,153,0.25)',  selColor: '#34d399' },
-  { provider: 'ollama'     as const, label: '⬡ Lokal · Hetzner',    color: '#a78bfa',              selBg: 'rgba(167,139,250,0.1)',   selBorder: 'rgba(167,139,250,0.3)',  selColor: '#a78bfa' },
 ] as const;
 
 // ── Service row ────────────────────────────────────────────────────────────────
@@ -96,7 +94,7 @@ export default function CockpitPage() {
     },
   ]);
   const [input, setInput] = useState('');
-  const [modelKey, setModelKey] = useState(DEFAULT_MODEL);
+  const [modelKey, setModelKey] = useState<string>(ORCHESTRATOR_AUTO);
   const [modelOpen, setModelOpen] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -135,7 +133,9 @@ export default function CockpitPage() {
   const getLatency = (id: string) => statuses[id]?.latency;
   const onlineCount = Object.values(statuses).filter(s => s.status === 'online').length;
   const totalCount  = Object.keys(statuses).length || CORE_SERVICES.length;
-  const currentModel = MODELS[modelKey] ?? MODELS[DEFAULT_MODEL];
+  const currentModel = modelKey === ORCHESTRATOR_AUTO
+    ? { label: 'Auto (Orchestrator)', free: true, tools: true, provider: 'openrouter' as const }
+    : (MODELS[modelKey] ?? MODELS[DEFAULT_MODEL]);
 
   // ── Send message ──
   const sendMessage = useCallback(async () => {
@@ -233,7 +233,7 @@ export default function CockpitPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       style={{
-        display: 'flex', height: 'calc(100vh - 90px)',
+        display: 'flex', height: 'calc(100vh - 60px)',
         position: 'relative', zIndex: 1,
       }}
     >
@@ -325,6 +325,23 @@ export default function CockpitPage() {
                   boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
                   maxHeight: 420, overflowY: 'auto',
                 }}>
+                  {/* Auto-Orchestrator Option */}
+                  <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
+                  <button onClick={() => { setModelKey(ORCHESTRATOR_AUTO); setModelOpen(false); }} style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '5px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 8,
+                    background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'transparent',
+                    border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid transparent',
+                    color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : '#94a3b8',
+                    fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
+                  }}
+                  onMouseEnter={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = '#f1f5f9'; } }}
+                  onMouseLeave={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = '#94a3b8'; } }}
+                  >
+                    <span>Auto — OpenRouter · Claude · Gemini</span>
+                    <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
+                  </button>
+                  <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />
                   {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
                     const entries = getModelsByProvider(provider);
                     if (!entries.length) return null;
@@ -345,8 +362,7 @@ export default function CockpitPage() {
                           >
                             <span>{m.label}</span>
                             <div style={{ display: 'flex', gap: 3 }}>
-                              {m.provider === 'ollama' && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>LOCAL</span>}
-                              {m.free && m.provider !== 'ollama' && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
+                              {m.free && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
                               {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
                             </div>
                           </button>
@@ -518,8 +534,36 @@ export default function CockpitPage() {
               Verfügbare Modelle
             </span>
             <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#34d399' }}>
-              {Object.keys(MODELS).length} gesamt
+              {Object.keys(MODELS).length + 1} gesamt
             </span>
+          </div>
+
+          {/* Auto Orchestrator */}
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
+            <button onClick={() => setModelKey(ORCHESTRATOR_AUTO)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
+              background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'rgba(22,27,34,0.6)',
+              border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid rgba(148,163,184,0.06)',
+              transition: 'all 0.12s', textAlign: 'left',
+            }}
+            onMouseEnter={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.16)'; el.style.background = 'rgba(22,27,34,0.9)'; } }}
+            onMouseLeave={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.06)'; el.style.background = 'rgba(22,27,34,0.6)'; } }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: '#22d3ee',
+                  boxShadow: '0 0 4px #22d3ee',
+                  flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 11, color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                  Auto — OpenRouter · Claude · Gemini
+                </span>
+              </div>
+              <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
+            </button>
           </div>
 
           {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
@@ -543,8 +587,8 @@ export default function CockpitPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <span style={{
                           width: 5, height: 5, borderRadius: '50%',
-                          background: m.provider === 'ollama' ? '#a78bfa' : '#34d399',
-                          boxShadow: `0 0 4px ${m.provider === 'ollama' ? '#a78bfa' : '#34d399'}`,
+                          background: '#34d399',
+                          boxShadow: '0 0 4px #34d399',
                           flexShrink: 0,
                         }} />
                         <span style={{ fontSize: 11, color: key === modelKey ? selColor : '#94a3b8', fontFamily: 'var(--font-mono)' }}>
@@ -552,8 +596,7 @@ export default function CockpitPage() {
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: 3 }}>
-                        {m.provider === 'ollama' && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>LOCAL</span>}
-                        {m.free && m.provider !== 'ollama' && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
+                        {m.free && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
                         {m.tools && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
                       </div>
                     </button>

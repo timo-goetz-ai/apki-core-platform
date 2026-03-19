@@ -1,4 +1,4 @@
-export type ModelProvider = 'openrouter' | 'anthropic' | 'google' | 'ollama';
+export type ModelProvider = 'openrouter' | 'anthropic' | 'google';
 
 export interface ModelInfo {
   id: string;
@@ -88,34 +88,27 @@ export const MODELS: Record<string, ModelInfo> = {
     description: "Neuestes Gemini — dein AI Studio"
   },
 
-  // ── Lokal · Hetzner (Ollama, keine API-Kosten) ─────────────────────────
-  "ollama-llama": {
-    id: "llama3.2:3b",
-    label: "Llama 3.2 3B",
-    provider: "ollama", free: true, tools: false,
-    description: "Lokal auf Hetzner, privat & kostenlos"
-  },
-  "ollama-phi": {
-    id: "phi3:mini",
-    label: "Phi-3 Mini",
-    provider: "ollama", free: true, tools: false,
-    description: "Microsoft Phi-3, lokal & kompakt"
-  },
-  "ollama-qwen": {
-    id: "qwen2.5:3b",
-    label: "Qwen 2.5 3B",
-    provider: "ollama", free: true, tools: false,
-    description: "Alibaba Qwen, lokal auf Hetzner"
-  },
 };
 
 export const DEFAULT_MODEL = "or-deepseek-r1";
 
+/** Orchestrator-Modus: Auto wählt Modell je nach Anwendbarkeit (Tool-Use, Länge, Kosten). */
+export const ORCHESTRATOR_AUTO = "auto" as const;
+
+/** Modell-Routing für Auto-Modus: Priorität pro Anwendungsfall */
+export const ORCHESTRATOR_ROUTING = {
+  /** Einfache Chats, kurze Anfragen → kostenlos & schnell */
+  simple: ["or-mistral-free", "or-gemini-free"],
+  /** Tool-Use, Infrastruktur-Abfragen → OpenRouter Free mit Tools */
+  tools: ["or-gemini-free", "or-llama-free", "or-llama4", "or-deepseek-r1"],
+  /** Komplexes Reasoning, lange Kontexte → stärkere Modelle */
+  reasoning: ["or-deepseek-r1", "or-qwen-free", "or-llama4", "or-gemini-free"],
+} as const;
+
 export const PROVIDER_META: Record<ModelProvider, { label: string; color: string; badge: string; description: string }> = {
   openrouter: { label: "Free Tier", color: "#fbbf24", badge: "FREE", description: "OpenRouter kostenlose Modelle" },
-  anthropic:  { label: "Anthropic", color: "#eb6041", badge: "ABo", description: "Dein Claude-Abo (direkt)" },
+  anthropic:  { label: "Anthropic", color: "#eb6041", badge: "ABO", description: "Dein Claude-Abo (direkt)" },
   google:     { label: "Google AI Studio", color: "#34d399", badge: "ABO", description: "Dein AI Studio Key (direkt)" },
-  ollama:     { label: "Lokal · Hetzner", color: "#818cf8", badge: "LOCAL", description: "Ollama auf deinem Server" },
 };
 
 export const getModelsByProvider = (provider: ModelProvider) =>
@@ -125,3 +118,25 @@ export const getDefaultForProvider = (provider: ModelProvider): string => {
   const models = getModelsByProvider(provider);
   return models[0]?.[0] ?? DEFAULT_MODEL;
 };
+
+/** Resolve modelKey für Auto-Orchestrator: wählt Modell je nach Kontext. */
+export function resolveOrchestratorModel(
+  modelKey: string,
+  options: {
+    lastUserMessage?: string;
+    hasToolUse?: boolean;
+    availableModels?: string[];
+  }
+): string {
+  if (modelKey !== ORCHESTRATOR_AUTO) return modelKey;
+  const available = options.availableModels ?? Object.keys(MODELS);
+  const msg = (options.lastUserMessage ?? "").toLowerCase();
+  const needsTools = options.hasToolUse ?? /container|docker|service|workflow|coolify|grafana|nocodb|n8n|status|starte|zeig|prüfe|trigger/i.test(msg);
+
+  const pickFirst = (keys: readonly string[]) =>
+    keys.find((k) => available.includes(k)) ?? DEFAULT_MODEL;
+
+  if (needsTools) return pickFirst(ORCHESTRATOR_ROUTING.tools);
+  if (msg.length < 80 && !msg.includes("?")) return pickFirst(ORCHESTRATOR_ROUTING.simple);
+  return pickFirst(ORCHESTRATOR_ROUTING.reasoning);
+}

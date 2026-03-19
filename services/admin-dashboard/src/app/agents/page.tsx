@@ -1,136 +1,104 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Bot, Plus, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Bot, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { DataTable } from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Agent {
   Id?: number;
   id?: string | number;
   name?: string;
+  Name?: string;
   status?: string;
+  Status?: string;
   description?: string;
+  Description?: string;
   last_run?: string;
+  provider?: string;
+  model?: string;
   [key: string]: unknown;
 }
 
-function statusColor(status: string | undefined): { bg: string; text: string; label: string } {
-  switch ((status ?? '').toLowerCase()) {
-    case 'active':
-    case 'aktiv':
-      return { bg: 'rgba(34,197,94,0.12)', text: 'var(--accent-green, #22c55e)', label: 'Aktiv' };
-    case 'paused':
-    case 'pausiert':
-      return { bg: 'rgba(245,158,11,0.12)', text: 'var(--accent-amber, #f59e0b)', label: 'Pausiert' };
-    default:
-      return { bg: 'rgba(100,116,139,0.15)', text: 'var(--text-secondary, #94a3b8)', label: 'Entwurf' };
-  }
+function getStatus(agent: Agent) {
+  return (agent.status ?? agent.Status ?? 'draft') as string;
 }
-
-function formatTs(ts: string | undefined): string {
+function getName(agent: Agent) {
+  return (agent.name ?? agent.Name ?? String(agent.id ?? agent.Id ?? '—')) as string;
+}
+function formatTs(ts: string | undefined) {
   if (!ts) return '—';
   try {
-    return new Date(ts).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return ts;
-  }
+    return new Date(ts).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch { return ts; }
 }
 
-function SkeletonCard() {
-  return (
-    <div style={{
-      background: 'var(--layer-2, #1e2535)',
-      border: '1px solid var(--border, #2d3748)',
-      borderRadius: 12,
-      padding: 20,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-    }}>
-      {[120, 80, 60, 40].map((w, i) => (
-        <div key={i} style={{
-          height: i === 0 ? 16 : 12,
-          width: w,
-          borderRadius: 6,
-          background: 'var(--layer-3, #2a3347)',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }} />
-      ))}
-    </div>
-  );
+function StatusBadge({ status }: { status: string }) {
+  const s = status.toLowerCase();
+  if (s === 'active' || s === 'aktiv') return <Badge variant="success">Aktiv</Badge>;
+  if (s === 'paused' || s === 'pausiert') return <Badge variant="warning">Pausiert</Badge>;
+  return <Badge variant="secondary">Entwurf</Badge>;
 }
 
-function AgentCard({ agent }: { agent: Agent }) {
-  const name = (agent.name ?? agent.Name ?? String(agent.id ?? agent.Id ?? '—')) as string;
-  const status = (agent.status ?? agent.Status ?? 'draft') as string;
-  const description = (agent.description ?? agent.Description ?? agent.beschreibung ?? '') as string;
-  const lastRun = (agent.last_run ?? agent.lastRun ?? agent.last_run_at ?? '') as string;
-  const badge = statusColor(status);
-
-  return (
-    <div style={{
-      background: 'var(--layer-2, #1e2535)',
-      border: '1px solid var(--border, #2d3748)',
-      borderRadius: 12,
-      padding: 20,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-      transition: 'border-color 0.15s',
-    }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent-blue, #3b82f6)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border, #2d3748)')}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: 'var(--layer-3, #2a3347)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <Bot size={16} color="var(--accent-blue, #3b82f6)" />
-          </div>
-          <span style={{
-            fontFamily: 'var(--font-ui, inherit)',
-            fontWeight: 600,
-            fontSize: 14,
-            color: 'var(--text-primary, #f1f5f9)',
-          }}>{name}</span>
+const columns: ColumnDef<Agent>[] = [
+  {
+    accessorFn: (row) => getName(row),
+    id: 'name',
+    header: 'Agent',
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[--layer-3] shrink-0">
+          <Bot size={13} className="text-[--accent-blue]" />
         </div>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center',
-          padding: '2px 8px', borderRadius: 20,
-          fontSize: 11, fontWeight: 600,
-          background: badge.bg,
-          color: badge.text,
-          flexShrink: 0,
-        }}>{badge.label}</span>
+        <span className="font-medium text-[--text-primary]">{getName(row.original)}</span>
       </div>
-
-      {description ? (
-        <p style={{
-          margin: 0,
-          fontSize: 13,
-          color: 'var(--text-secondary, #94a3b8)',
-          lineHeight: 1.5,
-        }}>{String(description)}</p>
-      ) : null}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-        <Clock size={11} color="var(--text-secondary, #64748b)" />
-        <span style={{ fontSize: 11, color: 'var(--text-secondary, #64748b)', fontFamily: 'var(--font-mono, monospace)' }}>
-          {formatTs(lastRun)}
-        </span>
-      </div>
-    </div>
-  );
-}
+    ),
+  },
+  {
+    accessorFn: (row) => getStatus(row),
+    id: 'status',
+    header: 'Status',
+    cell: ({ row }) => <StatusBadge status={getStatus(row.original)} />,
+  },
+  {
+    accessorKey: 'provider',
+    header: 'Provider',
+    cell: ({ getValue }) => (
+      <span className="font-mono text-xs text-[--text-muted]">{(getValue() as string) ?? '—'}</span>
+    ),
+  },
+  {
+    accessorKey: 'model',
+    header: 'Modell',
+    cell: ({ getValue }) => (
+      <span className="font-mono text-xs text-[--text-muted]">{(getValue() as string) ?? '—'}</span>
+    ),
+  },
+  {
+    accessorFn: (row) => row.last_run ?? row.lastRun ?? row.last_run_at ?? '',
+    id: 'last_run',
+    header: 'Zuletzt aktiv',
+    cell: ({ getValue }) => (
+      <span className="font-mono text-xs text-[--text-muted]">{formatTs(getValue() as string)}</span>
+    ),
+  },
+  {
+    accessorFn: (row) => (row.description ?? row.Description ?? '') as string,
+    id: 'description',
+    header: 'Beschreibung',
+    cell: ({ getValue }) => (
+      <span className="text-xs text-[--text-muted] line-clamp-1 max-w-[200px]">{(getValue() as string) || '—'}</span>
+    ),
+  },
+];
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -149,141 +117,72 @@ export default function AgentsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  function showToast() {
-    setToast(true);
-    setTimeout(() => setToast(false), 2500);
-  }
+  const active = agents.filter(a => ['active', 'aktiv'].includes(String(a.status ?? a.Status ?? '').toLowerCase())).length;
 
   return (
-    <div style={{ padding: '24px 32px', minHeight: '100vh', fontFamily: 'var(--font-ui, inherit)' }}>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 24, right: 24, zIndex: 9999,
-          background: 'var(--layer-3, #2a3347)',
-          border: '1px solid var(--border, #2d3748)',
-          borderRadius: 10, padding: '10px 16px',
-          fontSize: 13, color: 'var(--text-primary, #f1f5f9)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-        }}>
-          Neuer Agent — Coming Soon
-        </div>
-      )}
-
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary, #f1f5f9)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Bot size={22} color="var(--accent-blue, #3b82f6)" />
+          <h1 className="flex items-center gap-2.5 text-xl font-bold text-[--text-primary]">
+            <Bot size={20} className="text-[--accent-blue]" />
             Agenten-Fabrik
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary, #94a3b8)' }}>
-            Verwaltung und Orchestrierung von KI-Agenten
-          </p>
+          <p className="mt-1 text-sm text-[--text-muted]">Verwaltung und Orchestrierung von KI-Agenten</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={load}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '7px 12px', borderRadius: 8, fontSize: 13,
-              background: 'var(--layer-2, #1e2535)',
-              border: '1px solid var(--border, #2d3748)',
-              color: 'var(--text-secondary, #94a3b8)',
-              cursor: 'pointer',
-            }}
-          >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Aktualisieren
-          </button>
-          <button
-            onClick={showToast}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: 'var(--accent-blue, #3b82f6)',
-              border: 'none', color: '#fff', cursor: 'pointer',
-            }}
-          >
-            <Plus size={14} />
+          </Button>
+          <Button size="sm">
+            <Plus size={13} />
             Neuer Agent
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Content */}
-      {error ? (
-        <div style={{
-          background: 'rgba(239,68,68,0.08)',
-          border: '1px solid rgba(239,68,68,0.25)',
-          borderRadius: 12, padding: '24px 28px',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: 480,
-        }}>
-          <AlertTriangle size={24} color="#ef4444" />
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary, #f1f5f9)' }}>Fehler beim Laden der Agenten</p>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary, #94a3b8)' }}>{error}</p>
-          </div>
-          <button
-            onClick={load}
-            style={{
-              padding: '7px 16px', borderRadius: 8, fontSize: 13,
-              background: 'var(--layer-2, #1e2535)',
-              border: '1px solid var(--border, #2d3748)',
-              color: 'var(--text-primary, #f1f5f9)', cursor: 'pointer',
-            }}
-          >
-            Erneut versuchen
-          </button>
+      {/* KPI Row */}
+      {!loading && agents.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 max-w-sm">
+          {[
+            { label: 'Gesamt', value: agents.length, color: 'text-[--text-primary]' },
+            { label: 'Aktiv', value: active, color: 'text-[--accent-green]' },
+            { label: 'Inaktiv', value: agents.length - active, color: 'text-[--text-muted]' },
+          ].map(s => (
+            <Card key={s.label} className="py-3 px-4">
+              <p className={`text-lg font-bold font-mono ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-[--text-muted] uppercase tracking-wider">{s.label}</p>
+            </Card>
+          ))}
         </div>
-      ) : (
-        <>
-          {/* Stats bar */}
-          {!loading && agents.length > 0 && (
-            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-              {[
-                { label: 'Gesamt', value: agents.length, color: 'var(--text-primary, #f1f5f9)' },
-                { label: 'Aktiv', value: agents.filter(a => ['active','aktiv'].includes(String(a.status ?? '').toLowerCase())).length, color: 'var(--accent-green, #22c55e)' },
-                { label: 'Pausiert', value: agents.filter(a => ['paused','pausiert'].includes(String(a.status ?? '').toLowerCase())).length, color: 'var(--accent-amber, #f59e0b)' },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: 'var(--layer-2, #1e2535)',
-                  border: '1px solid var(--border, #2d3748)',
-                  borderRadius: 8, padding: '8px 16px',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)' }}>{s.label}</span>
-                </div>
+      )}
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-[--text-secondary]">
+            {loading ? 'Laden…' : `${agents.length} Agenten`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <AlertTriangle size={24} className="text-[--accent-red]" />
+              <p className="text-sm text-[--text-muted]">{error}</p>
+              <Button variant="outline" size="sm" onClick={load}>Erneut versuchen</Button>
+            </div>
+          ) : loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-md bg-[--layer-3] animate-pulse" />
               ))}
             </div>
+          ) : (
+            <DataTable columns={columns} data={agents} searchKey="name" searchPlaceholder="Agent suchen…" />
           )}
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-          }}>
-            {loading
-              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-              : agents.length === 0
-                ? (
-                  <div style={{
-                    gridColumn: '1 / -1',
-                    background: 'var(--layer-2, #1e2535)',
-                    border: '1px solid var(--border, #2d3748)',
-                    borderRadius: 12, padding: '40px 24px',
-                    textAlign: 'center', color: 'var(--text-secondary, #94a3b8)',
-                  }}>
-                    <Bot size={32} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                    <p style={{ margin: 0, fontSize: 14 }}>Keine Agenten gefunden. Erstelle deinen ersten Agenten in NocoDB.</p>
-                  </div>
-                )
-                : agents.map((a, i) => <AgentCard key={a.id ?? a.Id ?? i} agent={a} />)
-            }
-          </div>
-        </>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { LLMProvider } from '@/lib/llm-context';
-import TopBar from '@/components/TopBar';
-import ModelBar from '@/components/ModelBar';
-import Sidebar from '@/components/Sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { AppHeader } from '@/components/AppHeader';
 
 export const metadata: Metadata = {
   title: 'AIOS Admin',
-  description:
-    'Zentrale Steuereinheit für KI-Agents, Workflows und Infrastruktur auf automation-plus-ki.de',
+  description: 'Zentrale Steuereinheit für KI-Agents, Workflows und Infrastruktur auf automation-plus-ki.de',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,14 +19,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="bg-slate-950 text-slate-100 min-h-screen">
+      <body
+        className="min-h-screen"
+        style={{ background: 'var(--layer-0)', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}
+      >
         <LLMProvider>
-          <TopBar />
-          <ModelBar />
-          <Sidebar />
+          {/* Fixed sidebar */}
+          <AppSidebar />
+
+          {/* Fixed top header (starts after sidebar) */}
+          <AppHeader />
+
+          {/* Main content area */}
           <main
             className="min-h-screen"
-            style={{ paddingTop: '90px', paddingLeft: '240px' }}
+            style={{ paddingLeft: '220px', paddingTop: '60px' }}
           >
             {children}
           </main>

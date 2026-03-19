@@ -139,11 +139,12 @@ OLLAMA_BASE_URL=http://ollama:11434
 ## Admin Dashboard (set as Coolify environment variables)
 
 ```env
-# LLM Providers
-OPENROUTER_API_KEY=        # OpenRouter (multi-model routing)
+# LLM Providers (Multi-Orchestrator: OpenRouter · Ollama · SauerkrautLM)
+OPENROUTER_API_KEY=        # OpenRouter (kostenlose Modelle, Tool-Calling)
 ANTHROPIC_API_KEY=         # Anthropic Claude direct API
 GOOGLE_AI_API_KEY=         # Google AI Studio (Gemini)
 OPENAI_API_KEY=            # OpenAI (optional)
+OLLAMA_BASE_URL=           # Ollama API (z.B. http://ollama:11434) — für SauerkrautLM: ollama pull sauerkrautlm
 
 # Internal API
 NEXT_PUBLIC_NEXUS_API_URL=https://api.automation-plus-ki.de

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-// ── Agent definitions ────────────────────────────────────────────────────────
+// ── Agent definitions (Multi-Orchestrator: OpenRouter, Ollama, SauerkrautLM, …) ─
 const AGENTS = [
   {
     id: "claude",
@@ -61,9 +61,26 @@ const AGENTS = [
       "Erstelle Zusammenfassung mit Quellen…",
     ],
   },
+  {
+    id: "sauerkraut",
+    name: "SauerkrautLM",
+    vendor: "Ollama",
+    color: "#a78bfa",
+    glow: "rgba(167,139,250,0.15)",
+    border: "rgba(167,139,250,0.35)",
+    specialty: "Deutsch · Lokal · Kostenlos",
+    avatar: "⬡",
+    thoughts: [
+      "Verarbeite deutsche Anfrage lokal…",
+      "Antworte auf Deutsch ohne API-Kosten…",
+      "Einfache Klassifikation…",
+      "Kombiniere mit OpenRouter für komplexe Tasks…",
+      "Prüfe lokale Verfügbarkeit…",
+    ],
+  },
 ];
 
-// ── Tasks that get "dispatched" ──────────────────────────────────────────────
+// ── Tasks that get "dispatched" (Multi-Orchestrator: je nach Anwendbarkeit) ───
 const DEMO_TASKS = [
   { task: "Analysiere Lead-Pipeline und erstelle Report", agent: "claude" },
   { task: "Überprüfe aktuelle KI-News für Kunden-Briefing", agent: "grok" },
@@ -74,6 +91,8 @@ const DEMO_TASKS = [
   { task: "Refactore NocoDB-Integration", agent: "claude" },
   { task: "Prüfe Deployment-Status und Changelogs", agent: "grok" },
   { task: "Vergleiche Logos auf Brand-Konformität", agent: "gemini" },
+  { task: "Kurze deutsche Zusammenfassung (lokal)", agent: "sauerkraut" },
+  { task: "Übersetze Glossar auf Deutsch", agent: "sauerkraut" },
 ];
 
 type AgentState = "idle" | "thinking" | "working" | "done";
