@@ -28,21 +28,26 @@ export async function POST(
   const steps: string[] = JSON.parse(job.steps_requested ?? '["blog","image","voice"]');
   const errors: Record<string, string> = {};
 
-  // ── STEP 1: Blog-Text via LLM ───────────────────────────────────────────────
+  // ── STEP 1: Blog-Text via OpenRouter (direkt, kein Self-Call) ──────────────
   if (steps.includes('blog')) {
     await updatePipelineJob(jobId, { stage: 'text', status: 'running' });
     try {
-      const llmRes = await fetch(
-        `${process.env.INTERNAL_BASE_URL ?? 'http://localhost:3000'}/api/chat`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            modelKey: 'deepseek-chat',
-            messages: [
-              {
-                role: 'user',
-                content: `Schreibe einen professionellen Blogpost auf Deutsch zum Thema: "${job.topic}".
+      const orKey = process.env.OPENROUTER_API_KEY;
+      if (!orKey) throw new Error('OPENROUTER_API_KEY nicht gesetzt');
+
+      const llmRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${orKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://aios.automation-plus-ki.de',
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat',
+          messages: [
+            {
+              role: 'user',
+              content: `Schreibe einen professionellen Blogpost auf Deutsch zum Thema: "${job.topic}".
 Kategorie: ${job.category}
 
 Format:
@@ -53,35 +58,16 @@ Format:
 ---
 SEO-Keywords: ...
 Excerpt (1 Satz): ...`,
-              },
-            ],
-          }),
-        }
-      );
+            },
+          ],
+        }),
+      });
 
-      if (llmRes.ok) {
-        const reader = llmRes.body?.getReader();
-        let blogContent = '';
-        const decoder = new TextDecoder();
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value);
-            for (const line of chunk.split('\n')) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const json = JSON.parse(line.slice(6)) as { content?: string };
-                  if (json.content) blogContent += json.content;
-                } catch { /* skip malformed SSE */ }
-              }
-            }
-          }
-        }
-        await updatePipelineJob(jobId, { text_content: blogContent });
-      } else {
-        throw new Error(`LLM ${llmRes.status}`);
-      }
+      if (!llmRes.ok) throw new Error(`OpenRouter ${llmRes.status}: ${await llmRes.text()}`);
+
+      const llmData = await llmRes.json() as { choices?: { message?: { content?: string } }[] };
+      const blogContent = llmData.choices?.[0]?.message?.content ?? '';
+      await updatePipelineJob(jobId, { text_content: blogContent });
     } catch (e) {
       errors.blog = String(e);
       await updatePipelineJob(jobId, {
