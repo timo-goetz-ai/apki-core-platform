@@ -7,19 +7,18 @@ import { store } from "@/lib/mcp-plattform-data";
 export const dynamic = "force-dynamic";
 
 const MCP_SERVERS = [
-  { name: 'authentik',   label: 'Authentik',   desc: 'SSO & Identity Provider' },
-  { name: 'cloudflare',  label: 'Cloudflare',  desc: 'DNS & Routing' },
-  { name: 'coolify',     label: 'Coolify',     desc: 'Deployment-Plattform' },
-  { name: 'filesystem',  label: 'Filesystem',  desc: 'Lokaler Dateizugriff' },
-  { name: 'github',      label: 'GitHub',      desc: 'Code & PRs' },
-  { name: 'google',      label: 'Google',      desc: 'Drive, Calendar, Sheets' },
-  { name: 'grafana',     label: 'Grafana',     desc: 'Monitoring & Alerts' },
-  { name: 'hetzner',     label: 'Hetzner',     desc: 'Cloud Infrastructure' },
-  { name: 'n8n',         label: 'n8n',         desc: 'Workflow Automation' },
-  { name: 'nocodb',      label: 'NocoDB',      desc: 'Datenbank-Backend' },
-  { name: 'postgres',    label: 'PostgreSQL',  desc: 'Relationale Datenbank' },
-  { name: 'prometheus',  label: 'Prometheus',  desc: 'Metriken & Alerting' },
-  { name: 'qdrant',      label: 'Qdrant',      desc: 'Vektor-Datenbank' },
+  { name: 'authentik',  label: 'Authentik',  desc: 'SSO & Identity Provider',   uiUrl: 'https://auth.automation-plus-ki.de' },
+  { name: 'cloudflare', label: 'Cloudflare', desc: 'DNS & Routing',              uiUrl: 'https://dash.cloudflare.com' },
+  { name: 'coolify',    label: 'Coolify',    desc: 'Deployment-Plattform',       uiUrl: 'https://coolify.automation-plus-ki.de' },
+  { name: 'github',     label: 'GitHub',     desc: 'Code & PRs',                 uiUrl: 'https://github.com/TimoGoetz1988/aios' },
+  { name: 'google',     label: 'Google',     desc: 'Drive, Calendar, Sheets',    uiUrl: 'https://drive.google.com' },
+  { name: 'grafana',    label: 'Grafana',    desc: 'Monitoring & Alerts',        uiUrl: 'https://grafana.automation-plus-ki.de' },
+  { name: 'hetzner',    label: 'Hetzner',    desc: 'Cloud Infrastructure',       uiUrl: 'https://console.hetzner.cloud' },
+  { name: 'n8n',        label: 'n8n',        desc: 'Workflow Automation',        uiUrl: 'https://n8n.automation-plus-ki.de' },
+  { name: 'nocodb',     label: 'NocoDB',     desc: 'Datenbank-Backend',          uiUrl: 'https://nocodb.automation-plus-ki.de' },
+  { name: 'postgres',   label: 'PostgreSQL', desc: 'Relationale Datenbank',      uiUrl: null },
+  { name: 'prometheus', label: 'Prometheus', desc: 'Metriken & Alerting',        uiUrl: 'https://prometheus.automation-plus-ki.de' },
+  { name: 'qdrant',     label: 'Qdrant',     desc: 'Vektor-Datenbank',           uiUrl: 'https://qdrant.automation-plus-ki.de' },
 ];
 
 export default function MCPPlattformPage() {
@@ -43,7 +42,7 @@ export default function MCPPlattformPage() {
             MCP Plattform
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            19 Model Context Protocol Server · Hetzner 46.224.145.109 · Coolify · {projekte.length} Projekte
+            {MCP_SERVERS.length} MCP Server · Hetzner 46.224.145.109 · Coolify · {projekte.length} Projekte
           </p>
         </div>
         <a
@@ -63,33 +62,31 @@ export default function MCPPlattformPage() {
           MCP Server — {MCP_SERVERS.length} konfiguriert
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {MCP_SERVERS.map((mcp) => {
-            const url = `https://mcp-${mcp.name}.automation-plus-ki.de`;
-            return (
-              <div
-                key={mcp.name}
-                className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 flex flex-col gap-3 hover:border-[#1d6ef5]/40 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" style={{ boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
-                    <span className="text-sm font-semibold text-slate-100">{mcp.label}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 leading-snug m-0">{mcp.desc}</p>
-                <p className="text-[10px] font-mono text-slate-700 truncate m-0">mcp-{mcp.name}.automation-plus-ki.de</p>
+          {MCP_SERVERS.map((mcp) => (
+            <div
+              key={mcp.name}
+              className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 flex flex-col gap-3 hover:border-[#1d6ef5]/40 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" style={{ boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
+                <span className="text-sm font-semibold text-slate-100">{mcp.label}</span>
+              </div>
+              <p className="text-xs text-slate-500 leading-snug m-0">{mcp.desc}</p>
+              {mcp.uiUrl ? (
                 <a
-                  href={url}
+                  href={mcp.uiUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors no-underline"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors no-underline mt-auto"
                   style={{ background: 'rgba(29,110,245,0.1)', color: '#1d6ef5', border: '1px solid rgba(29,110,245,0.2)' }}
                 >
-                  Details <ExternalLink className="w-3 h-3" />
+                  Öffnen <ExternalLink className="w-3 h-3" />
                 </a>
-              </div>
-            );
-          })}
+              ) : (
+                <span className="text-[10px] font-mono text-slate-700 mt-auto">intern only</span>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
