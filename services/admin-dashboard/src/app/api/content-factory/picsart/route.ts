@@ -5,8 +5,6 @@ import {
   generateSocialAssets,
   generateYouTubeThumbnail,
   removeBackground,
-  addTextToImage,
-  enhanceImage,
 } from "@/lib/picsart";
 
 export const dynamic = "force-dynamic";
@@ -37,19 +35,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, assets });
       }
       case "thumbnail": {
-        const url = await generateYouTubeThumbnail(params.title, params.options);
+        const url = await generateYouTubeThumbnail(params.title);
         return NextResponse.json({ success: true, imageUrl: url });
       }
       case "remove-bg": {
         const url = await removeBackground(params.imageUrl);
-        return NextResponse.json({ success: true, imageUrl: url });
-      }
-      case "add-text": {
-        const url = await addTextToImage(params.imageUrl, params.options);
-        return NextResponse.json({ success: true, imageUrl: url });
-      }
-      case "enhance": {
-        const url = await enhanceImage(params.imageUrl);
         return NextResponse.json({ success: true, imageUrl: url });
       }
       default:
@@ -64,6 +54,6 @@ export async function GET() {
   return NextResponse.json({
     service: "Picsart Pro API",
     configured: !!process.env.PICSART_API_KEY,
-    actions: ["generate", "hero", "social", "thumbnail", "remove-bg", "add-text", "enhance"],
+    actions: ["generate", "hero", "social", "thumbnail", "remove-bg"],
   });
 }

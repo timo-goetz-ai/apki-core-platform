@@ -19,8 +19,8 @@ import {
   type AuditEintrag,
 } from "./mcp-plattform-data";
 
-const BASE  = process.env.NOCODB_URL        ?? "https://nocodb.automation-plus-ki.de";
-const TOKEN = process.env.NOCODB_API_TOKEN  ?? "***REDACTED_NOCODB_TOKEN***";
+const BASE  = process.env.NOCODB_URL       ?? "";
+const TOKEN = process.env.NOCODB_API_TOKEN ?? "";
 
 const TABLE_PROJEKTE = process.env.NOCODB_MCP_PROJEKTE_TABLE_ID ?? "";
 const TABLE_DIENSTE  = process.env.NOCODB_MCP_DIENSTE_TABLE_ID  ?? "";
@@ -314,6 +314,87 @@ export async function createProject(data: Record<string, unknown>): Promise<Reco
     console.warn("[NocoDB] createProject Fehler:", e);
     throw e;
   }
+}
+
+// ── Content Pipeline ─────────────────────────────────────────────────────────
+
+const TABLE_CONTENT_PIPELINE = process.env.NOCODB_CONTENT_PIPELINE_TABLE_ID ?? '';
+
+export interface PipelineJob {
+  Id?: number;
+  topic: string;
+  category: string;
+  stage: 'text' | 'image' | 'voice' | 'publish' | 'done';
+  status: 'idle' | 'running' | 'done' | 'error';
+  text_content?: string;
+  image_url?: string;
+  audio_url?: string;
+  blog_url?: string;
+  picsart_inference_id?: string;
+  error_message?: string;
+  retry_count: number;
+  steps_requested?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function createPipelineJob(
+  data: Pick<PipelineJob, 'topic' | 'category' | 'steps_requested'>
+): Promise<PipelineJob> {
+  if (!TOKEN || !TABLE_CONTENT_PIPELINE) {
+    throw new Error('NOCODB_CONTENT_PIPELINE_TABLE_ID nicht konfiguriert');
+  }
+  return nocoPost<PipelineJob>(TABLE_CONTENT_PIPELINE, {
+    topic:           data.topic,
+    category:        data.category,
+    stage:           'text',
+    status:          'idle',
+    retry_count:     0,
+    steps_requested: data.steps_requested ?? '["blog","image","voice"]',
+    created_at:      new Date().toISOString(),
+    updated_at:      new Date().toISOString(),
+  });
+}
+
+export async function getPipelineJobs(): Promise<PipelineJob[]> {
+  if (!TOKEN || !TABLE_CONTENT_PIPELINE) return [];
+  try {
+    return await nocoGet<PipelineJob>(TABLE_CONTENT_PIPELINE, { sort: '-created_at' });
+  } catch (e) {
+    console.warn('[NocoDB] getPipelineJobs Fehler:', e);
+    return [];
+  }
+}
+
+export async function getPipelineJob(id: number): Promise<PipelineJob | null> {
+  if (!TOKEN || !TABLE_CONTENT_PIPELINE) return null;
+  try {
+    const url = new URL(`${BASE}/api/v2/tables/${TABLE_CONTENT_PIPELINE}/records`);
+    url.searchParams.set('where', `(Id,eq,${id})`);
+    url.searchParams.set('limit', '1');
+    const res = await fetch(url.toString(), {
+      headers: { 'xc-token': TOKEN },
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) throw new Error(`NocoDB GET pipeline job: ${res.status}`);
+    const json = await res.json() as { list?: PipelineJob[] };
+    return json.list?.[0] ?? null;
+  } catch (e) {
+    console.warn('[NocoDB] getPipelineJob Fehler:', e);
+    return null;
+  }
+}
+
+export async function updatePipelineJob(
+  id: number,
+  data: Partial<Omit<PipelineJob, 'Id'>>
+): Promise<void> {
+  if (!TOKEN || !TABLE_CONTENT_PIPELINE) return;
+  await fetch(`${BASE}/api/v2/tables/${TABLE_CONTENT_PIPELINE}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, ...data, updated_at: new Date().toISOString() }),
+  });
 }
 
 // ── Resource Registry ────────────────────────────────────────────────────────
