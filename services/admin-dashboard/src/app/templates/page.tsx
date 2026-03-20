@@ -14,9 +14,7 @@ import {
 } from '@/lib/template-engine';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const NOCO_TOKEN = '***REDACTED_NOCODB_TOKEN***';
-const NOCO_BASE  = 'pfx0ca6docorj8n';
-const NOCO_URL   = 'https://nocodb.automation-plus-ki.de';
+const NOCO_URL = 'https://nocodb.automation-plus-ki.de';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Template {
@@ -105,34 +103,10 @@ export default function TemplatesPage() {
     async function load() {
       setLoading(true);
       try {
-        // Find tables
-        const tablesRes = await fetch(
-          `${NOCO_URL}/api/v1/db/meta/projects/${NOCO_BASE}/tables`,
-          { headers: { 'xc-token': NOCO_TOKEN } }
-        );
-        const tablesData = await tablesRes.json();
-        const tables: { id: string; title: string }[] = tablesData.list ?? [];
-
-        const tplTable   = tables.find(t => t.title === 'templates');
-        const brandTable = tables.find(t => t.title === 'brand_identity');
-
-        if (tplTable) {
-          const res  = await fetch(
-            `${NOCO_URL}/api/v1/db/data/noco/${NOCO_BASE}/${tplTable.id}?limit=100`,
-            { headers: { 'xc-token': NOCO_TOKEN } }
-          );
-          const data = await res.json();
-          setTemplates((data.list ?? []).filter((t: Template) => t.Aktiv !== false));
-        }
-
-        if (brandTable) {
-          const res  = await fetch(
-            `${NOCO_URL}/api/v1/db/data/noco/${NOCO_BASE}/${brandTable.id}?limit=100`,
-            { headers: { 'xc-token': NOCO_TOKEN } }
-          );
-          const data = await res.json();
-          setBrandItems(data.list ?? []);
-        }
+        const res  = await fetch('/api/nocodb/templates');
+        const data = await res.json();
+        setTemplates((data.templates ?? []).filter((t: Template) => t.Aktiv !== false));
+        setBrandItems(data.brandItems ?? []);
       } catch (e) {
         console.error('Templates fetch error:', e);
       }
@@ -259,7 +233,7 @@ export default function TemplatesPage() {
           { label: 'Brand Items',value: brandItems.length,                             color: '#fbbf24' },
         ].map(stat => (
           <div key={stat.label} style={{
-            flex: 1, background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.08)',
+            flex: 1, background: 'var(--layer-2)', border: '1px solid var(--border)',
             borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4,
           }}>
             <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</span>
@@ -280,7 +254,7 @@ export default function TemplatesPage() {
               style={{
                 padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
                 border: isActive ? '1px solid rgba(56,189,248,0.35)' : '1px solid rgba(148,163,184,0.1)',
-                background: isActive ? 'rgba(56,189,248,0.1)' : 'rgba(22,27,34,0.6)',
+                background: isActive ? 'var(--accent-blue)/10' : 'transparent',
                 color: isActive ? '#38bdf8' : '#94a3b8',
                 fontSize: 12, fontWeight: isActive ? 600 : 400,
                 display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -337,7 +311,7 @@ export default function TemplatesPage() {
                     variants={cardVariants}
                     onClick={() => isOpen ? closeTemplate() : openTemplate(tpl)}
                     style={{
-                      background: isOpen ? `rgba(56,189,248,0.06)` : 'rgba(22,27,34,0.85)',
+                      background: isOpen ? 'var(--layer-3)' : 'var(--layer-1)',
                       border: isOpen ? '1px solid rgba(56,189,248,0.3)' : '1px solid rgba(148,163,184,0.08)',
                       borderRadius: 12, padding: '18px 20px',
                       position: 'relative', overflow: 'hidden',
@@ -411,8 +385,8 @@ export default function TemplatesPage() {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               style={{
                 flexShrink: 0, width: 420,
-                background: 'rgba(14,18,24,0.95)',
-                border: '1px solid rgba(56,189,248,0.2)',
+                background: 'var(--layer-2)',
+                border: '1px solid var(--border)',
                 borderRadius: 14, overflow: 'hidden',
                 position: 'sticky', top: 28,
                 maxHeight: 'calc(100vh - 120px)',
@@ -483,8 +457,8 @@ export default function TemplatesPage() {
                             placeholder={v}
                             style={{
                               width: '100%', padding: '7px 10px', borderRadius: 7,
-                              background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.12)',
-                              color: '#f1f5f9', fontSize: 12, fontFamily: 'var(--font-mono)',
+                              background: 'var(--layer-1)', border: '1px solid var(--border)',
+                              color: 'var(--text-primary)', fontSize: 12, fontFamily: 'var(--font-mono)',
                               outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.12s',
                             }}
                             onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(56,189,248,0.35)'; }}
@@ -502,10 +476,10 @@ export default function TemplatesPage() {
                     Vorschau
                   </p>
                   <div style={{
-                    background: 'rgba(8,11,15,0.8)', border: '1px solid rgba(148,163,184,0.08)',
+                    background: 'var(--layer-1)', border: '1px solid var(--border)',
                     borderRadius: 8, padding: '12px 14px',
                     fontFamily: 'var(--font-mono)', fontSize: 11,
-                    color: '#94a3b8', lineHeight: 1.7,
+                    color: 'var(--text-muted)', lineHeight: 1.7,
                     whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                     maxHeight: 280, overflowY: 'auto',
                   }}>
@@ -580,8 +554,8 @@ export default function TemplatesPage() {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             width: '100%', padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
-            background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.08)',
-            color: '#f1f5f9', fontSize: 13, fontWeight: 500, textAlign: 'left',
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, textAlign: 'left',
             transition: 'border-color 0.12s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(148,163,184,0.16)'; }}
@@ -618,7 +592,7 @@ export default function TemplatesPage() {
                     <div
                       key={item.Id}
                       style={{
-                        background: 'rgba(22,27,34,0.85)', border: '1px solid rgba(148,163,184,0.08)',
+                        background: 'var(--layer-2)', border: '1px solid var(--border)',
                         borderRadius: 10, padding: '12px 14px',
                         display: 'flex', alignItems: 'center', gap: 10,
                       }}

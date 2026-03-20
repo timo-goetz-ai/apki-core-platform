@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ['class'],
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,12 +10,65 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ── shadcn-compatible semantic tokens (reference CSS vars) ─────────
+        background:  'var(--layer-0)',
+        foreground:  'var(--text-primary)',
+        card: {
+          DEFAULT:    'var(--layer-2)',
+          foreground: 'var(--text-primary)',
+        },
+        popover: {
+          DEFAULT:    'var(--layer-2)',
+          foreground: 'var(--text-primary)',
+        },
+        primary: {
+          DEFAULT:    'var(--accent-blue)',
+          foreground: 'var(--layer-0)',
+        },
+        secondary: {
+          DEFAULT:    'var(--layer-3)',
+          foreground: 'var(--text-secondary)',
+        },
+        muted: {
+          DEFAULT:    'var(--layer-3)',
+          foreground: 'var(--text-muted)',
+        },
+        accent: {
+          DEFAULT:    'var(--layer-3)',
+          foreground: 'var(--text-primary)',
+        },
+        destructive: {
+          DEFAULT:    'var(--accent-red)',
+          foreground: '#ffffff',
+        },
+        border:  'var(--border)',
+        input:   'var(--border-bright)',
+        ring:    'var(--accent-blue)',
+
+        // ── Status semantic colors ─────────────────────────────────────────
+        success: 'var(--accent-green)',
+        warning: 'var(--accent-amber)',
+        error:   'var(--accent-red)',
+        info:    'var(--accent-blue)',
+
+        // ── Brand ──────────────────────────────────────────────────────────
         brand: {
           50:  "#f0f9ff",
           500: "#0ea5e9",
           600: "#0284c7",
           900: "#0c4a6e",
         },
+      },
+      fontFamily: {
+        sans: ['var(--font-ui)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+      },
+      borderRadius: {
+        sm:  'calc(var(--radius) - 4px)',
+        md:  'calc(var(--radius) - 2px)',
+        lg:  'var(--radius)',
+        xl:  'calc(var(--radius) + 4px)',
+        '2xl': 'calc(var(--radius) + 8px)',
       },
       keyframes: {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },

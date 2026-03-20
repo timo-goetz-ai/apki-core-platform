@@ -4,8 +4,8 @@ import { createHmac, createHash } from 'crypto';
 
 const S3_ENDPOINT = 'fsn1.your-objectstorage.com';
 const S3_BUCKET   = process.env.NC_S3_BUCKET_NAME ?? 'noco-aios';
-const S3_KEY      = process.env.NC_S3_ACCESS_KEY ?? '5BSXSKXZSS5XZSAVK7N9';
-const S3_SECRET   = process.env.NC_S3_ACCESS_SECRET ?? 'wjKpLOPPMJjsM3i0EhCn83gZkQlITHd2B2A2iQAh';
+const S3_KEY      = process.env.NC_S3_ACCESS_KEY ?? '';
+const S3_SECRET   = process.env.NC_S3_ACCESS_SECRET ?? '';
 const S3_REGION   = process.env.NC_S3_REGION ?? 'fsn1';
 
 function sha256(data: string): string {

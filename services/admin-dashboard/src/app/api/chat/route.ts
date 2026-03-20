@@ -2,7 +2,10 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, resolveOrchestratorModel } from '@/lib/chat-models';
 
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? '';
+const OPENROUTER_KEY  = process.env.OPENROUTER_API_KEY ?? '';
+const NOCODB_URL      = process.env.NOCODB_URL ?? 'https://nocodb.automation-plus-ki.de';
+const NOCODB_TOKEN    = process.env.NOCODB_API_TOKEN ?? '';
+const NOCODB_BASE     = process.env.NOCODB_AI_SYSTEM_BASE_ID ?? '';
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY ?? '';
 const GOOGLE_KEY     = process.env.GOOGLE_AI_API_KEY ?? '';
 const N8N_URL        = process.env.N8N_BASE_URL ?? 'https://n8n.automation-plus-ki.de';
@@ -277,9 +280,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         const table = args.table as string;
         const tableId = NOCO_TABLE_IDS[table];
         if (!tableId) return `Unknown table: ${table}`;
-        const url = `https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pfx0ca6docorj8n/${tableId}?limit=50`;
+        const url = `${NOCODB_URL}/api/v1/db/data/noco/${NOCODB_BASE}/${tableId}?limit=50`;
         const r = await fetch(url, {
-          headers: { 'xc-token': '***REDACTED_NOCODB_TOKEN***' },
+          headers: { 'xc-token': NOCODB_TOKEN },
           signal: AbortSignal.timeout(8000),
         });
         const data = await r.json();
@@ -369,8 +372,8 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         // GitHub Trending (via NocoDB trends table as fallback)
         try {
           const noco = await fetch(
-            `https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pfx0ca6docorj8n/trends?limit=5&sort=-CreatedAt`,
-            { headers: { 'xc-token': '***REDACTED_NOCODB_TOKEN***' }, signal: AbortSignal.timeout(5000) }
+            `${NOCODB_URL}/api/v1/db/data/noco/${NOCODB_BASE}/trends?limit=5&sort=-CreatedAt`,
+            { headers: { 'xc-token': NOCODB_TOKEN }, signal: AbortSignal.timeout(5000) }
           );
           const nocoData = await noco.json();
           const items = (nocoData.list || []).slice(0, 3).map((t: { Thema?: string; Name?: string; Beschreibung?: string }) => `• ${t.Thema ?? t.Name}: ${(t.Beschreibung ?? '').slice(0, 80)}`).join('\n');

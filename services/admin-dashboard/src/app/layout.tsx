@@ -15,7 +15,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})()`,
+            __html: `(function(){try{
+              var t=localStorage.getItem('theme');
+              var dark = t==='dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) || t!=='light';
+              document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            }catch(e){}})()`,
           }}
         />
       </head>
@@ -33,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Main content area */}
           <main
             className="min-h-screen"
-            style={{ paddingLeft: '220px', paddingTop: '60px' }}
+            style={{ paddingLeft: '240px', paddingTop: '60px' }}
           >
             {children}
           </main>

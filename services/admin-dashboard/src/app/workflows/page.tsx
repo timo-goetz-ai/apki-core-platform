@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { ExternalLink, Search, RefreshCw, X, Clock, Zap } from 'lucide-react';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const NOCO_TOKEN = '***REDACTED_NOCODB_TOKEN***';
-const NOCO_BASE = 'pfx0ca6docorj8n';
 const WORKFLOWS_TABLE = 'mnwlsxsm0q1k2d2';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -480,10 +478,7 @@ export default function WorkflowsPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch(
-        `https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/${NOCO_BASE}/${WORKFLOWS_TABLE}?limit=100`,
-        { headers: { 'xc-token': NOCO_TOKEN } }
-      );
+      const r = await fetch(`/api/nocodb/table?id=${WORKFLOWS_TABLE}&limit=100`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       const list: Workflow[] = Array.isArray(data) ? data : (data.list ?? []);
