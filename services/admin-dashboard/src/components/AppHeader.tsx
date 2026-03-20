@@ -1,18 +1,68 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText } from 'lucide-react';
+import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from '@/components/CommandPalette';
 import { getRecentTemplates, type RecentTemplate } from '@/lib/template-engine';
+
+interface Alert {
+  name: string;
+  severity: 'critical' | 'warning' | 'info';
+  state: 'firing' | 'pending';
+  summary: string;
+  startsAt: string;
+}
+
+const ALERT_ICON = {
+  critical: <AlertCircle size={12} />,
+  warning:  <AlertTriangle size={12} />,
+  info:     <Info size={12} />,
+};
+
+const ALERT_COLOR = {
+  critical: '#f87171',
+  warning:  '#fbbf24',
+  info:     '#38bdf8',
+};
 
 export function AppHeader() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
   const [recentTemplates, setRecentTemplates] = useState<RecentTemplate[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/monitoring/alerts');
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.alerts ?? []);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+    const id = setInterval(fetchAlerts, 60_000);
+    return () => clearInterval(id);
+  }, [fetchAlerts]);
+
+  // Close bell dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('theme');
@@ -121,18 +171,79 @@ export function AppHeader() {
             </Button>
           </Link>
 
-          {/* Alerts */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-[--text-secondary] hover:text-[--text-primary] relative"
-          >
-            <Bell size={15} />
-            <span
-              className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-              style={{ background: 'var(--accent-red)' }}
-            />
-          </Button>
+          {/* Alerts bell */}
+          <div ref={bellRef} style={{ position: 'relative' }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setBellOpen(o => !o)}
+              className="text-[--text-secondary] hover:text-[--text-primary] relative"
+            >
+              <Bell size={15} />
+              {alerts.length > 0 && (
+                <span
+                  className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
+                  style={{ background: alerts.some(a => a.severity === 'critical') ? 'var(--accent-red)' : '#fbbf24' }}
+                />
+              )}
+            </Button>
+
+            {bellOpen && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                right: 0,
+                width: 320,
+                background: 'var(--layer-1)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                zIndex: 200,
+                overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Alerts {alerts.length > 0 ? `(${alerts.length})` : ''}
+                  </span>
+                  <button onClick={() => setBellOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
+                    <X size={13} />
+                  </button>
+                </div>
+                <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                  {alerts.length === 0 ? (
+                    <div style={{ padding: '24px 14px', textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Keine aktiven Alerts</p>
+                    </div>
+                  ) : alerts.map((a, i) => {
+                    const color = ALERT_COLOR[a.severity];
+                    return (
+                      <div key={i} style={{
+                        padding: '10px 14px',
+                        borderBottom: i < alerts.length - 1 ? '1px solid var(--border)' : 'none',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 9,
+                      }}>
+                        <span style={{ color, flexShrink: 0, marginTop: 2 }}>{ALERT_ICON[a.severity]}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
+                          {a.summary && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{a.summary}</p>}
+                        </div>
+                        <span style={{ fontSize: 10, color, flexShrink: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{a.severity}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {alerts.length > 0 && (
+                  <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border)' }}>
+                    <Link href="/monitoring/grafana" onClick={() => setBellOpen(false)} style={{ fontSize: 11, color: 'var(--accent-blue)', textDecoration: 'none' }}>
+                      Grafana öffnen →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Theme toggle */}
           <button
