@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Workflow, BookOpen, FlaskConical,
+  LayoutDashboard, Workflow, BookOpen,
   BarChart2, Factory, Users, Activity,
   Database, Wrench, Globe, Settings,
   Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate,
@@ -32,6 +32,7 @@ const NAV_GROUPS: NavItem[][] = [
     { label: 'Activity',      href: '/activity',         icon: Activity        },
     { label: 'Logs',          href: '/logs',             icon: ScrollText      },
     { label: 'Deployments',   href: '/deployments',      icon: Rocket         },
+    { label: 'Analytics',     href: '/analytics',        icon: BarChart2       },
   ],
   [
     { label: 'Content Factory', href: '/content-factory', icon: Factory       },
@@ -42,10 +43,6 @@ const NAV_GROUPS: NavItem[][] = [
   [
     { label: 'MCP Services',  href: '/mcp-plattform',   icon: Globe           },
     { label: 'Tools & API',   href: '/tools',            icon: Wrench          },
-    { label: 'Analytics',     href: '/analytics',        icon: BarChart2       },
-  ],
-  [
-    { label: 'Workspace',     href: '/claude-workspace', icon: FlaskConical   },
   ],
 ];
 

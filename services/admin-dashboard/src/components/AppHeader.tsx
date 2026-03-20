@@ -159,7 +159,7 @@ export function AppHeader() {
 
         {/* Right actions */}
         <div className="flex items-center gap-1">
-          {/* Workspace */}
+          {/* Playground */}
           <Link href="/claude-workspace">
             <Button
               variant="ghost"
@@ -167,7 +167,7 @@ export function AppHeader() {
               className="gap-1.5 text-[--text-secondary] hover:text-[--text-primary]"
             >
               <FlaskConical size={13} />
-              <span className="hidden sm:inline">Workspace</span>
+              <span className="hidden sm:inline">Playground</span>
             </Button>
           </Link>
 
