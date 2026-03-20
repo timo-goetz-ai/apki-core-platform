@@ -19,7 +19,7 @@ export interface GenerateImageOptions {
   width?: number;
   height?: number;
   count?: number;
-  /** Max polling time in ms, default 150_000 */
+  /** Max polling time in ms, default 240_000 */
   timeoutMs?: number;
 }
 
@@ -56,7 +56,7 @@ export async function generateImage(
   if (!inference_id) throw new Error("Picsart: keine inference_id in Response");
 
   // 2. Poll until DONE or timeout
-  const timeoutMs = options.timeoutMs ?? 150_000;
+  const timeoutMs = options.timeoutMs ?? 240_000;
   const deadline = Date.now() + timeoutMs;
   const pollInterval = 3_000;
 
