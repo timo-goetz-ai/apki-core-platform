@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (steps.includes("blog")) {
     try {
       const llmRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/chat`,
+        `${process.env.INTERNAL_BASE_URL ?? "http://localhost:3000"}/api/chat`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
