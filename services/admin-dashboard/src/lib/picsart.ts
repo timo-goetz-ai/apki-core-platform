@@ -19,7 +19,7 @@ export interface GenerateImageOptions {
   width?: number;
   height?: number;
   count?: number;
-  /** Max polling time in ms, default 240_000 */
+  /** Max polling time in ms, default 90_000 */
   timeoutMs?: number;
 }
 
@@ -56,7 +56,7 @@ export async function generateImage(
   if (!inference_id) throw new Error("Picsart: keine inference_id in Response");
 
   // 2. Poll until DONE or timeout
-  const timeoutMs = options.timeoutMs ?? 240_000;
+  const timeoutMs = options.timeoutMs ?? 90_000;
   const deadline = Date.now() + timeoutMs;
   const pollInterval = 3_000;
 
@@ -72,22 +72,23 @@ export async function generateImage(
     }
 
     const pollData = await pollRes.json() as {
-      status: "DONE" | "IN_PROGRESS" | "FAILED";
-      data?: { url: string }[];
+      status: "success" | "processing" | "queued" | "failed";
+      inference_id?: string;
+      data?: { url: string; status?: string }[];
       error?: string;
     };
 
-    if (pollData.status === "DONE" && pollData.data?.length) {
+    if (pollData.status === "success" && pollData.data?.length) {
       return {
         imageUrls: pollData.data.map((d) => d.url),
         inferenceId: inference_id,
       };
     }
 
-    if (pollData.status === "FAILED") {
+    if (pollData.status === "failed") {
       throw new Error(`Picsart: Job fehlgeschlagen — ${pollData.error ?? "unbekannt"}`);
     }
-    // IN_PROGRESS → weiter warten
+    // processing / queued → weiter warten
   }
 
   throw new Error(`Picsart: Timeout nach ${timeoutMs}ms (inference_id: ${inference_id})`);
