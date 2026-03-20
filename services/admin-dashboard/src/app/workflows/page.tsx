@@ -666,7 +666,7 @@ export default function WorkflowsPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* View toggle */}
           <div style={{ display: 'flex', background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 7, overflow: 'hidden' }}>
-            {([['cards', <LayoutGrid size={12} />, 'Karten'], ['calendar', <CalendarDays size={12} />, 'Kalender']] as const).map(([v, icon, label]) => (
+            {(['cards', 'calendar'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -681,7 +681,8 @@ export default function WorkflowsPage() {
                   transition: 'all 0.1s',
                 }}
               >
-                {icon}{label}
+                {v === 'cards' ? <LayoutGrid size={12} /> : <CalendarDays size={12} />}
+                {v === 'cards' ? 'Karten' : 'Kalender'}
               </button>
             ))}
           </div>
