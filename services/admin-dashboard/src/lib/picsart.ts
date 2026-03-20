@@ -63,7 +63,7 @@ export async function generateImage(
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, pollInterval));
 
-    const pollRes = await fetch(`${GENAI_API}/text2image/${inference_id}`, {
+    const pollRes = await fetch(`${GENAI_API}/text2image/inferences/${inference_id}`, {
       headers: { "x-picsart-api-key": apiKey },
     });
 
