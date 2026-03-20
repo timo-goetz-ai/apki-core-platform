@@ -42,8 +42,8 @@ export async function generateImage(
     },
     body: JSON.stringify({
       prompt,
-      width: options.width ?? 1920,
-      height: options.height ?? 1080,
+      width: options.width ?? 1024,
+      height: options.height ?? 1024,
       count: options.count ?? 1,
     }),
   });

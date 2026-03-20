@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ExternalLink, Search, RefreshCw, X, Clock, Zap, Download } from 'lucide-react';
+import { ExternalLink, Search, RefreshCw, X, Clock, Zap, Download, CalendarDays, LayoutGrid } from 'lucide-react';
 import { exportCsv } from '@/lib/csv-export';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -466,6 +466,154 @@ function PipelineVisualizer() {
   );
 }
 
+// ─── Schedule Parser ─────────────────────────────────────────────────────────
+// Returns array of {day: 0-6 (Mo-So), hour: 0-23} for a workflow schedule string.
+// day=-1 means every day.
+function parseSchedule(wf: Workflow): { day: number; hour: number; label: string }[] {
+  const intervall = (wf.Intervall ?? '').toLowerCase();
+  const trigger   = (wf.Trigger   ?? '').toLowerCase();
+
+  if (!intervall && trigger !== 'schedule' && trigger !== 'cron') return [];
+
+  // "alle Xh" / "every Xh" → spread across day
+  const everyH = intervall.match(/alle\s*(\d+)\s*h/);
+  if (everyH) {
+    const step = parseInt(everyH[1]);
+    const slots: { day: number; hour: number; label: string }[] = [];
+    for (let h = 0; h < 24; h += step) {
+      slots.push({ day: -1, hour: h, label: `alle ${step}h` });
+    }
+    return slots;
+  }
+
+  // "täglich HH:mm" or just "HH:mm"
+  const timeMatch = intervall.match(/(\d{1,2}):(\d{2})/);
+  const hour = timeMatch ? parseInt(timeMatch[1]) : 8;
+
+  const DAY_MAP: Record<string, number> = {
+    mo: 0, di: 1, mi: 2, do: 3, fr: 4, sa: 5, so: 6,
+    mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6,
+  };
+
+  // "wöchentlich mo" / "weekly mon"
+  for (const [key, idx] of Object.entries(DAY_MAP)) {
+    if (intervall.includes(key)) {
+      return [{ day: idx, hour, label: intervall }];
+    }
+  }
+
+  // "täglich" / "daily" / "jede nacht" / just a time
+  if (
+    intervall.includes('täglich') || intervall.includes('daily') ||
+    intervall.includes('nacht') || intervall.includes('night') ||
+    timeMatch
+  ) {
+    return [{ day: -1, hour, label: intervall || `${hour}:00` }];
+  }
+
+  return [];
+}
+
+const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const HOURS = [0, 2, 4, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22];
+
+function ScheduleView({ workflows }: { workflows: Workflow[] }) {
+  // Build grid: day(0-6) × hour → workflows[]
+  const grid: Record<string, Workflow[]> = {};
+
+  for (const wf of workflows) {
+    if (wf.Status !== 'aktiv') continue;
+    const slots = parseSchedule(wf);
+    for (const slot of slots) {
+      const days = slot.day === -1 ? [0,1,2,3,4,5,6] : [slot.day];
+      for (const d of days) {
+        const key = `${d}-${slot.hour}`;
+        if (!grid[key]) grid[key] = [];
+        grid[key].push(wf);
+      }
+    }
+  }
+
+  const hasAny = Object.keys(grid).length > 0;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {!hasAny ? (
+        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+          Keine Schedules gefunden — nur aktive Workflows mit Intervall-Feld werden angezeigt.
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+            <thead>
+              <tr>
+                <th style={{ width: 42, padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                  Uhr
+                </th>
+                {DAYS.map(d => (
+                  <th key={d} style={{ padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                    {d}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {HOURS.map(h => (
+                <tr key={h} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '4px 8px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 10, whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                    {String(h).padStart(2, '0')}:00
+                  </td>
+                  {DAYS.map((_, di) => {
+                    const key = `${di}-${h}`;
+                    const wfs = grid[key] ?? [];
+                    return (
+                      <td key={di} style={{ padding: '3px 4px', verticalAlign: 'top', minWidth: 90 }}>
+                        {wfs.map(wf => {
+                          const color = KATEGORIE_COLORS[wf.Kategorie] ?? '#94a3b8';
+                          return (
+                            <div key={wf.Id} title={wf.Zweck} style={{
+                              marginBottom: 2,
+                              padding: '2px 7px',
+                              borderRadius: 5,
+                              fontSize: 10,
+                              fontWeight: 500,
+                              color,
+                              background: `${color}18`,
+                              border: `1px solid ${color}30`,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: 130,
+                            }}>
+                              {wf.Name}
+                            </div>
+                          );
+                        })}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Legend */}
+          <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {Object.entries(KATEGORIE_COLORS).map(([kat, color]) => (
+              workflows.some(w => w.Kategorie === kat && w.Status === 'aktiv' && parseSchedule(w).length > 0) ? (
+                <div key={kat} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 3, background: `${color}30`, border: `1px solid ${color}50`, display: 'inline-block' }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{kat}</span>
+                </div>
+              ) : null
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -474,6 +622,7 @@ export default function WorkflowsPage() {
   const [selected, setSelected] = useState<Workflow | null>(null);
   const [activeKategorie, setActiveKategorie] = useState('Alle');
   const [search, setSearch] = useState('');
+  const [view, setView] = useState<'cards' | 'calendar'>('cards');
 
   const fetchWorkflows = useCallback(async () => {
     setLoading(true);
@@ -514,7 +663,28 @@ export default function WorkflowsPage() {
           <Zap size={18} color="var(--accent-amber, #f59e0b)" />
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>n8n Workflows</h1>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 7, overflow: 'hidden' }}>
+            {([['cards', <LayoutGrid size={12} />, 'Karten'], ['calendar', <CalendarDays size={12} />, 'Kalender']] as const).map(([v, icon, label]) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 11px', fontSize: 12, cursor: 'pointer',
+                  background: view === v ? 'rgba(56,189,248,0.12)' : 'transparent',
+                  border: 'none',
+                  borderRight: v === 'cards' ? '1px solid var(--border)' : 'none',
+                  color: view === v ? 'var(--accent-blue)' : 'var(--text-muted)',
+                  fontWeight: view === v ? 600 : 400,
+                  transition: 'all 0.1s',
+                }}
+              >
+                {icon}{label}
+              </button>
+            ))}
+          </div>
           <button
             onClick={fetchWorkflows}
             style={{
@@ -634,8 +804,15 @@ export default function WorkflowsPage() {
         </div>
       </div>
 
+      {/* Calendar view */}
+      {view === 'calendar' && !loading && !error && (
+        <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
+          <ScheduleView workflows={workflows} />
+        </div>
+      )}
+
       {/* Cards grid */}
-      {loading ? (
+      {view === 'cards' && loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} style={{ height: 120, borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -648,11 +825,11 @@ export default function WorkflowsPage() {
             Erneut versuchen
           </button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : view === 'cards' && filtered.length === 0 ? (
         <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
           Keine Workflows gefunden.
         </div>
-      ) : (
+      ) : view === 'cards' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
           {filtered.map(wf => (
             <WorkflowCard
@@ -663,10 +840,10 @@ export default function WorkflowsPage() {
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Pipeline visualizer */}
-      {!loading && !error && <PipelineVisualizer />}
+      {view === 'cards' && !loading && !error && <PipelineVisualizer />}
 
       {/* Detail slide-in panel */}
       {selected && (
