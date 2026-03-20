@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ExternalLink, Search, RefreshCw, X, Clock, Zap } from 'lucide-react';
+import { ExternalLink, Search, RefreshCw, X, Clock, Zap, Download } from 'lucide-react';
+import { exportCsv } from '@/lib/csv-export';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const WORKFLOWS_TABLE = 'mnwlsxsm0q1k2d2';
@@ -525,6 +526,19 @@ export default function WorkflowsPage() {
           >
             <RefreshCw size={12} />
             Aktualisieren
+          </button>
+          <button
+            onClick={() => exportCsv('workflows.csv', workflows as unknown as Record<string, unknown>[])}
+            disabled={workflows.length === 0}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 12px', borderRadius: 7, fontSize: 12,
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', cursor: workflows.length === 0 ? 'not-allowed' : 'pointer', opacity: workflows.length === 0 ? 0.5 : 1,
+            }}
+          >
+            <Download size={12} />
+            CSV
           </button>
           <a
             href="https://n8n.automation-plus-ki.de"

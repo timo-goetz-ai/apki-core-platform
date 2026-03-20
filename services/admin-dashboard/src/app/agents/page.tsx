@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Bot, Plus, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Bot, Plus, RefreshCw, AlertTriangle, ExternalLink, Download } from 'lucide-react';
+import { exportCsv } from '@/lib/csv-export';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -134,6 +135,15 @@ export default function AgentsPage() {
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Aktualisieren
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCsv('agents.csv', agents as unknown as Record<string, unknown>[])}
+            disabled={agents.length === 0}
+          >
+            <Download size={13} />
+            CSV
           </Button>
           <Button size="sm" onClick={() => window.open('https://nocodb.automation-plus-ki.de', '_blank')}>
             <Plus size={13} />

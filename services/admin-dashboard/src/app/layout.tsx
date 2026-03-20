@@ -3,6 +3,7 @@ import './globals.css';
 import { LLMProvider } from '@/lib/llm-context';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppHeader } from '@/components/AppHeader';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'AIOS Admin',
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             {children}
           </main>
+          <Toaster />
         </LLMProvider>
       </body>
     </html>
