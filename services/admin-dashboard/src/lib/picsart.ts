@@ -129,17 +129,17 @@ export async function generateHeroImage(
   opts: { style?: string } = {}
 ): Promise<{ imageUrl: string; inferenceId: string }> {
   const prompt = `Professional hero image for blog titled "${title}" in category "${category}". Style: ${opts.style ?? "professional, modern, cinematic"}. High quality, suitable for web header, no text overlays.`;
-  const { imageUrls, inferenceId } = await generateImage(prompt, { width: 1920, height: 1080 });
+  const { imageUrls, inferenceId } = await generateImage(prompt, { width: 1024, height: 1024 });
   return { imageUrl: imageUrls[0], inferenceId };
 }
 
 // ─── Social Media Assets ─────────────────────────────────────────────────────
 
 const SOCIAL_DIMENSIONS: Record<string, { width: number; height: number }> = {
-  instagram: { width: 1080, height: 1080 },
-  facebook:  { width: 1200, height: 628  },
-  twitter:   { width: 1200, height: 675  },
-  linkedin:  { width: 1200, height: 627  },
+  instagram: { width: 1024, height: 1024 },
+  facebook:  { width: 1024, height: 536  },
+  twitter:   { width: 1024, height: 576  },
+  linkedin:  { width: 1024, height: 536  },
 };
 
 export async function generateSocialAssets(
@@ -163,7 +163,7 @@ export async function generateSocialAssets(
 export async function generateYouTubeThumbnail(title: string): Promise<string> {
   const { imageUrls } = await generateImage(
     `YouTube thumbnail: "${title}". Bold, eye-catching, high contrast, professional, no text.`,
-    { width: 1280, height: 720 }
+    { width: 1024, height: 576 }
   );
   return imageUrls[0];
 }
