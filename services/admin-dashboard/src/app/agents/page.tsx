@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Bot, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Bot, Plus, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -135,9 +135,9 @@ export default function AgentsPage() {
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Aktualisieren
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => window.open('https://nocodb.automation-plus-ki.de', '_blank')}>
             <Plus size={13} />
-            Neuer Agent
+            In NocoDB anlegen
           </Button>
         </div>
       </div>
@@ -177,6 +177,25 @@ export default function AgentsPage() {
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-10 rounded-md bg-[--layer-3] animate-pulse" />
               ))}
+            </div>
+          ) : agents.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 py-14 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[--layer-3]">
+                <Bot size={22} className="text-[--text-muted]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[--text-primary]">Noch keine Agenten</p>
+                <p className="mt-1 text-xs text-[--text-muted]">Lege Agenten in NocoDB an — sie erscheinen hier automatisch.</p>
+              </div>
+              <a
+                href="https://nocodb.automation-plus-ki.de"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-[--accent-blue] border border-[--border] hover:bg-[--layer-3] transition-colors no-underline"
+              >
+                <ExternalLink size={13} />
+                NocoDB öffnen
+              </a>
             </div>
           ) : (
             <DataTable columns={columns} data={agents} searchKey="name" searchPlaceholder="Agent suchen…" />
