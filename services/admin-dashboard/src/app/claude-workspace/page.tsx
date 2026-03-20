@@ -6,7 +6,7 @@ import {
   Send, RefreshCw, Zap, ChevronDown, Bot, Sparkles,
   Code2, BookOpen, Terminal, ExternalLink, Copy, Check,
 } from 'lucide-react';
-import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, getModelsByProvider, type ModelInfo } from '@/lib/chat-models';
+import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, getModelsByProvider } from '@/lib/chat-models';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Role = 'user' | 'assistant';
@@ -194,7 +194,7 @@ export default function ClaudeWorkspacePage() {
     <div style={{ display: 'flex', height: 'calc(100vh - 60px)', position: 'relative', zIndex: 1 }}>
 
       {/* ── Chat Panel ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
         {/* Header */}
         <div style={{
@@ -439,83 +439,6 @@ export default function ClaudeWorkspacePage() {
               <Send size={15} style={{ color: input.trim() && !streaming ? '#fff' : 'var(--text-muted)' }} />
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* ── Right Panel: Model List ── */}
-      <div style={{ width: 240, overflowY: 'auto', padding: '20px 16px', flexShrink: 0 }}>
-        <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-          Modelle · {Object.keys(MODELS).length + 1}
-        </p>
-
-        {/* Auto */}
-        <button onClick={() => setModelKey(ORCHESTRATOR_AUTO)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', padding: '7px 10px', borderRadius: 8, cursor: 'pointer', marginBottom: 12,
-          background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'var(--layer-2)',
-          border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid var(--border)',
-          transition: 'all 0.12s', textAlign: 'left',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22d3ee', boxShadow: '0 0 4px #22d3ee', flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : 'var(--text-secondary)' }}>Auto</span>
-          </div>
-          <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
-        </button>
-
-        {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
-          const entries = getModelsByProvider(provider);
-          if (!entries.length) return null;
-          return (
-            <div key={provider} style={{ marginBottom: 14 }}>
-              <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.85 }}>{label}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {entries.map(([key, m]) => (
-                  <button key={key} onClick={() => setModelKey(key)} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '6px 10px', borderRadius: 7, cursor: 'pointer',
-                    background: key === modelKey ? selBg : 'transparent',
-                    border: key === modelKey ? `1px solid ${selBorder}` : '1px solid transparent',
-                    transition: 'all 0.12s', textAlign: 'left',
-                  }}
-                  onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-2)'; el.style.borderColor = 'var(--border)'; } }}
-                  onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.borderColor = 'transparent'; } }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 3px #34d399', flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: key === modelKey ? selColor : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>{m.label}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                      {m.free  && <span style={{ fontSize: 7, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
-                      {m.tools && <span style={{ fontSize: 7, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Raycast AI shortcut */}
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-          <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>External</p>
-          <a
-            href="raycast://extensions/raycast/raycast-ai/ai-chat"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8,
-              background: 'rgba(255,99,99,0.08)', border: '1px solid rgba(255,99,99,0.2)',
-              color: '#ff6363', textDecoration: 'none', transition: 'background 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,99,99,0.14)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,99,99,0.08)')}
-          >
-            <Zap size={13} />
-            <div>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-mono)' }}>Raycast AI</p>
-              <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,99,99,0.7)' }}>AI Workspace öffnen</p>
-            </div>
-            <ExternalLink size={10} style={{ marginLeft: 'auto' }} />
-          </a>
         </div>
       </div>
     </div>

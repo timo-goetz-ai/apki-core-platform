@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Workflow, BookOpen, FlaskConical,
-  BarChart2, Factory, Users, Activity, FileText,
-  Database, Wrench, Globe, Building2, Settings,
+  BarChart2, Factory, Users, Activity,
+  Database, Wrench, Globe, Settings,
   Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,56 +19,34 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
-
-// ── Navigation Structure ─────────────────────────────────────────────────────
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: 'Core',
-    items: [
-      { label: 'Overview',    href: '/',               icon: LayoutDashboard },
-      { label: 'Workflows',   href: '/workflows',      icon: Workflow        },
-      { label: 'Agents',      href: '/agents',         icon: Users           },
-      { label: 'Knowledge',   href: '/knowledge',      icon: BookOpen        },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { label: 'Monitoring',  href: '/monitoring',     icon: Monitor         },
-      { label: 'Activity',    href: '/activity',       icon: Activity        },
-      { label: 'Logs',        href: '/logs',           icon: ScrollText      },
-      { label: 'Deployments', href: '/deployments',    icon: Rocket          },
-    ],
-  },
-  {
-    label: 'Content & Data',
-    items: [
-      { label: 'Content Factory', href: '/content-factory', icon: Factory   },
-      { label: 'Templates',   href: '/templates',      icon: LayoutTemplate  },
-      { label: 'Files',       href: '/files',          icon: FolderOpen      },
-      { label: 'Databases',   href: '/databases',      icon: Database        },
-    ],
-  },
-  {
-    label: 'Platform',
-    items: [
-      { label: 'MCP Plattform', href: '/mcp-plattform', icon: Globe         },
-      { label: 'MCP Stadt',   href: '/mcp-stadt',      icon: Building2       },
-      { label: 'Tools',       href: '/tools',          icon: Wrench          },
-    ],
-  },
-  {
-    label: 'Dev',
-    items: [
-      { label: 'Analytics',   href: '/analytics',      icon: BarChart2       },
-      { label: 'Playground',  href: '/claude-workspace', icon: FlaskConical  },
-      { label: 'API Explorer',href: '/api-explorer',   icon: FileText        },
-    ],
-  },
+// ── Navigation Structure — groups separated by dividers, no labels ───────────
+const NAV_GROUPS: NavItem[][] = [
+  [
+    { label: 'Overview',      href: '/',                 icon: LayoutDashboard },
+    { label: 'Workflows',     href: '/workflows',        icon: Workflow        },
+    { label: 'Agents',        href: '/agents',           icon: Users           },
+    { label: 'Knowledge',     href: '/knowledge',        icon: BookOpen        },
+  ],
+  [
+    { label: 'Monitoring',    href: '/monitoring/grafana', icon: Monitor       },
+    { label: 'Activity',      href: '/activity',         icon: Activity        },
+    { label: 'Logs',          href: '/logs',             icon: ScrollText      },
+    { label: 'Deployments',   href: '/deployments',      icon: Rocket         },
+  ],
+  [
+    { label: 'Content Factory', href: '/content-factory', icon: Factory       },
+    { label: 'Templates',     href: '/templates',        icon: LayoutTemplate  },
+    { label: 'Files',         href: '/files',            icon: FolderOpen      },
+    { label: 'Databases',     href: '/databases',        icon: Database        },
+  ],
+  [
+    { label: 'MCP Services',  href: '/mcp-plattform',   icon: Globe           },
+    { label: 'Tools & API',   href: '/tools',            icon: Wrench          },
+    { label: 'Analytics',     href: '/analytics',        icon: BarChart2       },
+  ],
+  [
+    { label: 'Workspace',     href: '/claude-workspace', icon: FlaskConical   },
+  ],
 ];
 
 // ── NavLink ──────────────────────────────────────────────────────────────────
@@ -136,19 +114,14 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-3">
-        <nav className="px-2 space-y-4">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
-              {/* Section label */}
-              <p
-                className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {group.label}
-              </p>
-              {/* Items */}
+        <nav className="px-2">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {gi > 0 && (
+                <div style={{ height: 1, background: 'var(--border)', margin: '6px 8px' }} />
+              )}
               <div className="space-y-0.5">
-                {group.items.map((item) => (
+                {group.map((item) => (
                   <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
                 ))}
               </div>
