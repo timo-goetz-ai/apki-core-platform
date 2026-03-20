@@ -5,14 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import PlaygroundModal from '@/components/PlaygroundModal';
 import { CommandPalette } from '@/components/CommandPalette';
 import { getRecentTemplates, type RecentTemplate } from '@/lib/template-engine';
 
 export function AppHeader() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(true);
-  const [playgroundOpen, setPlaygroundOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [recentTemplates, setRecentTemplates] = useState<RecentTemplate[]>([]);
 
@@ -111,16 +109,17 @@ export function AppHeader() {
 
         {/* Right actions */}
         <div className="flex items-center gap-1">
-          {/* Playground */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setPlaygroundOpen(true)}
-            className="gap-1.5 text-[--text-secondary] hover:text-[--text-primary]"
-          >
-            <FlaskConical size={13} />
-            <span className="hidden sm:inline">Playground</span>
-          </Button>
+          {/* Workspace */}
+          <Link href="/claude-workspace">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-[--text-secondary] hover:text-[--text-primary]"
+            >
+              <FlaskConical size={13} />
+              <span className="hidden sm:inline">Workspace</span>
+            </Button>
+          </Link>
 
           {/* Alerts */}
           <Button
@@ -178,7 +177,6 @@ export function AppHeader() {
       </header>
 
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-      <PlaygroundModal isOpen={playgroundOpen} onClose={() => setPlaygroundOpen(false)} />
     </>
   );
 }
