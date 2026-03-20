@@ -17,6 +17,9 @@ interface Workflow { Id: number; Name: string; Status: string; Kategorie: string
 interface ErrorLog { Id: number | string; ts: string; service: string; level: string; message: string; resolved?: boolean; }
 interface CoolifyService { id: string; name: string; kind: string; status: string; fqdn: string | null; updatedAt: string | null; }
 interface ActivityItem { id: string; icon: string; text: string; sub: string; ts: number; color: string; }
+interface TrendRow { Id?: number; Thema?: string; Kategorie?: string; Score?: number; Sentiment?: string; Wachstum_Prozent?: number; Zusammenfassung?: string; Datum?: string; [k: string]: unknown; }
+interface SentimentRow { Id?: number; Thema?: string; Sentiment?: string; Score?: number; Quelle?: string; Datum?: string; [k: string]: unknown; }
+interface ContentOppRow { Id?: number; Titel?: string; Beschreibung?: string; Priorität?: string; Kategorie?: string; Datum?: string; [k: string]: unknown; }
 interface RssFeedItem { title: string; link: string; pubDate: string; }
 interface RssFeed { id: string; name: string; ok: boolean; items: RssFeedItem[]; }
 interface ScannerSummary {
@@ -160,6 +163,9 @@ export default function OverviewPage() {
   const [now,         setNow]         = useState('');
   const [scanner,     setScanner]     = useState<ScannerResult>({ summary: null, scannedAt: null });
   const [scanning,    setScanning]    = useState(false);
+  const [trends,      setTrends]      = useState<TrendRow[]>([]);
+  const [sentiments,  setSentiments]  = useState<SentimentRow[]>([]);
+  const [contentOps,  setContentOps]  = useState<ContentOppRow[]>([]);
   const prevOnline = useRef(0);
 
   useEffect(() => {
@@ -171,7 +177,7 @@ export default function OverviewPage() {
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes] = await Promise.allSettled([
+    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes, trendRes, sentRes, oppRes] = await Promise.allSettled([
       fetch('/api/services').then(r => r.json()),
       fetch('/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=100').then(r => r.json()),
       fetch('/api/nocodb/error-logs').then(r => r.json()),
@@ -180,6 +186,9 @@ export default function OverviewPage() {
       fetch('/api/nocodb/table?id=mijlvsujsgqa92m&limit=1').then(r => r.json()),
       fetch('/api/activity').then(r => r.json()),
       fetch('/api/scanner/run').then(r => r.json()),
+      fetch('/api/nocodb/table?id=m91y1ifz2aop1ef&limit=10').then(r => r.json()),
+      fetch('/api/nocodb/table?id=moigzpvd4yw1d0a&limit=8').then(r => r.json()),
+      fetch('/api/nocodb/table?id=m7ehbmbi5t2w0dw&limit=5').then(r => r.json()),
     ]);
 
     if (svcRes.status === 'fulfilled') {
@@ -231,6 +240,18 @@ export default function OverviewPage() {
     }
     if (scanRes.status === 'fulfilled' && scanRes.value?.summary) {
       setScanner(scanRes.value);
+    }
+    if (trendRes.status === 'fulfilled') {
+      const list: TrendRow[] = Array.isArray(trendRes.value) ? trendRes.value : (trendRes.value?.list ?? []);
+      setTrends(list.sort((a, b) => (b.Score ?? 0) - (a.Score ?? 0)).slice(0, 5));
+    }
+    if (sentRes.status === 'fulfilled') {
+      const list: SentimentRow[] = Array.isArray(sentRes.value) ? sentRes.value : (sentRes.value?.list ?? []);
+      setSentiments(list.slice(0, 6));
+    }
+    if (oppRes.status === 'fulfilled') {
+      const list: ContentOppRow[] = Array.isArray(oppRes.value) ? oppRes.value : (oppRes.value?.list ?? []);
+      setContentOps(list.slice(0, 3));
     }
 
     setTimeout(() => setRefreshing(false), 500);
@@ -546,6 +567,84 @@ export default function OverviewPage() {
             </div>
           </Card>
         </div>
+      </div>
+
+      {/* ── Research Outputs Row ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
+
+        {/* Top Trends */}
+        <Card>
+          <WHeader icon={<TrendingUp size={12} />} title="Top Trends" right={<Link href="/workflows" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>n8n <ExternalLink size={8} /></Link>} />
+          {trends.length === 0 ? (
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Noch keine Daten — Workflow läuft täglich um 07:00</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {trends.map((t, i) => {
+                const score = t.Score ?? 0;
+                const sentColor = (t.Sentiment ?? '').toLowerCase().includes('positiv') ? '#34d399' : (t.Sentiment ?? '').toLowerCase().includes('negativ') ? '#f87171' : '#fbbf24';
+                return (
+                  <div key={t.Id ?? i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: i < trends.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', width: 14, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.Thema}>{t.Thema ?? '—'}</span>
+                    {t.Wachstum_Prozent != null && (
+                      <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: t.Wachstum_Prozent > 0 ? '#34d399' : '#f87171', flexShrink: 0 }}>
+                        {t.Wachstum_Prozent > 0 ? '+' : ''}{t.Wachstum_Prozent}%
+                      </span>
+                    )}
+                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, color: sentColor, flexShrink: 0, minWidth: 20, textAlign: 'right' }}>{score}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* Sentiment-Ticker */}
+        <Card>
+          <WHeader icon={<Activity size={12} />} title="Sentiment-Ticker" right="alle 4h" />
+          {sentiments.length === 0 ? (
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Noch keine Daten — Workflow läuft alle 4 Stunden</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {sentiments.map((s, i) => {
+                const sent = (s.Sentiment ?? '').toLowerCase();
+                const color = sent.includes('positiv') ? '#34d399' : sent.includes('negativ') ? '#f87171' : '#fbbf24';
+                const label = sent.includes('positiv') ? '↑' : sent.includes('negativ') ? '↓' : '→';
+                return (
+                  <div key={s.Id ?? i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', borderBottom: i < sentiments.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: 11, color, flexShrink: 0, width: 12, textAlign: 'center' }}>{label}</span>
+                    <span style={{ flex: 1, fontSize: 10.5, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.Thema}>{s.Thema ?? '—'}</span>
+                    {s.Quelle && <span style={{ fontSize: 8.5, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0, background: 'var(--layer-3)', padding: '1px 4px', borderRadius: 3 }}>{s.Quelle}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* Content-Chancen */}
+        <Card>
+          <WHeader icon={<Rocket size={12} />} title="Content-Chancen" right="täglich" />
+          {contentOps.length === 0 ? (
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Noch keine Daten — Workflow läuft täglich</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {contentOps.map((c, i) => {
+                const prio = (c.Priorität ?? '').toLowerCase();
+                const prioColor = prio === 'hoch' || prio === 'high' ? '#f87171' : prio === 'mittel' || prio === 'medium' ? '#fbbf24' : '#34d399';
+                return (
+                  <div key={c.Id ?? i} style={{ padding: '7px 8px', borderRadius: 6, background: 'var(--layer-1)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                      <span style={{ flex: 1, fontSize: 11, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.Titel ?? '—'}</span>
+                      {c.Priorität && <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: prioColor, flexShrink: 0, textTransform: 'uppercase' }}>{c.Priorität}</span>}
+                    </div>
+                    {c.Beschreibung && <p style={{ margin: 0, fontSize: 9.5, color: 'var(--text-muted)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.Beschreibung}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* ── Knowledge Scanner Row ── */}
