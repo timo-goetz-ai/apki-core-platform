@@ -11,6 +11,7 @@ export type ActivityType =
   | "prompt-created"
   | "prompt-used"
   | "github-push"
+  | "scanner"
   | "info";
 
 export interface ActivityEvent {

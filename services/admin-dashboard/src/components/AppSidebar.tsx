@@ -4,223 +4,181 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Bot, Workflow, Database, BarChart2, Monitor, Bell,
-  Settings, Activity, Server, Code2, FileText, BookOpen, Container,
-  Layers, Zap, Shield, HardDrive, GitBranch, Terminal, Cpu, FolderPlus,
-  ChevronDown, ChevronRight, ScanSearch, ScrollText,
+  LayoutDashboard, Workflow, BookOpen, FlaskConical,
+  BarChart2, Factory, Users, Activity, FileText,
+  Database, Wrench, Globe, Building2, Settings,
+  Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// ── Types ───────────────────────────────────────────────────────────────────
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
 }
 
-interface NavSection {
-  title: string;
-  icon?: React.ElementType;
+interface NavGroup {
+  label: string;
   items: NavItem[];
-  collapsible?: boolean;
 }
 
-const NAV: NavSection[] = [
+// ── Navigation Structure ─────────────────────────────────────────────────────
+const NAV_GROUPS: NavGroup[] = [
   {
-    title: 'Overview',
-    collapsible: false,
+    label: 'Core',
     items: [
-      { label: 'Cockpit',      href: '/',             icon: LayoutDashboard },
-      { label: 'Services',     href: '/services',     icon: Server },
-      { label: 'API Explorer', href: '/api-explorer', icon: Code2 },
-      { label: 'Aktivität',   href: '/activity',     icon: Activity },
+      { label: 'Overview',    href: '/',               icon: LayoutDashboard },
+      { label: 'Workflows',   href: '/workflows',      icon: Workflow        },
+      { label: 'Agents',      href: '/agents',         icon: Users           },
+      { label: 'Knowledge',   href: '/knowledge',      icon: BookOpen        },
     ],
   },
   {
-    title: 'KI-System',
-    icon: Cpu,
-    collapsible: true,
+    label: 'Operations',
     items: [
-      { label: 'Agenten',       href: '/agents',     icon: Bot },
-      { label: 'Workflows',     href: '/workflows',  icon: Workflow },
-      { label: 'Datenbanken',   href: '/databases',  icon: Database },
-      { label: 'Knowledge Base',href: '/knowledge',  icon: BookOpen },
-      { label: 'Templates',     href: '/templates',  icon: FileText },
-      { label: 'Tools',         href: '/tools',      icon: Zap },
+      { label: 'Monitoring',  href: '/monitoring',     icon: Monitor         },
+      { label: 'Activity',    href: '/activity',       icon: Activity        },
+      { label: 'Logs',        href: '/logs',           icon: ScrollText      },
+      { label: 'Deployments', href: '/deployments',    icon: Rocket          },
     ],
   },
   {
-    title: 'Agentic OS',
-    icon: Layers,
-    collapsible: true,
+    label: 'Content & Data',
     items: [
-      { label: 'Active Projects', href: '/agentic-os/management/active-projects', icon: GitBranch },
-      { label: 'Neues Projekt',   href: '/agentic-os/management/new-project',     icon: FolderPlus },
-      { label: 'AI Ops',          href: '/agentic-os/management/ai-ops',          icon: Cpu },
-      { label: 'Agents Engine',   href: '/agentic-os/engine-room/agents',         icon: Bot },
-      { label: 'Prompt Library',  href: '/agentic-os/knowledge/prompts',          icon: Terminal },
-      { label: 'Registry',        href: '/agentic-os/registry',                   icon: ScanSearch },
-      { label: 'Error Logs',      href: '/agentic-os/logs',                       icon: ScrollText },
+      { label: 'Content Factory', href: '/content-factory', icon: Factory   },
+      { label: 'Templates',   href: '/templates',      icon: LayoutTemplate  },
+      { label: 'Files',       href: '/files',          icon: FolderOpen      },
+      { label: 'Databases',   href: '/databases',      icon: Database        },
     ],
   },
   {
-    title: 'Monitoring',
-    icon: Monitor,
-    collapsible: true,
+    label: 'Platform',
     items: [
-      { label: 'Container',  href: '/monitoring/containers', icon: Container },
-      { label: 'Metrics',    href: '/monitoring/metrics',    icon: BarChart2 },
-      { label: 'Grafana',    href: '/monitoring/grafana',    icon: BarChart2 },
-      { label: 'Logs',       href: '/logs',                  icon: FileText },
-      { label: 'Alerts',     href: '/monitoring/alerts',     icon: Bell },
+      { label: 'MCP Plattform', href: '/mcp-plattform', icon: Globe         },
+      { label: 'MCP Stadt',   href: '/mcp-stadt',      icon: Building2       },
+      { label: 'Tools',       href: '/tools',          icon: Wrench          },
     ],
   },
   {
-    title: 'Platform',
-    icon: HardDrive,
-    collapsible: true,
+    label: 'Dev',
     items: [
-      { label: 'MCP Platform', href: '/mcp-plattform', icon: Layers },
-      { label: 'Files',        href: '/files',          icon: HardDrive },
-      { label: 'Security',     href: '/settings',       icon: Shield },
+      { label: 'Analytics',   href: '/analytics',      icon: BarChart2       },
+      { label: 'Playground',  href: '/claude-workspace', icon: FlaskConical  },
+      { label: 'API Explorer',href: '/api-explorer',   icon: FileText        },
     ],
   },
 ];
 
+// ── NavLink ──────────────────────────────────────────────────────────────────
 function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
       className={cn(
-        'group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-100',
+        'group flex items-center gap-2.5 rounded-md px-3 py-[7px] text-sm transition-all duration-100',
         isActive
-          ? 'bg-[--accent-blue]/10 text-[--accent-blue] font-medium border-l-2 border-[--accent-blue] pl-[10px]'
-          : 'text-[--text-secondary] hover:bg-[--layer-3] hover:text-[--text-primary] border-l-2 border-transparent pl-[10px]'
+          ? 'bg-[--layer-3] text-[--text-primary] font-semibold'
+          : 'text-[--text-secondary] hover:bg-[--layer-3] hover:text-[--text-primary]'
       )}
     >
       <Icon
-        size={15}
+        size={13}
         className={cn(
           'shrink-0 transition-colors',
-          isActive ? 'text-[--accent-blue]' : 'text-[--text-muted] group-hover:text-[--text-secondary]'
+          isActive
+            ? 'text-[--text-primary]'
+            : 'text-[--text-muted] group-hover:text-[--text-secondary]'
         )}
       />
-      <span className="truncate">{item.label}</span>
+      <span className="truncate flex-1 text-[12.5px]">{item.label}</span>
     </Link>
   );
 }
 
-function SidebarSection({ section, pathname }: { section: NavSection; pathname: string }) {
-  const hasActive = section.items.some(
-    (item) => pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
-  );
-  const [open, setOpen] = React.useState(hasActive || !section.collapsible);
-
-  if (!section.collapsible) {
-    return (
-      <div className="space-y-0.5">
-        {section.items.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-          return <NavLink key={item.href} item={item} isActive={isActive} />;
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-[--text-muted] hover:text-[--text-secondary] transition-colors">
-        <span>{section.title}</span>
-        <ChevronDown
-          size={12}
-          className={cn('transition-transform duration-200', open && 'rotate-180')}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-0.5 pt-1">
-        {section.items.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-          return <NavLink key={item.href} item={item} isActive={isActive} />;
-        })}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
+// ── AppSidebar ───────────────────────────────────────────────────────────────
 export function AppSidebar() {
   const pathname = usePathname();
 
+  function isActive(href: string) {
+    return href === '/'
+      ? pathname === '/'
+      : pathname === href || pathname.startsWith(href + '/');
+  }
+
   return (
-    <TooltipProvider delayDuration={300}>
-      <aside
-        className="fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col"
-        style={{
-          background: 'var(--layer-1)',
-          borderRight: '1px solid var(--border)',
-        }}
+    <aside
+      className="fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col"
+      style={{ background: 'var(--layer-1)', borderRight: '1px solid var(--border)' }}
+    >
+      {/* Brand */}
+      <div
+        className="flex h-[60px] shrink-0 items-center gap-3 px-4"
+        style={{ borderBottom: '1px solid var(--border)' }}
       >
-        {/* Logo / Brand */}
         <div
-          className="flex h-[60px] shrink-0 items-center gap-3 px-4"
-          style={{ borderBottom: '1px solid var(--border)' }}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold"
+          style={{
+            background: 'var(--layer-3)',
+            border: '1px solid var(--border-bright)',
+            color: 'var(--text-primary)',
+          }}
         >
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
-            style={{ background: 'var(--accent-blue)', color: 'var(--layer-0)' }}
-          >
-            AI
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[--text-primary] leading-none">AIOS</p>
-            <p className="text-[10px] font-mono text-[--text-muted] leading-none mt-0.5">ops center</p>
-          </div>
+          AI
         </div>
+        <div>
+          <p className="text-sm font-semibold text-[--text-primary] leading-none">AIOS</p>
+          <p className="text-[10px] font-mono text-[--text-muted] leading-none mt-0.5">ops center</p>
+        </div>
+      </div>
 
-        {/* Navigation */}
-        <ScrollArea className="flex-1 py-3">
-          <nav className="space-y-4 px-2">
-            {NAV.map((section) => (
-              <div key={section.title}>
-                {section.collapsible ? (
-                  <SidebarSection section={section} pathname={pathname} />
-                ) : (
-                  <>
-                    <p className="mb-1 px-3 text-[10px] font-mono font-medium uppercase tracking-[0.12em] text-[--text-muted]">
-                      {section.title}
-                    </p>
-                    <div className="space-y-0.5">
-                      {section.items.map((item) => {
-                        const isActive =
-                          pathname === item.href ||
-                          (item.href !== '/' && pathname.startsWith(item.href));
-                        return <NavLink key={item.href} item={item} isActive={isActive} />;
-                      })}
-                    </div>
-                  </>
-                )}
+      {/* Navigation */}
+      <ScrollArea className="flex-1 py-3">
+        <nav className="px-2 space-y-4">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {/* Section label */}
+              <p
+                className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {group.label}
+              </p>
+              {/* Items */}
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
+                ))}
               </div>
-            ))}
-          </nav>
-        </ScrollArea>
+            </div>
+          ))}
+        </nav>
+      </ScrollArea>
 
-        {/* Footer status */}
+      {/* Footer: Settings + Status */}
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="px-2 py-1.5">
+          <NavLink
+            item={{ label: 'Settings', href: '/settings', icon: Settings }}
+            isActive={isActive('/settings')}
+          />
+        </div>
         <div
-          className="flex items-center gap-2 px-4 py-3"
+          className="flex items-center gap-2 px-4 py-2.5"
           style={{ borderTop: '1px solid var(--border)' }}
         >
           <span
-            className="h-1.5 w-1.5 rounded-full shrink-0"
-            style={{ background: 'var(--accent-green)', boxShadow: '0 0 6px var(--accent-green)' }}
+            className="h-1.5 w-1.5 rounded-full shrink-0 live-dot"
+            style={{ background: 'var(--accent-green)' }}
           />
           <span className="flex-1 text-[10px] font-mono text-[--text-muted]">system online</span>
           <span className="text-[10px] font-mono text-[--text-muted] tabular-nums">
             {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-      </aside>
-    </TooltipProvider>
+      </div>
+    </aside>
   );
 }

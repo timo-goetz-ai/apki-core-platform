@@ -1,649 +1,798 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import {
-  Send, RefreshCw, Zap, ChevronDown,
-  Server, Activity, Cpu, TrendingUp,
-  CheckCircle2, AlertTriangle, XCircle, Minus,
-  Sparkles, Bot, Workflow,
+  RefreshCw, ExternalLink, Activity, Clock,
+  AlertTriangle, CheckCircle2, XCircle, Minus,
+  Zap, Rocket, Database, FileText, GitBranch,
+  ScrollText, TrendingUp, Bot, Server, Play,
+  ArrowUpRight, ArrowDownRight,
+  ScanSearch, Github, Workflow, Rss, BookOpen,
 } from 'lucide-react';
-import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, getModelsByProvider, type ModelInfo } from '@/lib/chat-models';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
-type Role = 'user' | 'assistant' | 'tool';
-
-interface Message {
-  id: string;
-  role: Role;
-  content: string;
-  isStreaming?: boolean;
+interface Workflow { Id: number; Name: string; Status: string; Kategorie: string; n8n_url?: string; }
+interface ErrorLog { Id: number | string; ts: string; service: string; level: string; message: string; resolved?: boolean; }
+interface CoolifyService { id: string; name: string; kind: string; status: string; fqdn: string | null; updatedAt: string | null; }
+interface ActivityItem { id: string; icon: string; text: string; sub: string; ts: number; color: string; }
+interface RssFeedItem { title: string; link: string; pubDate: string; }
+interface RssFeed { id: string; name: string; ok: boolean; items: RssFeedItem[]; }
+interface ScannerSummary {
+  github: { count: number; withClaudeMd: number; error?: string };
+  n8n: { count: number; active: number; error?: string };
+  nocodb: { count: number; totalFields: number; error?: string };
+  rss: { feeds: number; items: number; ok: number };
+  durationMs: number;
+  scannedAt: string;
+}
+interface ScannerResult {
+  summary: ScannerSummary | null;
+  scannedAt: string | null;
+  rss?: { feeds: RssFeed[] };
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-const STATUS_COLOR: Record<ServiceStatus, string> = {
-  online: '#34d399', degraded: '#fbbf24',
-  offline: '#f87171', unknown: '#475569',
-};
-const STATUS_ICON: Record<ServiceStatus, React.ReactNode> = {
-  online:   <CheckCircle2 size={9} />,
-  degraded: <AlertTriangle size={9} />,
-  offline:  <XCircle size={9} />,
-  unknown:  <Minus size={9} />,
-};
+// ── Config ─────────────────────────────────────────────────────────────────────
 const CORE_SERVICES = [
-  { id: 'n8n',        name: 'n8n Workflows'  },
-  { id: 'nocodb',     name: 'NocoDB'         },
-  { id: 'grafana',    name: 'Grafana'        },
-  { id: 'coolify',    name: 'Coolify'        },
-  { id: 'authentik',  name: 'Authentik SSO'  },
-  { id: 'qdrant',     name: 'Qdrant'         },
-  { id: 'redis',      name: 'Redis'          },
-  { id: 'postgres',   name: 'PostgreSQL'     },
-  { id: 'prometheus', name: 'Prometheus'     },
-  { id: 'traefik',    name: 'Traefik'        },
-  { id: 'cloudflare', name: 'Cloudflare'     },
+  { id: 'n8n',        name: 'n8n'        },
+  { id: 'nocodb',     name: 'NocoDB'     },
+  { id: 'grafana',    name: 'Grafana'    },
+  { id: 'coolify',    name: 'Coolify'    },
+  { id: 'authentik',  name: 'Authentik'  },
+  { id: 'qdrant',     name: 'Qdrant'     },
+  { id: 'redis',      name: 'Redis'      },
+  { id: 'postgres',   name: 'PostgreSQL' },
+  { id: 'prometheus', name: 'Prometheus' },
+  { id: 'traefik',    name: 'Traefik'    },
 ];
 
-const QUICK_PROMPTS = [
-  'Was läuft gerade?',
-  'Zeig alle Container',
-  'Service-Status',
-  'Fehlerhafte Services',
-  'n8n Workflows auflisten',
+const STATUS_COLOR: Record<ServiceStatus, string> = {
+  online: '#34d399', degraded: '#fbbf24', offline: '#f87171', unknown: '#475569',
+};
+const LOG_COLOR: Record<string, string> = {
+  info: '#60a5fa', warn: '#fbbf24', error: '#f87171', critical: '#e11d48',
+};
+const KAT_COLOR: Record<string, string> = {
+  'System': '#38bdf8', 'KI-Chat': '#a78bfa', 'Content': '#fb923c',
+  'DevOps': '#94a3b8', 'Daten': '#60a5fa', 'Voice': '#f472b6',
+  'SaaS': '#fbbf24', 'Job-Scout': '#34d399',
+};
+const TRIGGERS = [
+  { label: 'AI Brain',     id: 'ai-brain',     color: '#a78bfa' },
+  { label: 'System Brain', id: 'system-brain', color: '#38bdf8' },
+  { label: 'Lead Scout',   id: 'lead-scout',   color: '#34d399' },
+  { label: 'Content Gen',  id: 'content-gen',  color: '#fb923c' },
+  { label: 'Voice Agent',  id: 'voice-agent',  color: '#f472b6' },
+  { label: 'DevOps Bot',   id: 'devops-bot',   color: '#94a3b8' },
 ];
 
-// ── Provider config ────────────────────────────────────────────────────────────
-const PROVIDERS = [
-  { provider: 'openrouter' as const, label: '⚡ Free · OpenRouter', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',   selBorder: 'rgba(56,189,248,0.2)',   selColor: '#38bdf8' },
-  { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude', color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',   selBorder: 'rgba(251,191,36,0.25)',  selColor: '#fbbf24' },
-  { provider: 'google'     as const, label: '◈ Google AI Studio',   color: '#34d399',              selBg: 'rgba(52,211,153,0.08)',   selBorder: 'rgba(52,211,153,0.25)',  selColor: '#34d399' },
-] as const;
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function timeAgo(iso: string | null): string {
+  if (!iso) return '—';
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return 'jetzt';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
 
-// ── Service row ────────────────────────────────────────────────────────────────
-function ServiceRow({ name, status, latency }: { name: string; status: ServiceStatus; latency?: string }) {
-  const color = STATUS_COLOR[status];
+// ── Sub-components ─────────────────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '6px 0', borderBottom: '1px solid rgba(148,163,184,0.05)',
+      background: 'var(--layer-2)', border: '1px solid var(--border)',
+      borderRadius: 10, padding: '14px 16px', height: '100%',
+      boxSizing: 'border-box', ...style,
     }}>
-      <span style={{
-        width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0,
-        boxShadow: status === 'online' ? `0 0 6px ${color}` : 'none',
-        animation: status === 'online' ? 'status-pulse 2.5s ease-in-out infinite' : 'none',
-      }} />
-      <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{name}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, fontFamily: 'var(--font-mono)', color }}>
-        {STATUS_ICON[status]}
-        {latency ?? status}
-      </span>
+      {children}
+    </div>
+  );
+}
+
+function WHeader({ icon, title, right }: { icon: React.ReactNode; title: string; right?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: 'var(--text-muted)', display: 'flex' }}>{icon}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>{title}</span>
+      </div>
+      {right && <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: 3 }}>{right}</span>}
+    </div>
+  );
+}
+
+function Dot({ color, pulse }: { color: string; pulse?: boolean }) {
+  return <span style={{
+    display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+    background: color, flexShrink: 0,
+    animation: pulse ? 'status-pulse 2.5s ease-in-out infinite' : 'none',
+  }} />;
+}
+
+function LatencyBar({ ms }: { ms: string | undefined }) {
+  if (!ms) return null;
+  const num = parseInt(ms);
+  if (isNaN(num)) return null;
+  const pct = Math.min(100, (num / 800) * 100);
+  const color = num < 200 ? '#34d399' : num < 500 ? '#fbbf24' : '#f87171';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <div style={{ width: 36, height: 3, background: 'var(--layer-3)', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2 }} />
+      </div>
+      <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{ms}</span>
+    </div>
+  );
+}
+
+function MiniBar({ data }: { data: { label: string; value: number; color: string }[] }) {
+  const max = Math.max(...data.map(d => d.value), 1);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 32 }}>
+      {data.map(d => (
+        <div key={d.label} title={`${d.label}: ${d.value}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{
+            width: '100%', borderRadius: 2,
+            height: Math.max(3, Math.round((d.value / max) * 28)),
+            background: d.color, opacity: 0.8,
+          }} />
+          <span style={{ fontSize: 7.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{d.value}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────────
-export default function CockpitPage() {
-  // ── Chat state ──
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Hey — ich bin dein AIOS Assistent. Ich habe Zugriff auf alle Services, Docker-Container, Coolify-Apps und mehr.\n\nFrag mich z.B.: *"Was läuft gerade?"*, *"Zeig alle Container"*, oder *"Starte Service XY neu."*',
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const [modelKey, setModelKey] = useState<string>(ORCHESTRATOR_AUTO);
-  const [modelOpen, setModelOpen] = useState(false);
-  const [streaming, setStreaming] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+export default function OverviewPage() {
+  const [statuses,    setStatuses]    = useState<Record<string, { status: ServiceStatus; latency?: string }>>({});
+  const [workflows,   setWorkflows]   = useState<Workflow[]>([]);
+  const [errorLogs,   setErrorLogs]   = useState<ErrorLog[]>([]);
+  const [deployments, setDeployments] = useState<CoolifyService[]>([]);
+  const [agentCount,  setAgentCount]  = useState(0);
+  const [promptCount, setPromptCount] = useState(0);
+  const [activity,    setActivity]    = useState<ActivityItem[]>([]);
+  const [triggering,  setTriggering]  = useState<string | null>(null);
+  const [triggered,   setTriggered]   = useState<string | null>(null);
+  const [refreshing,  setRefreshing]  = useState(false);
+  const [now,         setNow]         = useState('');
+  const [scanner,     setScanner]     = useState<ScannerResult>({ summary: null, scannedAt: null });
+  const [scanning,    setScanning]    = useState(false);
+  const prevOnline = useRef(0);
 
-  // ── Status state ──
-  const [statuses, setStatuses] = useState<Record<string, { status: ServiceStatus; latency?: string }>>({});
-  const [refreshing, setRefreshing] = useState(false);
+  useEffect(() => {
+    const fmt = () => new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setNow(fmt());
+    const t = setInterval(() => setNow(fmt()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-  const fetchStatuses = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    try {
-      const res = await fetch('/api/services');
-      if (res.ok) setStatuses(await res.json());
-    } catch { /* silent */ }
-    setTimeout(() => setRefreshing(false), 700);
+    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes] = await Promise.allSettled([
+      fetch('/api/services').then(r => r.json()),
+      fetch('/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=100').then(r => r.json()),
+      fetch('/api/nocodb/error-logs').then(r => r.json()),
+      fetch('/api/coolify/services').then(r => r.json()),
+      fetch('/api/nocodb/agents').then(r => r.json()),
+      fetch('/api/nocodb/table?id=mijlvsujsgqa92m&limit=1').then(r => r.json()),
+      fetch('/api/activity').then(r => r.json()),
+      fetch('/api/scanner/run').then(r => r.json()),
+    ]);
+
+    if (svcRes.status === 'fulfilled') {
+      const data = svcRes.value;
+      const newOnline = Object.values(data).filter((s: unknown) => (s as { status: string }).status === 'online').length;
+      if (prevOnline.current > 0 && newOnline !== prevOnline.current) {
+        const diff = newOnline - prevOnline.current;
+        const item: ActivityItem = {
+          id: `svc-${Date.now()}`, icon: diff > 0 ? '✅' : '⚠️',
+          text: diff > 0 ? `${diff} Service(s) wieder online` : `${Math.abs(diff)} Service(s) offline`,
+          sub: 'Service Health', ts: Date.now(),
+          color: diff > 0 ? '#34d399' : '#f87171',
+        };
+        setActivity(prev => [item, ...prev].slice(0, 20));
+      }
+      prevOnline.current = newOnline;
+      setStatuses(data);
+    }
+    if (wfRes.status === 'fulfilled') {
+      const list: Workflow[] = Array.isArray(wfRes.value) ? wfRes.value : (wfRes.value?.list ?? []);
+      setWorkflows(list);
+    }
+    if (logRes.status === 'fulfilled') {
+      const list: ErrorLog[] = Array.isArray(logRes.value) ? logRes.value : (logRes.value?.list ?? []);
+      setErrorLogs(list.filter(l => !l.resolved).slice(0, 8));
+    }
+    if (depRes.status === 'fulfilled' && depRes.value?.services) {
+      setDeployments(depRes.value.services.slice(0, 9));
+    }
+    if (agRes.status === 'fulfilled') {
+      const list = Array.isArray(agRes.value) ? agRes.value : (agRes.value?.list ?? []);
+      setAgentCount(list.length);
+    }
+    if (prRes.status === 'fulfilled') {
+      const list = Array.isArray(prRes.value) ? prRes.value : (prRes.value?.list ?? []);
+      setPromptCount(list.length);
+    }
+    if (actRes.status === 'fulfilled') {
+      const raw = Array.isArray(actRes.value) ? actRes.value : (actRes.value?.events ?? actRes.value?.list ?? []);
+      const items: ActivityItem[] = raw.slice(0, 20).map((e: Record<string, unknown>, i: number) => ({
+        id: String(e.id ?? i),
+        icon: String(e.icon ?? '▸'),
+        text: String(e.message ?? e.text ?? e.action ?? ''),
+        sub: String(e.type ?? e.service ?? e.source ?? ''),
+        ts: new Date(String(e.time ?? e.ts ?? e.created_at ?? Date.now())).getTime(),
+        color: String(e.color ?? '#60a5fa'),
+      }));
+      if (items.length > 0) setActivity(items);
+    }
+    if (scanRes.status === 'fulfilled' && scanRes.value?.summary) {
+      setScanner(scanRes.value);
+    }
+
+    setTimeout(() => setRefreshing(false), 500);
   }, []);
 
   useEffect(() => {
-    fetchStatuses();
-    const t = setInterval(fetchStatuses, 30_000);
+    fetchAll();
+    const t = setInterval(fetchAll, 30_000);
     return () => clearInterval(t);
-  }, [fetchStatuses]);
+  }, [fetchAll]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Derived
+  const onlineCount  = Object.values(statuses).filter(s => s.status === 'online').length;
+  const totalCount   = Object.keys(statuses).length || CORE_SERVICES.length;
+  const activeWf     = workflows.filter(w => ['aktiv','active'].includes((w.Status ?? '').toLowerCase())).length;
+  const runningDeps  = deployments.filter(d => d.status === 'running').length;
+  const openErrors   = errorLogs.length;
+  const onlinePct    = totalCount > 0 ? Math.round((onlineCount / totalCount) * 100) : 0;
 
-  useEffect(() => {
-    const close = () => setModelOpen(false);
-    if (modelOpen) document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [modelOpen]);
+  const wfKats = Object.entries(
+    workflows.reduce((acc, w) => {
+      const k = w.Kategorie || 'Other';
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([label, value]) => ({ label, value, color: KAT_COLOR[label] ?? '#475569' }));
 
-  const getStatus  = (id: string): ServiceStatus => statuses[id]?.status ?? 'unknown';
-  const getLatency = (id: string) => statuses[id]?.latency;
-  const onlineCount = Object.values(statuses).filter(s => s.status === 'online').length;
-  const totalCount  = Object.keys(statuses).length || CORE_SERVICES.length;
-  const currentModel = modelKey === ORCHESTRATOR_AUTO
-    ? { label: 'Auto (Orchestrator)', free: true, tools: true, provider: 'openrouter' as const }
-    : (MODELS[modelKey] ?? MODELS[DEFAULT_MODEL]);
-
-  // ── Send message ──
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
-    if (!text || streaming) return;
-
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
-    const assistantId = (Date.now() + 1).toString();
-    const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '', isStreaming: true };
-
-    setMessages(prev => [...prev, userMsg, assistantMsg]);
-    setInput('');
-    setStreaming(true);
-
-    const history = messages
-      .filter(m => m.role === 'user' || m.role === 'assistant')
-      .map(m => ({ role: m.role, content: m.content }));
-    history.push({ role: 'user', content: text });
-
+  async function runScan() {
+    if (scanning) return;
+    setScanning(true);
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, modelKey }),
-      });
-
-      if (!res.body) throw new Error('No stream');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(data) as { text: string };
-            accumulated += parsed.text;
-            setMessages(prev => prev.map(m =>
-              m.id === assistantId ? { ...m, content: accumulated } : m
-            ));
-          } catch { /* skip */ }
-        }
+      const res = await fetch('/api/scanner/run', { method: 'POST' });
+      const data = await res.json();
+      setScanner(data);
+      if (data.summary) {
+        setActivity(prev => [{
+          id: `scan-${Date.now()}`, icon: '🔍',
+          text: `Scanner: ${data.summary.github.count} Repos · ${data.summary.n8n.count} Flows · ${data.summary.rss.items} RSS`,
+          sub: 'Knowledge Scanner', ts: Date.now(), color: '#34d399',
+        }, ...prev].slice(0, 20));
       }
-      setMessages(prev => prev.map(m =>
-        m.id === assistantId ? { ...m, isStreaming: false } : m
-      ));
-    } catch (e) {
-      setMessages(prev => prev.map(m =>
-        m.id === assistantId ? { ...m, content: `[Fehler: ${String(e)}]`, isStreaming: false } : m
-      ));
-    } finally {
-      setStreaming(false);
+    } catch { /* silent */ }
+    setScanning(false);
+  }
+
+  async function triggerWorkflow(id: string) {
+    setTriggering(id);
+    try { await fetch(`/api/n8n/trigger/${id}`, { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } }); }
+    catch { /* silent */ }
+    setTriggered(id);
+    setTimeout(() => { setTriggering(null); setTriggered(null); }, 2000);
+    // add to activity
+    const t = TRIGGERS.find(t => t.id === id);
+    if (t) {
+      setActivity(prev => [{
+        id: `trig-${Date.now()}`, icon: '⚡',
+        text: `${t.label} getriggert`, sub: 'n8n Workflow',
+        ts: Date.now(), color: t.color,
+      }, ...prev].slice(0, 20));
     }
-  }, [input, streaming, messages, modelKey]);
-
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  };
-
-  // ── Render message content ──
-  const renderContent = (content: string) => {
-    const lines = content.split('\n');
-    return lines.map((line, i) => {
-      const isTool = line.startsWith('🔧');
-      const isCode = line.startsWith('```');
-      return (
-        <span key={i} style={{
-          display: 'block',
-          color: isTool ? '#fbbf24' : isCode ? '#38bdf8' : 'inherit',
-          fontFamily: isTool ? 'var(--font-mono)' : 'inherit',
-          fontSize: isTool ? 11 : 'inherit',
-        }}>
-          {line || '\u00A0'}
-        </span>
-      );
-    });
-  };
-
-  // ── KPI config ──
-  const KPI_CARDS = [
-    { label: 'Services Online', value: `${onlineCount}/${totalCount}`, sub: 'Alle Dienste', icon: <Server size={14} />, color: '#34d399', glow: 'rgba(52,211,153,0.15)' },
-    { label: 'Workflows',       value: '17',                           sub: 'n8n aktiv',    icon: <Workflow size={14} />, color: '#38bdf8', glow: 'rgba(56,189,248,0.15)' },
-    { label: 'MCPs',            value: '19',                           sub: 'Verbunden',    icon: <Cpu size={14} />,    color: '#a78bfa', glow: 'rgba(167,139,250,0.15)' },
-    { label: 'Uptime',          value: '99.8%',                        sub: '30-Tage-Avg',  icon: <TrendingUp size={14} />, color: '#34d399', glow: 'rgba(52,211,153,0.15)' },
-  ];
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{
-        display: 'flex', height: 'calc(100vh - 60px)',
-        position: 'relative', zIndex: 1,
-      }}
-    >
+    <div style={{ padding: '16px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
-      {/* ══════════════════════════════════════════════════════════ */}
-      {/* LEFT — Chat Panel                                          */}
-      {/* ══════════════════════════════════════════════════════════ */}
-      <div style={{
-        flex: '0 0 58%', display: 'flex', flexDirection: 'column',
-        borderRight: '1px solid var(--border)',
-      }}>
-
-        {/* Chat header */}
-        <div style={{
-          padding: '14px 20px 12px', borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0, background: 'rgba(13,17,23,0.6)', backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Avatar */}
-            <div style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: 'linear-gradient(135deg, rgba(56,189,248,0.2), rgba(52,211,153,0.2))',
-              border: '1px solid rgba(56,189,248,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(56,189,248,0.1)',
-            }}>
-              <Bot size={15} style={{ color: '#38bdf8' }} />
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>
-                AIOS Assistant
-              </p>
-              <p style={{ margin: 0, fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)' }}>
-                Tool-Calling · Docker · Services · Cloudflare
-              </p>
-            </div>
-          </div>
-
-          {/* Streaming indicator + Model selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <AnimatePresence>
-              {streaming && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '3px 9px', borderRadius: 999,
-                    background: 'rgba(56,189,248,0.1)',
-                    border: '1px solid rgba(56,189,248,0.2)',
-                    fontSize: 10, color: '#38bdf8', fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#38bdf8', animation: 'status-pulse 0.8s ease-in-out infinite' }} />
-                  streaming
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Model selector */}
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={e => { e.stopPropagation(); setModelOpen(o => !o); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '5px 10px', borderRadius: 8, cursor: 'pointer',
-                  background: 'var(--layer-2)', border: '1px solid var(--border)',
-                  color: '#94a3b8', fontSize: 11, fontFamily: 'var(--font-mono)',
-                  transition: 'border-color 0.12s',
-                }}
-                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = '#38bdf8'}
-                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'}
-              >
-                <Zap size={10} style={{ color: '#fbbf24' }} />
-                {currentModel.label}
-                {currentModel.free && (
-                  <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>
-                )}
-                <ChevronDown size={9} style={{ transform: modelOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-              </button>
-
-              {modelOpen && (
-                <div style={{
-                  position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                  width: 260, background: 'var(--layer-2)', border: '1px solid var(--border-bright)',
-                  borderRadius: 12, padding: 8, zIndex: 50,
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-                  maxHeight: 420, overflowY: 'auto',
-                }}>
-                  {/* Auto-Orchestrator Option */}
-                  <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
-                  <button onClick={() => { setModelKey(ORCHESTRATOR_AUTO); setModelOpen(false); }} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '5px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 8,
-                    background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'transparent',
-                    border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid transparent',
-                    color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : '#94a3b8',
-                    fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
-                  }}
-                  onMouseEnter={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = '#f1f5f9'; } }}
-                  onMouseLeave={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = '#94a3b8'; } }}
-                  >
-                    <span>Auto — OpenRouter · Claude · Gemini</span>
-                    <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
-                  </button>
-                  <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />
-                  {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
-                    const entries = getModelsByProvider(provider);
-                    if (!entries.length) return null;
-                    return (
-                      <div key={provider}>
-                        <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>{label}</p>
-                        {entries.map(([key, m]) => (
-                          <button key={key} onClick={() => { setModelKey(key); setModelOpen(false); }} style={{
-                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '5px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 2,
-                            background: key === modelKey ? selBg : 'transparent',
-                            border: key === modelKey ? `1px solid ${selBorder}` : '1px solid transparent',
-                            color: key === modelKey ? selColor : '#94a3b8',
-                            fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'all 0.1s', textAlign: 'left',
-                          }}
-                          onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--layer-3)'; el.style.color = '#f1f5f9'; } }}
-                          onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'transparent'; el.style.color = '#94a3b8'; } }}
-                          >
-                            <span>{m.label}</span>
-                            <div style={{ display: 'flex', gap: 3 }}>
-                              {m.free && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
-                              {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
-                            </div>
-                          </button>
-                        ))}
-                        <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>AIOS Overview</h1>
+          <p style={{ margin: '1px 0 0', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          </p>
         </div>
-
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 12px' }}>
-          {messages.map((msg, idx) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: idx === 0 ? 0 : 0 }}
-              style={{
-                marginBottom: 18,
-                display: 'flex',
-                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                gap: 10, alignItems: 'flex-start',
-              }}
-            >
-              {/* Avatar */}
-              {msg.role !== 'user' && (
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                  background: 'linear-gradient(135deg, rgba(56,189,248,0.2), rgba(52,211,153,0.15))',
-                  border: '1px solid rgba(56,189,248,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginTop: 2,
-                }}>
-                  <Sparkles size={12} style={{ color: '#38bdf8' }} />
-                </div>
-              )}
-
-              {/* Bubble */}
-              <div style={{
-                maxWidth: '82%',
-                padding: msg.role === 'user' ? '9px 14px' : '11px 14px',
-                borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                background: msg.role === 'user'
-                  ? 'rgba(56,189,248,0.1)'
-                  : 'rgba(22,27,34,0.9)',
-                border: msg.role === 'user'
-                  ? '1px solid rgba(56,189,248,0.22)'
-                  : '1px solid rgba(148,163,184,0.08)',
-                backdropFilter: 'blur(8px)',
-                fontSize: 13, lineHeight: 1.65,
-                color: '#f1f5f9',
-              }}>
-                {renderContent(msg.content)}
-                {msg.isStreaming && (
-                  <span style={{
-                    display: 'inline-block', width: 8, height: 14, marginLeft: 3,
-                    background: '#38bdf8', borderRadius: 2,
-                    animation: 'status-pulse 0.7s ease-in-out infinite', verticalAlign: 'text-bottom',
-                  }} />
-                )}
-              </div>
-            </motion.div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input area */}
-        <div style={{
-          padding: '12px 20px 16px', borderTop: '1px solid var(--border)',
-          flexShrink: 0, background: 'rgba(13,17,23,0.5)', backdropFilter: 'blur(8px)',
-        }}>
-          {/* Quick prompts */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            {QUICK_PROMPTS.map(q => (
-              <button key={q} onClick={() => setInput(q)} style={{
-                padding: '4px 12px', borderRadius: 999, border: '1px solid var(--border)',
-                background: 'rgba(22,27,34,0.6)', color: '#94a3b8',
-                fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)',
-                transition: 'all 0.12s', whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = '#38bdf8'; el.style.color = '#38bdf8'; el.style.background = 'rgba(56,189,248,0.06)'; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'var(--border)'; el.style.color = '#94a3b8'; el.style.background = 'rgba(22,27,34,0.6)'; }}
-              >{q}</button>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            padding: '4px 10px', borderRadius: 6,
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <Clock size={10} style={{ color: '#34d399' }} />
+            {now}
           </div>
-
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Frag mich etwas über dein System… (Enter zum Senden)"
-              rows={2}
-              style={{
-                flex: 1, resize: 'none', padding: '10px 14px',
-                background: 'rgba(22,27,34,0.8)', border: '1px solid var(--border)',
-                borderRadius: 10, color: '#f1f5f9',
-                fontSize: 13, fontFamily: 'var(--font-ui)', lineHeight: 1.5,
-                outline: 'none', transition: 'border-color 0.15s',
-              }}
-              onFocus={e => (e.target as HTMLTextAreaElement).style.borderColor = '#38bdf8'}
-              onBlur={e => (e.target as HTMLTextAreaElement).style.borderColor = 'var(--border)'}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || streaming}
-              style={{
-                width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                background: input.trim() && !streaming ? '#38bdf8' : 'var(--layer-3)',
-                border: 'none', cursor: input.trim() && !streaming ? 'pointer' : 'not-allowed',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.15s, transform 0.1s',
-                transform: 'scale(1)',
-              }}
-              onMouseEnter={e => { if (input.trim() && !streaming) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.05)'; }}
-              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'}
-            >
-              <Send size={15} style={{ color: input.trim() && !streaming ? '#fff' : '#475569' }} />
-            </button>
-          </div>
+          <button onClick={fetchAll} style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px',
+            borderRadius: 6, cursor: 'pointer',
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            color: 'var(--text-secondary)', fontSize: 11,
+          }}>
+            <RefreshCw size={10} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════ */}
-      {/* RIGHT — Status Panel                                       */}
-      {/* ══════════════════════════════════════════════════════════ */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 32px' }}>
-
-        {/* KPI row */}
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}
-        >
-          {KPI_CARDS.map(kpi => (
-            <motion.div
-              key={kpi.label}
-              variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
-              style={{
-                background: 'rgba(22,27,34,0.9)', border: '1px solid rgba(148,163,184,0.08)',
-                borderRadius: 12, padding: '16px', position: 'relative', overflow: 'hidden',
-              }}
-            >
-              {/* Top accent line */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${kpi.color}50, transparent)` }} />
-              {/* Subtle glow bg */}
-              <div style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: kpi.glow, borderRadius: '50%', filter: 'blur(20px)', pointerEvents: 'none' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{kpi.label}</span>
-                <span style={{ color: kpi.color, opacity: 0.8 }}>{kpi.icon}</span>
-              </div>
-              <span style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#f1f5f9', display: 'block' }}>{kpi.value}</span>
-              <span style={{ fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)' }}>{kpi.sub}</span>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Available Models */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Verfügbare Modelle
-            </span>
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#34d399' }}>
-              {Object.keys(MODELS).length + 1} gesamt
-            </span>
+      {/* ── KPI Strip ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        {[
+          {
+            label: 'Services', value: `${onlineCount}/${totalCount}`, sub: `${onlinePct}% uptime`,
+            icon: <Server size={12} />, color: onlinePct >= 90 ? '#34d399' : onlinePct >= 70 ? '#fbbf24' : '#f87171',
+            trend: onlinePct >= 90 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />,
+          },
+          {
+            label: 'Workflows', value: String(activeWf), sub: `von ${workflows.length} gesamt`,
+            icon: <Zap size={12} />, color: '#60a5fa',
+            trend: <ArrowUpRight size={11} />,
+          },
+          {
+            label: 'Offene Fehler', value: String(openErrors), sub: 'unresolved',
+            icon: <AlertTriangle size={12} />, color: openErrors === 0 ? '#34d399' : openErrors > 3 ? '#f87171' : '#fbbf24',
+            trend: openErrors === 0 ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />,
+          },
+          {
+            label: 'Deployments', value: String(runningDeps), sub: `von ${deployments.length} running`,
+            icon: <Rocket size={12} />, color: '#60a5fa',
+            trend: <ArrowUpRight size={11} />,
+          },
+        ].map(kpi => (
+          <div key={kpi.label} style={{
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: '11px 14px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{kpi.label}</span>
+              <span style={{ color: kpi.color, display: 'flex', gap: 3, alignItems: 'center' }}>{kpi.icon}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: 26, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>{kpi.value}</span>
+              <span style={{ color: kpi.color, display: 'flex', alignItems: 'center' }}>{kpi.trend}</span>
+            </div>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 3, display: 'block' }}>{kpi.sub}</span>
           </div>
+        ))}
+      </div>
 
-          {/* Auto Orchestrator */}
-          <div style={{ marginBottom: 12 }}>
-            <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
-            <button onClick={() => setModelKey(ORCHESTRATOR_AUTO)} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
-              background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'rgba(22,27,34,0.6)',
-              border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid rgba(148,163,184,0.06)',
-              transition: 'all 0.12s', textAlign: 'left',
-            }}
-            onMouseEnter={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.16)'; el.style.background = 'rgba(22,27,34,0.9)'; } }}
-            onMouseLeave={e => { if (modelKey !== ORCHESTRATOR_AUTO) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.06)'; el.style.background = 'rgba(22,27,34,0.6)'; } }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: '#22d3ee',
-                  boxShadow: '0 0 4px #22d3ee',
-                  flexShrink: 0,
-                }} />
-                <span style={{ fontSize: 11, color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-                  Auto — OpenRouter · Claude · Gemini
-                </span>
-              </div>
-              <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
-            </button>
+      {/* ── Main Grid: 3 columns ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 220px', gap: 10, marginBottom: 10 }}>
+
+        {/* Col 1: Service Health */}
+        <Card>
+          <WHeader icon={<Activity size={12} />} title="Service Health" right={`${onlineCount}/${totalCount}`} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {CORE_SERVICES.map(svc => {
+              const s = (statuses[svc.id]?.status ?? 'unknown') as ServiceStatus;
+              const lat = statuses[svc.id]?.latency;
+              return (
+                <div key={svc.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 5px', borderRadius: 4 }}>
+                  <Dot color={STATUS_COLOR[s]} pulse={s === 'online'} />
+                  <span style={{ flex: 1, fontSize: 11, color: s === 'offline' ? '#f87171' : 'var(--text-secondary)' }}>{svc.name}</span>
+                  {s === 'online' ? <LatencyBar ms={lat} /> : (
+                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: STATUS_COLOR[s] }}>{s}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          {/* Uptime bar */}
+          <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>UPTIME</span>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: onlinePct >= 90 ? '#34d399' : '#fbbf24' }}>{onlinePct}%</span>
+            </div>
+            <div style={{ height: 4, background: 'var(--layer-3)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: `${onlinePct}%`, height: '100%', background: onlinePct >= 90 ? '#34d399' : '#fbbf24', borderRadius: 2, transition: 'width 0.5s ease' }} />
+            </div>
+          </div>
+        </Card>
 
-          {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
-            const entries = getModelsByProvider(provider);
-            if (!entries.length) return null;
-            return (
-              <div key={provider} style={{ marginBottom: 12 }}>
-                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5, opacity: 0.85 }}>{label}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {entries.map(([key, m]) => (
-                    <button key={key} onClick={() => setModelKey(key)} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
-                      background: key === modelKey ? selBg : 'rgba(22,27,34,0.6)',
-                      border: key === modelKey ? `1px solid ${selBorder}` : '1px solid rgba(148,163,184,0.06)',
-                      transition: 'all 0.12s', textAlign: 'left',
-                    }}
-                    onMouseEnter={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.16)'; el.style.background = 'rgba(22,27,34,0.9)'; } }}
-                    onMouseLeave={e => { if (key !== modelKey) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.06)'; el.style.background = 'rgba(22,27,34,0.6)'; } }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <span style={{
-                          width: 5, height: 5, borderRadius: '50%',
-                          background: '#34d399',
-                          boxShadow: '0 0 4px #34d399',
-                          flexShrink: 0,
-                        }} />
-                        <span style={{ fontSize: 11, color: key === modelKey ? selColor : '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-                          {m.label}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 3 }}>
-                        {m.free && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
-                        {m.tools && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
-                      </div>
-                    </button>
+        {/* Col 2: Workflows + Deployments */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+          {/* Workflows */}
+          <Card>
+            <WHeader
+              icon={<Zap size={12} />}
+              title="Workflows"
+              right={<Link href="/workflows" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {/* List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {workflows.slice(0, 7).map(wf => {
+                  const isActive = ['aktiv','active'].includes((wf.Status ?? '').toLowerCase());
+                  return (
+                    <div key={wf.Id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 4px' }}>
+                      <Dot color={isActive ? '#34d399' : 'var(--text-muted)'} pulse={isActive} />
+                      <span style={{ flex: 1, fontSize: 10.5, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wf.Name}</span>
+                      <span style={{ fontSize: 8.5, fontFamily: 'var(--font-mono)', color: KAT_COLOR[wf.Kategorie] ?? 'var(--text-muted)', flexShrink: 0 }}>{wf.Kategorie}</span>
+                    </div>
+                  );
+                })}
+                {workflows.length === 0 && <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Lade…</p>}
+              </div>
+              {/* Chart */}
+              <div>
+                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>nach Kategorie</p>
+                <MiniBar data={wfKats} />
+                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '3px 8px' }}>
+                  {wfKats.map(k => (
+                    <span key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: 1, background: k.color, display: 'inline-block' }} />
+                      {k.label}
+                    </span>
                   ))}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          </Card>
+
+          {/* Deployments */}
+          <Card>
+            <WHeader
+              icon={<Rocket size={12} />}
+              title="Deployments"
+              right={<Link href="/deployments" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
+            />
+            {deployments.length === 0 ? (
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Lade…</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                {deployments.map(dep => {
+                  const color = dep.status === 'running' ? '#34d399' : dep.status === 'stopped' ? '#f87171' : '#fbbf24';
+                  return (
+                    <div key={dep.id} style={{
+                      background: 'var(--layer-1)', border: '1px solid var(--border)',
+                      borderRadius: 6, padding: '7px 8px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                        <Dot color={color} />
+                        <span style={{ flex: 1, fontSize: 10, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dep.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', background: 'var(--layer-3)', padding: '1px 4px', borderRadius: 3 }}>{dep.kind}</span>
+                        <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{timeAgo(dep.updatedAt)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
         </div>
 
-        {/* Core Services */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Core Services
-            </span>
-            <button
-              onClick={fetchStatuses}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#475569', display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 10, fontFamily: 'var(--font-mono)', padding: 0,
-                transition: 'color 0.12s',
-              }}
-              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'}
-              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = '#475569'}
-            >
-              <RefreshCw size={9} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
-              refresh
-            </button>
-          </div>
-          <div style={{
-            background: 'rgba(22,27,34,0.6)', borderRadius: 10,
-            border: '1px solid rgba(148,163,184,0.06)', padding: '8px 12px',
-            display: 'flex', flexDirection: 'column',
-          }}>
-            {CORE_SERVICES.map(svc => (
-              <ServiceRow
-                key={svc.id}
-                name={svc.name}
-                status={getStatus(svc.id)}
-                latency={getLatency(svc.id)}
-              />
-            ))}
-          </div>
+        {/* Col 3: Error Logs + Knowledge */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+          {/* Error Logs */}
+          <Card>
+            <WHeader
+              icon={<ScrollText size={12} />}
+              title="Error Logs"
+              right={<Link href="/agentic-os/logs" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
+            />
+            {openErrors === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0' }}>
+                <CheckCircle2 size={12} style={{ color: '#34d399' }} />
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Keine Fehler</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {errorLogs.map(log => (
+                  <div key={String(log.Id)} style={{
+                    padding: '6px 7px', borderRadius: 5,
+                    background: 'var(--layer-1)', border: `1px solid ${LOG_COLOR[log.level] ?? '#475569'}22`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                      <span style={{
+                        fontSize: 7.5, fontFamily: 'var(--font-mono)', fontWeight: 700,
+                        color: LOG_COLOR[log.level], textTransform: 'uppercase',
+                        padding: '1px 4px', borderRadius: 3,
+                        background: `${LOG_COLOR[log.level]}18`,
+                      }}>{log.level}</span>
+                      <span style={{ flex: 1, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.service}</span>
+                      <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(log.ts)}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Knowledge Base */}
+          <Card>
+            <WHeader icon={<Database size={12} />} title="Knowledge" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {[
+                { label: 'Agents',    value: agentCount,   icon: <Bot size={10} />,       href: '/agentic-os/engine-room/agents',         color: '#a78bfa' },
+                { label: 'Workflows', value: workflows.length, icon: <Zap size={10} />,   href: '/workflows',                             color: '#38bdf8' },
+                { label: 'Prompts',   value: promptCount,  icon: <FileText size={10} />,   href: '/agentic-os/knowledge/prompts',          color: '#34d399' },
+                { label: 'Templates', value: '—',          icon: <TrendingUp size={10} />, href: '/templates',                            color: '#fb923c' },
+                { label: 'Projekte',  value: '—',          icon: <GitBranch size={10} />,  href: '/agentic-os/management/active-projects', color: '#fbbf24' },
+              ].map(row => (
+                <Link key={row.label} href={row.href} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '5px 6px', borderRadius: 5,
+                    transition: 'background 0.1s',
+                  }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-3)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+                  >
+                    <span style={{ color: row.color }}>{row.icon}</span>
+                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-secondary)' }}>{row.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{row.value}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
-    </motion.div>
+
+      {/* ── Knowledge Scanner Row ── */}
+      <div style={{ marginBottom: 10 }}>
+        <Card>
+          <WHeader
+            icon={<ScanSearch size={12} />}
+            title="Knowledge Scanner"
+            right={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {scanner.scannedAt && (
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)' }}>
+                    zuletzt {timeAgo(scanner.scannedAt)}
+                  </span>
+                )}
+                <button
+                  onClick={runScan}
+                  disabled={scanning}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '3px 8px', borderRadius: 4, cursor: scanning ? 'default' : 'pointer',
+                    background: scanning ? 'var(--layer-3)' : 'var(--layer-1)',
+                    border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: 10,
+                  }}
+                >
+                  <ScanSearch size={9} style={{ animation: scanning ? 'spin 1s linear infinite' : 'none' }} />
+                  {scanning ? 'Scant…' : 'Scan Now'}
+                </button>
+              </div>
+            }
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: scanner.rss?.feeds ? 12 : 0 }}>
+            {/* GitHub */}
+            {(() => {
+              const s = scanner.summary?.github;
+              return (
+                <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <Github size={11} style={{ color: s?.error ? '#f87171' : '#a78bfa', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>GitHub</span>
+                    {s?.error && <span style={{ fontSize: 8, color: '#f87171', fontFamily: 'var(--font-mono)' }}>no token</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>{s?.count ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Repos</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#a78bfa', lineHeight: 1 }}>{s?.withClaudeMd ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>CLAUDE.md</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* n8n */}
+            {(() => {
+              const s = scanner.summary?.n8n;
+              return (
+                <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <Workflow size={11} style={{ color: s?.error ? '#f87171' : '#38bdf8', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>n8n Workflows</span>
+                    {s?.error && <span style={{ fontSize: 8, color: '#f87171', fontFamily: 'var(--font-mono)' }}>no key</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>{s?.count ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Total</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#34d399', lineHeight: 1 }}>{s?.active ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Aktiv</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* NocoDB Schema */}
+            {(() => {
+              const s = scanner.summary?.nocodb;
+              return (
+                <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <Database size={11} style={{ color: '#fb923c', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>NocoDB Schema</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>{s?.count ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Tabellen</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fb923c', lineHeight: 1 }}>{s?.totalFields ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Felder</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* RSS */}
+            {(() => {
+              const s = scanner.summary?.rss;
+              return (
+                <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 7, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <Rss size={11} style={{ color: '#fbbf24', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)' }}>RSS Feeds</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>{s?.ok ?? '—'}<span style={{ fontSize: 10, color: 'var(--text-muted)' }}>/{s?.feeds ?? 5}</span></p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Feeds ok</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fbbf24', lineHeight: 1 }}>{s?.items ?? '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>Artikel</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* RSS feed items preview */}
+          {scanner.rss?.feeds && scanner.rss.feeds.some(f => f.items.length > 0) && (
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+              <p style={{ margin: '0 0 6px', fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <BookOpen size={9} /> Letzte Artikel
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px 12px' }}>
+                {scanner.rss.feeds.flatMap(f => f.items.slice(0, 2).map(item => ({ ...item, source: f.name }))).slice(0, 9).map((item, i) => (
+                  <a
+                    key={i}
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'flex-start', gap: 5, padding: '4px 0' }}
+                  >
+                    <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0, marginTop: 2, background: 'var(--layer-3)', padding: '1px 4px', borderRadius: 3 }}>{item.source}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={item.title}>{item.title}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!scanner.summary && !scanning && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0' }}>
+              <ScanSearch size={12} style={{ color: 'var(--text-muted)' }} />
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Noch kein Scan durchgeführt — klicke &quot;Scan Now&quot;</span>
+            </div>
+          )}
+          {scanning && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0' }}>
+              <ScanSearch size={12} style={{ color: '#34d399', animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: 11, color: '#34d399', fontFamily: 'var(--font-mono)' }}>Scanner läuft — GitHub · n8n · NocoDB · RSS…</span>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* ── Bottom Row: Quick Triggers + Activity Feed ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+        {/* Quick Triggers */}
+        <Card>
+          <WHeader icon={<Play size={12} />} title="Quick Trigger" right="n8n Workflows" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {TRIGGERS.map(t => {
+              const isRunning = triggering === t.id;
+              const isDone    = triggered === t.id && !isRunning;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => triggerWorkflow(t.id)}
+                  disabled={!!triggering}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 10px', borderRadius: 6, cursor: triggering ? 'default' : 'pointer',
+                    background: isRunning ? `${t.color}15` : isDone ? '#34d39915' : 'var(--layer-1)',
+                    border: `1px solid ${isRunning ? t.color : isDone ? '#34d399' : 'var(--border)'}`,
+                    color: 'var(--text-primary)', fontSize: 11, fontWeight: 500,
+                    transition: 'all 0.15s ease', textAlign: 'left', width: '100%',
+                  }}
+                >
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%', background: isDone ? '#34d399' : t.color, flexShrink: 0,
+                    animation: isRunning ? 'status-pulse 0.6s ease-in-out infinite' : 'none',
+                  }} />
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 10.5 }}>
+                    {isRunning ? 'Läuft…' : isDone ? 'Gesendet ✓' : t.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+            <Link href="/workflows" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              fontSize: 10, color: 'var(--text-muted)', textDecoration: 'none', fontFamily: 'var(--font-mono)',
+            }}>
+              Alle Workflows öffnen <ExternalLink size={9} />
+            </Link>
+          </div>
+        </Card>
+
+        {/* Activity Feed */}
+        <Card>
+          <WHeader icon={<Activity size={12} />} title="Activity Feed" right="live" />
+          {activity.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[
+                { icon: '▸', text: 'Dashboard gestartet', sub: 'system', color: '#60a5fa', ts: Date.now() - 5000 },
+                { icon: '▸', text: 'Services werden geprüft…', sub: 'health-check', color: '#34d399', ts: Date.now() - 3000 },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 11, width: 16, textAlign: 'center', flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.text}</p>
+                    <p style={{ margin: 0, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{item.sub}</p>
+                  </div>
+                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(new Date(item.ts).toISOString())}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 180, overflowY: 'auto' }}>
+              {activity.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 2px', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 11, width: 16, textAlign: 'center', flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.text}</p>
+                    <p style={{ margin: 0, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{item.sub}</p>
+                  </div>
+                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(new Date(item.ts).toISOString())}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+    </div>
   );
 }

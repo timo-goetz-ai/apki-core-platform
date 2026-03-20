@@ -8,8 +8,6 @@ import {
 
 // ─── NocoDB config ────────────────────────────────────────────────────────────
 const NOCO_BASE = 'https://nocodb.automation-plus-ki.de';
-const NOCO_PROJECT = 'pfx0ca6docorj8n';
-const NOCO_TOKEN = '***REDACTED_NOCODB_TOKEN***';
 
 const TABLE_IDS: Record<string, string> = {
   rules:           'mcn1qpaapk5x849',
@@ -41,9 +39,7 @@ type Row = Record<string, unknown>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 async function fetchTable(tableId: string): Promise<Row[]> {
-  const url = `${NOCO_BASE}/api/v1/db/data/noco/${NOCO_PROJECT}/${tableId}?limit=100`;
-  const res = await fetch(url, {
-    headers: { 'xc-token': NOCO_TOKEN },
+  const res = await fetch(`/api/nocodb/table?id=${tableId}&limit=100`, {
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

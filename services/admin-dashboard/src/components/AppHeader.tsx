@@ -18,9 +18,28 @@ export function AppHeader() {
 
   useEffect(() => {
     const saved = localStorage.getItem('theme');
-    const dark = saved !== 'light';
+    let dark: boolean;
+    if (saved === 'light') {
+      dark = false;
+    } else if (saved === 'dark') {
+      dark = true;
+    } else {
+      // System preference detection
+      dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
     setIsDark(dark);
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+
+    // Listen for system preference changes
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('theme')) {
+        setIsDark(e.matches);
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+      }
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
@@ -54,7 +73,7 @@ export function AppHeader() {
       <header
         className="fixed top-0 right-0 z-30 flex h-[60px] items-center gap-3 px-4"
         style={{
-          left: '220px',
+          left: '240px',
           background: 'var(--layer-1)',
           borderBottom: '1px solid var(--border)',
         }}
@@ -117,15 +136,37 @@ export function AppHeader() {
           </Button>
 
           {/* Theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="text-[--text-secondary] hover:text-[--text-primary]"
+            aria-label={isDark ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'}
+            title={isDark ? 'Light Mode' : 'Dark Mode'}
+            className="relative flex h-8 w-14 items-center rounded-full border border-[--border-bright] bg-[--layer-3] p-0.5 transition-all hover:border-[--accent-blue]/40"
+            style={{ flexShrink: 0 }}
           >
-            {isDark ? <Sun size={15} /> : <Moon size={15} />}
-          </Button>
+            {/* Track icons */}
+            <span className="absolute left-1.5 flex items-center text-[--accent-amber]">
+              <Sun size={11} />
+            </span>
+            <span className="absolute right-1.5 flex items-center text-[--text-muted]">
+              <Moon size={11} />
+            </span>
+            {/* Thumb */}
+            <span
+              className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full shadow-sm transition-all duration-300"
+              style={{
+                background: isDark ? 'var(--layer-1)' : 'var(--accent-blue)',
+                transform: isDark ? 'translateX(24px)' : 'translateX(0)',
+                boxShadow: isDark
+                  ? '0 1px 4px rgba(0,0,0,0.5)'
+                  : '0 1px 4px rgba(2,132,199,0.4)',
+              }}
+            >
+              {isDark
+                ? <Moon size={10} className="text-[--accent-blue]" />
+                : <Sun size={10} className="text-white" />
+              }
+            </span>
+          </button>
 
           {/* Settings */}
           <Button variant="ghost" size="icon" asChild className="text-[--text-secondary] hover:text-[--text-primary]">
