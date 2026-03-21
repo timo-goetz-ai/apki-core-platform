@@ -1,293 +1,316 @@
-import { LayoutGrid, ShieldCheck, Server, Zap, ExternalLink } from "lucide-react";
-import { ProjekteGrid } from "@/components/ProjekteGrid";
-import { MCPDienstePanel } from "@/components/MCPDienstePanel";
-import { AuditTimeline } from "@/components/AuditTimeline";
-import { store } from "@/lib/mcp-plattform-data";
+'use client';
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from 'react';
+import {
+  Server, ExternalLink, RefreshCw, Activity,
+  GitBranch, Database, Zap, Shield, Cloud, BarChart2,
+  Globe, Box, CheckCircle2, XCircle, AlertTriangle,
+  Copy, Check,
+} from 'lucide-react';
 
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface ServiceStatus { status: 'online' | 'degraded' | 'offline' | 'unknown'; latency?: string; }
+
+// ── Config ─────────────────────────────────────────────────────────────────────
 const MCP_SERVERS = [
-  { name: 'authentik',  label: 'Authentik',  desc: 'SSO & Identity Provider',   uiUrl: 'https://auth.automation-plus-ki.de' },
-  { name: 'cloudflare', label: 'Cloudflare', desc: 'DNS & Routing',              uiUrl: 'https://dash.cloudflare.com' },
-  { name: 'coolify',    label: 'Coolify',    desc: 'Deployment-Plattform',       uiUrl: 'https://coolify.automation-plus-ki.de' },
-  { name: 'github',     label: 'GitHub',     desc: 'Code & PRs',                 uiUrl: 'https://github.com/TimoGoetz1988/aios' },
-  { name: 'google',     label: 'Google',     desc: 'Drive, Calendar, Sheets',    uiUrl: 'https://drive.google.com' },
-  { name: 'grafana',    label: 'Grafana',    desc: 'Monitoring & Alerts',        uiUrl: 'https://grafana.automation-plus-ki.de' },
-  { name: 'hetzner',    label: 'Hetzner',    desc: 'Cloud Infrastructure',       uiUrl: 'https://console.hetzner.cloud' },
-  { name: 'n8n',        label: 'n8n',        desc: 'Workflow Automation',        uiUrl: 'https://n8n.automation-plus-ki.de' },
-  { name: 'nocodb',     label: 'NocoDB',     desc: 'Datenbank-Backend',          uiUrl: 'https://nocodb.automation-plus-ki.de' },
-  { name: 'postgres',   label: 'PostgreSQL', desc: 'Relationale Datenbank',      uiUrl: null },
-  { name: 'prometheus', label: 'Prometheus', desc: 'Metriken & Alerting',        uiUrl: 'https://prometheus.automation-plus-ki.de' },
-  { name: 'qdrant',     label: 'Qdrant',     desc: 'Vektor-Datenbank',           uiUrl: 'https://qdrant.automation-plus-ki.de' },
+  { id: 'nocodb',     label: 'NocoDB',      desc: 'Datenbank-Backend',       icon: <Database size={14} />,  color: '#fb923c', url: 'https://nocodb.automation-plus-ki.de' },
+  { id: 'n8n',        label: 'n8n',         desc: 'Workflow Automation',      icon: <Zap size={14} />,       color: '#60a5fa', url: 'https://n8n.automation-plus-ki.de' },
+  { id: 'grafana',    label: 'Grafana',     desc: 'Monitoring & Alerts',      icon: <BarChart2 size={14} />, color: '#f97316', url: 'https://grafana.automation-plus-ki.de' },
+  { id: 'prometheus', label: 'Prometheus',  desc: 'Metriken & Alerting',      icon: <Activity size={14} />, color: '#a78bfa', url: 'https://prometheus.automation-plus-ki.de' },
+  { id: 'coolify',    label: 'Coolify',     desc: 'Deployment-Plattform',     icon: <Cloud size={14} />,    color: '#38bdf8', url: 'https://coolify.automation-plus-ki.de' },
+  { id: 'authentik',  label: 'Authentik',   desc: 'SSO & Identity Provider',  icon: <Shield size={14} />,   color: '#34d399', url: 'https://auth.automation-plus-ki.de' },
+  { id: 'qdrant',     label: 'Qdrant',      desc: 'Vektor-Datenbank',         icon: <Box size={14} />,      color: '#fbbf24', url: 'https://qdrant.automation-plus-ki.de' },
+  { id: 'redis',      label: 'Redis',       desc: 'In-Memory Cache',          icon: <Database size={14} />, color: '#f87171', url: null },
+  { id: 'postgres',   label: 'PostgreSQL',  desc: 'Relationale Datenbank',    icon: <Database size={14} />, color: '#60a5fa', url: null },
+  { id: 'traefik',    label: 'Traefik',     desc: 'Reverse Proxy & Routing',  icon: <Globe size={14} />,    color: '#34d399', url: null },
+  { id: 'github',     label: 'GitHub',      desc: 'Code & Versionierung',     icon: <GitBranch size={14} />,color: '#94a3b8', url: 'https://github.com/TimoGoetz1988/aios' },
+  { id: 'cloudflare', label: 'Cloudflare',  desc: 'DNS & CDN',                icon: <Globe size={14} />,    color: '#fbbf24', url: 'https://dash.cloudflare.com' },
 ];
 
-export default function MCPPlattformPage() {
-  const projekte = store.getProjekte();
-  const dienste  = store.getMCPDienste();
-  const audit    = store.getAudit();
+const INFRA = [
+  { label: 'Coolify',    sub: 'Deployments',      url: 'https://coolify.automation-plus-ki.de',    color: '#38bdf8' },
+  { label: 'Grafana',    sub: 'Monitoring',        url: 'https://grafana.automation-plus-ki.de',    color: '#f97316' },
+  { label: 'Authentik',  sub: 'SSO & Identity',    url: 'https://auth.automation-plus-ki.de',       color: '#34d399' },
+  { label: 'Prometheus', sub: 'Metriken',          url: 'https://prometheus.automation-plus-ki.de', color: '#a78bfa' },
+  { label: 'NocoDB',     sub: 'No-Code DB',        url: 'https://nocodb.automation-plus-ki.de',     color: '#fb923c' },
+  { label: 'n8n',        sub: 'Automations',       url: 'https://n8n.automation-plus-ki.de',        color: '#60a5fa' },
+];
 
-  const onlineCount  = projekte.filter((p) => p.status === "online").length;
-  const warnCount    = projekte.filter((p) => p.status === "degraded").length;
-  const aktivCount   = dienste.filter((d) => d.status === "aktiv").length;
-  const warnAudit    = audit.filter((a) => a.ergebnis !== "OK").length;
+const ENDPOINTS = [
+  { label: 'n8n API',         url: 'http://10.0.1.29:5678',                   auth: 'X-N8N-API-KEY' },
+  { label: 'NocoDB API',      url: 'https://nocodb.automation-plus-ki.de',    auth: 'xc-token' },
+  { label: 'Prometheus',      url: 'http://10.0.1.29:9090',                   auth: 'intern' },
+  { label: 'Admin Dashboard', url: 'https://admin.automation-plus-ki.de',     auth: 'Authentik OIDC' },
+  { label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',   auth: 'Service Token' },
+  { label: 'Coolify',         url: 'https://coolify.automation-plus-ki.de',   auth: 'Bearer' },
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function StatusDot({ s }: { s: ServiceStatus | undefined }) {
+  const c = !s ? '#475569' : s.status === 'online' ? '#34d399' : s.status === 'degraded' ? '#fbbf24' : s.status === 'offline' ? '#f87171' : '#475569';
+  const pulse = s?.status === 'online';
+  return (
+    <span style={{
+      display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+      background: c, flexShrink: 0,
+      boxShadow: pulse ? `0 0 5px ${c}80` : 'none',
+    }} />
+  );
+}
+
+function StatusIcon({ s }: { s: ServiceStatus | undefined }) {
+  if (!s || s.status === 'unknown') return <span style={{ color: '#475569', fontSize: 10, fontFamily: 'var(--font-mono)' }}>—</span>;
+  if (s.status === 'online') return <CheckCircle2 size={11} style={{ color: '#34d399' }} />;
+  if (s.status === 'degraded') return <AlertTriangle size={11} style={{ color: '#fbbf24' }} />;
+  return <XCircle size={11} style={{ color: '#f87171' }} />;
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(text).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#34d399' : 'var(--text-muted)', display: 'flex', padding: 2 }}
+    >
+      {copied ? <Check size={11} /> : <Copy size={11} />}
+    </button>
+  );
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────────
+export default function MCPPlattformPage() {
+  const [statuses, setStatuses] = useState<Record<string, ServiceStatus>>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = async () => {
+    setRefreshing(true);
+    try {
+      const data = await fetch('/api/services').then(r => r.json());
+      setStatuses(data ?? {});
+    } catch { /* silent */ }
+    setLoading(false);
+    setTimeout(() => setRefreshing(false), 500);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const online  = MCP_SERVERS.filter(s => statuses[s.id]?.status === 'online').length;
+  const degraded = MCP_SERVERS.filter(s => statuses[s.id]?.status === 'degraded').length;
+  const offline = MCP_SERVERS.filter(s => statuses[s.id]?.status === 'offline').length;
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] p-6 space-y-8">
+    <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-            <LayoutGrid className="w-7 h-7 text-[#1d6ef5]" />
-            MCP Plattform
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            {MCP_SERVERS.length} MCP Server · Hetzner 46.224.145.109 · Coolify · {projekte.length} Projekte
-          </p>
-        </div>
-        <a
-          href="https://coolify.automation-plus-ki.de"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          Coolify öffnen
-        </a>
-      </div>
-
-      {/* MCP Server Cards */}
-      <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
-          MCP Server — {MCP_SERVERS.length} konfiguriert
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {MCP_SERVERS.map((mcp) => (
-            <div
-              key={mcp.name}
-              className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 flex flex-col gap-3 hover:border-[#1d6ef5]/40 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" style={{ boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
-                <span className="text-sm font-semibold text-slate-100">{mcp.label}</span>
-              </div>
-              <p className="text-xs text-slate-500 leading-snug m-0">{mcp.desc}</p>
-              {mcp.uiUrl ? (
-                <a
-                  href={mcp.uiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors no-underline mt-auto"
-                  style={{ background: 'rgba(29,110,245,0.1)', color: '#1d6ef5', border: '1px solid rgba(29,110,245,0.2)' }}
-                >
-                  Öffnen <ExternalLink className="w-3 h-3" />
-                </a>
-              ) : (
-                <span className="text-[10px] font-mono text-slate-700 mt-auto">intern only</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          icon={<LayoutGrid className="w-5 h-5 text-sky-400" />}
-          label="Projekte"
-          value={`${onlineCount}/${projekte.length}`}
-          sub="online"
-          accent={onlineCount === projekte.length ? "ok" : "warn"}
-        />
-        <KpiCard
-          icon={<Zap className="w-5 h-5 text-amber-400" />}
-          label="Degraded"
-          value={warnCount}
-          sub="Projekte eingeschränkt"
-          accent={warnCount === 0 ? "ok" : "warn"}
-        />
-        <KpiCard
-          icon={<Server className="w-5 h-5 text-emerald-400" />}
-          label="MCP-Dienste"
-          value={aktivCount}
-          sub="aktiv"
-          accent="ok"
-        />
-        <KpiCard
-          icon={<ShieldCheck className="w-5 h-5 text-purple-400" />}
-          label="Audit-Warnungen"
-          value={warnAudit}
-          sub="letzte Einträge"
-          accent={warnAudit === 0 ? "ok" : "warn"}
-        />
-      </div>
-
-      {/* Infrastruktur-Links */}
-      <section>
-        <SectionLabel>Infrastruktur — Schnellzugriff</SectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {INFRA_LINKS.map((link) => (
-            <a
-              key={link.url}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="card p-3 text-center space-y-1.5 hover:border-[#1d6ef5]/40 transition-colors group"
-            >
-              <span className="text-xl">{link.emoji}</span>
-              <p className="text-xs font-medium text-slate-300 leading-tight group-hover:text-[#1d6ef5] transition-colors">
-                {link.name}
-              </p>
-              <p className="text-[10px] text-slate-600 font-mono truncate">{link.label}</p>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      {/* Governance / RACI */}
-      <section>
-        <SectionLabel>Governance & RACI-Matrix</SectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {ROLLEN.map((r) => (
-            <div key={r.emoji} className="card p-3 text-center space-y-1.5">
-              <span className="text-xl">{r.emoji}</span>
-              <p className="text-xs font-medium text-slate-300 leading-tight">{r.name}</p>
-              <p className="text-[10px] text-slate-600">{r.zugriff}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Projekte */}
-      <section>
-        <SectionLabel>Projekte — Status & MCP-Server</SectionLabel>
-        <ProjekteGrid />
-      </section>
-
-      {/* MCP-Dienste + Audit nebeneinander */}
-      <section>
-        <SectionLabel>MCP-Dienste & Audit-Trail</SectionLabel>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <MCPDienstePanel />
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)',
+          }}>
+            <Server size={18} style={{ color: '#38bdf8' }} />
           </div>
           <div>
-            <AuditTimeline />
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>MCP Plattform</h1>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {MCP_SERVERS.length} Server · Hetzner 46.224.145.109 · Coolify
+            </p>
           </div>
         </div>
-      </section>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={load} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+            borderRadius: 8, cursor: 'pointer',
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            color: 'var(--text-secondary)', fontSize: 12,
+          }}>
+            <RefreshCw size={12} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
+            Refresh
+          </button>
+          <a
+            href="https://coolify.automation-plus-ki.de"
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+              borderRadius: 8, textDecoration: 'none',
+              background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.2)',
+              color: '#38bdf8', fontSize: 12, fontWeight: 600,
+            }}
+          >
+            Coolify <ExternalLink size={10} />
+          </a>
+        </div>
+      </div>
 
-      {/* Mac Dev-Pfade */}
-      <section>
-        <SectionLabel>Lokale Entwicklung (Mac)</SectionLabel>
-        <div className="card p-5 space-y-3">
-          {MAC_PFADE.map((p) => (
-            <div key={p.pfad} className="flex items-start gap-3">
-              <span className="text-base shrink-0">{p.emoji}</span>
-              <div>
-                <p className="text-xs font-medium text-slate-300">{p.name}</p>
-                <p className="text-[10px] font-mono text-slate-600 mt-0.5">{p.pfad}</p>
-              </div>
+      {/* ── KPI Strip ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+        {[
+          { label: 'Online',    value: loading ? '…' : String(online),    color: '#34d399', icon: <CheckCircle2 size={13} /> },
+          { label: 'Degraded',  value: loading ? '…' : String(degraded), color: '#fbbf24', icon: <AlertTriangle size={13} /> },
+          { label: 'Offline',   value: loading ? '…' : String(offline),  color: '#f87171', icon: <XCircle size={13} /> },
+          { label: 'Gesamt',    value: String(MCP_SERVERS.length),        color: '#60a5fa', icon: <Server size={13} /> },
+        ].map(k => (
+          <div key={k.label} style={{
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '12px 16px',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ color: k.color }}>{k.icon}</span>
+            <div>
+              <p style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: k.color, lineHeight: 1 }}>{k.value}</p>
+              <p style={{ margin: '3px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{k.label}</p>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+
+      {/* ── MCP Server Grid ── */}
+      <section style={{ marginBottom: 20 }}>
+        <p style={{ margin: '0 0 10px', fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          MCP Server — {MCP_SERVERS.length} konfiguriert
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+          {MCP_SERVERS.map(mcp => {
+            const st = statuses[mcp.id];
+            const isOnline = st?.status === 'online';
+            return (
+              <div
+                key={mcp.id}
+                style={{
+                  background: 'var(--layer-2)', border: '1px solid var(--border)',
+                  borderRadius: 10, padding: '12px 14px',
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                  transition: 'border-color 0.12s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = mcp.color + '44'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: mcp.color }}>{mcp.icon}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{mcp.label}</span>
+                  </div>
+                  <StatusDot s={st} />
+                </div>
+                <p style={{ margin: 0, fontSize: 10, color: 'var(--text-muted)' }}>{mcp.desc}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <StatusIcon s={st} />
+                    {st?.latency && (
+                      <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{st.latency}</span>
+                    )}
+                    {!st && !loading && (
+                      <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>ext.</span>
+                    )}
+                  </div>
+                  {mcp.url ? (
+                    <a
+                      href={mcp.url} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none',
+                        padding: '3px 8px', borderRadius: 5, fontSize: 10, fontWeight: 500,
+                        background: `${mcp.color}12`, color: mcp.color,
+                        border: `1px solid ${mcp.color}30`,
+                      }}
+                    >
+                      UI <ExternalLink size={9} />
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>intern</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Incident-Eskalation */}
-      <section>
-        <SectionLabel>Incident-Eskalation</SectionLabel>
-        <div className="card p-5">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {ESKALATION.map((e, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold ${e.bg}`}>
-                  {i + 1}
-                </span>
+      {/* ── Bottom 2-col: Infra-Links + API-Endpoints ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        {/* Schnellzugriff */}
+        <section>
+          <p style={{ margin: '0 0 10px', fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Infrastruktur — Schnellzugriff
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {INFRA.map(link => (
+              <a
+                key={link.url}
+                href={link.url} target="_blank" rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', borderRadius: 9, textDecoration: 'none',
+                  background: 'var(--layer-2)', border: '1px solid var(--border)',
+                  transition: 'border-color 0.1s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = link.color + '44'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+              >
                 <div>
-                  <p className="text-xs font-medium text-slate-300">{e.label}</p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">{e.zeit}</p>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{link.label}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{link.sub}</span>
                 </div>
+                <ExternalLink size={10} style={{ color: 'var(--text-muted)' }} />
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* API-Adressen */}
+        <section>
+          <p style={{ margin: '0 0 10px', fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            API-Adressen
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {ENDPOINTS.map(ep => (
+              <div
+                key={ep.url}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+                  background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 9,
+                }}
+              >
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-primary)' }}>{ep.label}</span>
+                  <span style={{ display: 'block', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.url}</span>
+                </div>
+                <span style={{
+                  fontSize: 8, fontFamily: 'var(--font-mono)', color: '#60a5fa',
+                  background: 'rgba(96,165,250,0.1)', padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+                }}>{ep.auth}</span>
+                <CopyBtn text={ep.url} />
               </div>
             ))}
           </div>
+        </section>
+      </div>
+
+      {/* ── Server Info ── */}
+      <section style={{ marginTop: 16 }}>
+        <p style={{ margin: '0 0 10px', fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Server-Konfiguration
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          {[
+            { label: 'Host',       value: 'Hetzner VPS',         sub: '46.224.145.109' },
+            { label: 'Proxy',      value: 'Traefik v3',          sub: 'via Coolify' },
+            { label: 'Auth',       value: 'Authentik OIDC',      sub: 'SSO / Forward Auth' },
+            { label: 'Registry',   value: 'ghcr.io',             sub: 'TimoGoetz1988' },
+          ].map(item => (
+            <div key={item.label} style={{
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              borderRadius: 9, padding: '10px 14px',
+            }}>
+              <p style={{ margin: 0, fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</p>
+              <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{item.sub}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      <footer className="text-center text-xs text-slate-700 pt-4">
-        MCP-Plattform · {projekte.length} Projekte · {dienste.length} MCP-Dienste · Hetzner 46.224.145.109
-      </footer>
     </div>
   );
 }
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
-      {children}
-    </h2>
-  );
-}
-
-function KpiCard({
-  icon, label, value, sub, accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  sub: string;
-  accent: "ok" | "warn";
-}) {
-  return (
-    <div className={`bg-[#111827] border rounded-xl p-4 flex items-center gap-4 ${accent === "warn" ? "border-amber-500/30" : "border-[#1f2937]"}`}>
-      <div className="p-2 rounded-lg bg-[#0a0f1a]">{icon}</div>
-      <div>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-xs text-slate-400">{label} <span className="text-slate-600">· {sub}</span></p>
-      </div>
-    </div>
-  );
-}
-
-const INFRA_LINKS = [
-  { emoji: "🚀", name: "Coolify", label: "Deployments", url: "https://coolify.automation-plus-ki.de" },
-  { emoji: "🔐", name: "Authentik", label: "SSO & Identity", url: "https://auth.automation-plus-ki.de" },
-  { emoji: "📊", name: "Grafana", label: "Monitoring", url: "https://grafana.automation-plus-ki.de" },
-  { emoji: "🔥", name: "Prometheus", label: "Metriken", url: "https://prometheus.automation-plus-ki.de" },
-  { emoji: "🗃️", name: "NocoDB", label: "No-Code DB", url: "https://nocodb.automation-plus-ki.de" },
-  { emoji: "⚡", name: "n8n", label: "Automation", url: "https://n8n.automation-plus-ki.de" },
-];
-
-const ROLLEN = [
-  { emoji: "🏛️", name: "Platform-Owner", zugriff: "Vollzugriff" },
-  { emoji: "👔", name: "Projektleiter", zugriff: "Betrieb & Orga" },
-  { emoji: "🛡️", name: "Security-Lead", zugriff: "Audit & Compliance" },
-  { emoji: "🔬", name: "Tech-Lead", zugriff: "Architektur" },
-  { emoji: "🔧", name: "Developer", zugriff: "Projekt (eigen)" },
-  { emoji: "👷", name: "Operator", zugriff: "Projekt (lesen)" },
-];
-
-const MAC_PFADE = [
-  {
-    emoji: "🤖",
-    name: "AI Agent Platform",
-    pfad: "~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/03_ai-agent-platform/",
-  },
-  {
-    emoji: "🎙️",
-    name: "AI Voice Platform",
-    pfad: "~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/01_ai-voice-platform/",
-  },
-  {
-    emoji: "🧪",
-    name: "Bruno API Tests",
-    pfad: "~/Geschäft/STUDIO/03_AI_Engineering/01_APIs/02_bruno-api-tests/",
-  },
-];
-
-const ESKALATION = [
-  { label: "Developer", zeit: "30 Min", bg: "bg-emerald-500/20 text-emerald-400" },
-  { label: "Projektleiter", zeit: "30 Min", bg: "bg-sky-500/20 text-sky-400" },
-  { label: "Tech-Lead", zeit: "15 Min", bg: "bg-amber-500/20 text-amber-400" },
-  { label: "Platform-Owner", zeit: "Sofort", bg: "bg-orange-500/20 text-orange-400" },
-  { label: "Security-Lead", zeit: "Sofort (kritisch)", bg: "bg-red-500/20 text-red-400" },
-];

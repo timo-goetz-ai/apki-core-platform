@@ -293,6 +293,13 @@ export default function OverviewPage() {
     return () => clearInterval(t);
   }, [fetchAll]);
 
+  // RSS-Feeds im Hintergrund laden (unabhängig vom langsamen Full-Scanner)
+  useEffect(() => {
+    fetch('/api/scanner/rss').then(r => r.json()).then(data => {
+      if (data?.feeds) setScanner(prev => ({ ...prev, rss: { feeds: data.feeds } }));
+    }).catch(() => {});
+  }, []);
+
   // Derived
   const onlineCount  = Object.values(statuses).filter(s => s.status === 'online').length;
   const totalCount   = Object.keys(statuses).length || CORE_SERVICES.length;
