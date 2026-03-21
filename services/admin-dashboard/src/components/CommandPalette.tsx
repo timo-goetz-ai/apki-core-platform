@@ -7,7 +7,7 @@ import {
   Settings, Activity, Server, Code2, FileText, BookOpen, Container,
   Layers, Zap, HardDrive, GitBranch, Terminal, Cpu,
   Rocket, RefreshCw, FlaskConical, ExternalLink, Play,
-  Search, ChevronRight,
+  Search, ChevronRight, Kanban,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -89,6 +89,12 @@ function buildCommands(
       description: 'Brand & Content Templates',
       keywords: 'template brand content factory',
       href: '/templates', icon: FileText, group: 'AI Workspace', type: 'nav',
+    },
+    {
+      label: 'Content Kanban',
+      description: 'Content Pipeline · Idee → Veröffentlicht',
+      keywords: 'kanban content pipeline status board',
+      href: '/kanban', icon: Kanban, group: 'AI Workspace', type: 'nav',
     },
     {
       label: 'Active Projects',
@@ -182,6 +188,36 @@ function buildCommands(
         close();
       },
       icon: Play, group: 'Befehle', type: 'action',
+    },
+    {
+      label: '▶ 11_TREND_MONITOR starten',
+      description: 'Trend-Research Workflow sofort ausführen',
+      keywords: 'trigger trend monitor n8n research run',
+      action: async () => {
+        await fetch('/api/n8n/trigger/fEYWN4pWhRcG2tLg', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        close();
+      },
+      icon: Zap, group: 'Befehle', type: 'action',
+    },
+    {
+      label: '▶ 12_SENTIMENT_TRACKER starten',
+      description: 'Sentiment-Analyse Workflow sofort ausführen',
+      keywords: 'trigger sentiment tracker n8n research run',
+      action: async () => {
+        await fetch('/api/n8n/trigger/Vx1Aea5glbogJxg6', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        close();
+      },
+      icon: Zap, group: 'Befehle', type: 'action',
+    },
+    {
+      label: '▶ 13_CONTENT_OPPORTUNITY starten',
+      description: 'Content-Chancen Workflow sofort ausführen',
+      keywords: 'trigger content opportunity n8n research run',
+      action: async () => {
+        await fetch('/api/n8n/trigger/I6LcxlyMM8TU7A7V', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        close();
+      },
+      icon: Zap, group: 'Befehle', type: 'action',
     },
     {
       label: 'Einstellungen',

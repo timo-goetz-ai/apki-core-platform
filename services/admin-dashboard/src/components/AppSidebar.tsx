@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Workflow, BookOpen,
   BarChart2, Factory, Users, Activity,
   Database, Wrench, Globe, Settings,
-  Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate,
+  Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate, Kanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,6 +36,7 @@ const NAV_GROUPS: NavItem[][] = [
   ],
   [
     { label: 'Content Factory', href: '/content-factory', icon: Factory       },
+    { label: 'Kanban',        href: '/kanban',           icon: Kanban          },
     { label: 'Templates',     href: '/templates',        icon: LayoutTemplate  },
     { label: 'Files',         href: '/files',            icon: FolderOpen      },
     { label: 'Databases',     href: '/databases',        icon: Database        },

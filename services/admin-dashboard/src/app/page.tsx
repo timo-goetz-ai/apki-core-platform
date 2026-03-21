@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   RefreshCw, ExternalLink, Activity, Clock,
@@ -10,9 +10,14 @@ import {
   ArrowUpRight, ArrowDownRight,
   ScanSearch, Github, Workflow, Rss, BookOpen,
 } from 'lucide-react';
+import { HoneycombStatusMap, type ServiceStatus } from '@/components/overview/HoneycombStatusMap';
+import { WorkflowPulseGraph } from '@/components/overview/WorkflowPulseGraph';
+import { TrendSentimentViz } from '@/components/overview/TrendSentimentViz';
+import { GrafanaEmbedPanel } from '@/components/overview/GrafanaEmbedPanel';
+import { buildPromGlowMap, type PromSnapshot } from '@/components/overview/promGlow';
+import { LiveActivityFeed } from '@/components/overview/LiveActivityFeed';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
 interface Workflow { Id: number; Name: string; Status: string; Kategorie: string; n8n_url?: string; }
 interface ErrorLog { Id: number | string; ts: string; service: string; level: string; message: string; resolved?: boolean; }
 interface CoolifyService { id: string; name: string; kind: string; status: string; fqdn: string | null; updatedAt: string | null; }
@@ -70,6 +75,19 @@ const TRIGGERS = [
   { label: 'DevOps Bot',   id: 'devops-bot',   color: '#94a3b8' },
 ];
 
+function orderedServiceIds(statuses: Record<string, { status: string }>): string[] {
+  const keys = new Set(Object.keys(statuses));
+  const ordered: string[] = [];
+  for (const c of CORE_SERVICES) {
+    if (keys.has(c.id)) {
+      ordered.push(c.id);
+      keys.delete(c.id);
+    }
+  }
+  ordered.push(...Array.from(keys).sort((a, b) => a.localeCompare(b)));
+  return ordered;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function timeAgo(iso: string | null): string {
   if (!iso) return '—';
@@ -82,13 +100,20 @@ function timeAgo(iso: string | null): string {
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
-    <div style={{
-      background: 'var(--layer-2)', border: '1px solid var(--border)',
-      borderRadius: 10, padding: '14px 16px', height: '100%',
-      boxSizing: 'border-box', ...style,
-    }}>
+    <div
+      className={['overview-glass-panel', 'overview-glitch-wrap', className].filter(Boolean).join(' ')}
+      style={{
+        borderRadius: 12,
+        padding: '14px 16px',
+        height: '100%',
+        boxSizing: 'border-box',
+        position: 'relative',
+        overflow: 'hidden',
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
@@ -166,6 +191,7 @@ export default function OverviewPage() {
   const [trends,      setTrends]      = useState<TrendRow[]>([]);
   const [sentiments,  setSentiments]  = useState<SentimentRow[]>([]);
   const [contentOps,  setContentOps]  = useState<ContentOppRow[]>([]);
+  const [promData, setPromData] = useState<PromSnapshot | null>(null);
   const prevOnline = useRef(0);
 
   useEffect(() => {
@@ -177,7 +203,7 @@ export default function OverviewPage() {
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes, trendRes, sentRes, oppRes] = await Promise.allSettled([
+    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes, trendRes, sentRes, oppRes, promRes] = await Promise.allSettled([
       fetch('/api/services').then(r => r.json()),
       fetch('/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=100').then(r => r.json()),
       fetch('/api/nocodb/error-logs').then(r => r.json()),
@@ -189,6 +215,7 @@ export default function OverviewPage() {
       fetch('/api/nocodb/table?id=m91y1ifz2aop1ef&limit=10').then(r => r.json()),
       fetch('/api/nocodb/table?id=moigzpvd4yw1d0a&limit=8').then(r => r.json()),
       fetch('/api/nocodb/table?id=m7ehbmbi5t2w0dw&limit=5').then(r => r.json()),
+      fetch('/api/monitoring/prometheus').then(r => r.json()),
     ]);
 
     if (svcRes.status === 'fulfilled') {
@@ -253,6 +280,9 @@ export default function OverviewPage() {
       const list: ContentOppRow[] = Array.isArray(oppRes.value) ? oppRes.value : (oppRes.value?.list ?? []);
       setContentOps(list.slice(0, 3));
     }
+    if (promRes.status === 'fulfilled' && promRes.value && !promRes.value.error) {
+      setPromData(promRes.value as PromSnapshot);
+    }
 
     setTimeout(() => setRefreshing(false), 500);
   }, []);
@@ -270,6 +300,30 @@ export default function OverviewPage() {
   const runningDeps  = deployments.filter(d => d.status === 'running').length;
   const openErrors   = errorLogs.length;
   const onlinePct    = totalCount > 0 ? Math.round((onlineCount / totalCount) * 100) : 0;
+
+  const serviceIdsOrdered = useMemo(
+    () => (Object.keys(statuses).length ? orderedServiceIds(statuses) : CORE_SERVICES.map((c) => c.id)),
+    [statuses],
+  );
+
+  const promGlowMap = useMemo(
+    () => buildPromGlowMap(serviceIdsOrdered, promData),
+    [serviceIdsOrdered, promData],
+  );
+
+  const honeyServices = useMemo(
+    () =>
+      serviceIdsOrdered.map((id) => ({
+        id,
+        name: CORE_SERVICES.find((c) => c.id === id)?.name ?? id.replace(/-/g, ' '),
+        status: (statuses[id]?.status ?? 'unknown') as ServiceStatus,
+        latency: statuses[id]?.latency,
+        promGlow: promGlowMap[id] ?? 0,
+      })),
+    [serviceIdsOrdered, statuses, promGlowMap],
+  );
+
+  const wfPulseSec = activeWf > 8 ? 1.25 : activeWf > 3 ? 1.65 : activeWf > 0 ? 2 : 2.5;
 
   const wfKats = Object.entries(
     workflows.reduce((acc, w) => {
@@ -318,7 +372,7 @@ export default function OverviewPage() {
   }
 
   return (
-    <div style={{ padding: '16px 20px', maxWidth: 1440, margin: '0 auto' }}>
+    <div className="overview-page-grid-bg" style={{ padding: '16px 20px', maxWidth: 1440, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -391,76 +445,39 @@ export default function OverviewPage() {
         ))}
       </div>
 
-      {/* ── Main Grid: 3 columns ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 220px', gap: 10, marginBottom: 10 }}>
+      <GrafanaEmbedPanel />
 
-        {/* Col 1: Service Health */}
+      {/* ── Main Grid: 3 columns ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(380px, 1.4fr) 220px', gap: 10, marginBottom: 10 }}>
+
+        {/* Col 1: Honeycomb Health Hub (Prometheus-gestütztes Leuchten) */}
         <Card>
-          <WHeader icon={<Activity size={12} />} title="Service Health" right={`${onlineCount}/${totalCount}`} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {CORE_SERVICES.map(svc => {
-              const s = (statuses[svc.id]?.status ?? 'unknown') as ServiceStatus;
-              const lat = statuses[svc.id]?.latency;
-              return (
-                <div key={svc.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 5px', borderRadius: 4 }}>
-                  <Dot color={STATUS_COLOR[s]} pulse={s === 'online'} />
-                  <span style={{ flex: 1, fontSize: 11, color: s === 'offline' ? '#f87171' : 'var(--text-secondary)' }}>{svc.name}</span>
-                  {s === 'online' ? <LatencyBar ms={lat} /> : (
-                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: STATUS_COLOR[s] }}>{s}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {/* Uptime bar */}
-          <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>UPTIME</span>
-              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: onlinePct >= 90 ? '#34d399' : '#fbbf24' }}>{onlinePct}%</span>
-            </div>
-            <div style={{ height: 4, background: 'var(--layer-3)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ width: `${onlinePct}%`, height: '100%', background: onlinePct >= 90 ? '#34d399' : '#fbbf24', borderRadius: 2, transition: 'width 0.5s ease' }} />
-            </div>
-          </div>
+          <WHeader icon={<Activity size={12} />} title="Health Hub" right={`${onlineCount}/${totalCount} · Prom`} />
+          <HoneycombStatusMap
+            services={honeyServices}
+            onlineCount={onlineCount}
+            totalCount={totalCount}
+            onlinePct={onlinePct}
+          />
         </Card>
 
         {/* Col 2: Workflows + Deployments */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-          {/* Workflows */}
+          {/* Workflows: Node Graph + Kategorie-Dichte */}
           <Card>
-            <WHeader
-              icon={<Zap size={12} />}
-              title="Workflows"
-              right={<Link href="/workflows" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
-            />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {/* List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {workflows.slice(0, 7).map(wf => {
-                  const isActive = ['aktiv','active'].includes((wf.Status ?? '').toLowerCase());
-                  return (
-                    <div key={wf.Id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 4px' }}>
-                      <Dot color={isActive ? '#34d399' : 'var(--text-muted)'} pulse={isActive} />
-                      <span style={{ flex: 1, fontSize: 10.5, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wf.Name}</span>
-                      <span style={{ fontSize: 8.5, fontFamily: 'var(--font-mono)', color: KAT_COLOR[wf.Kategorie] ?? 'var(--text-muted)', flexShrink: 0 }}>{wf.Kategorie}</span>
-                    </div>
-                  );
-                })}
-                {workflows.length === 0 && <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Lade…</p>}
-              </div>
-              {/* Chart */}
-              <div>
-                <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>nach Kategorie</p>
-                <MiniBar data={wfKats} />
-                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '3px 8px' }}>
-                  {wfKats.map(k => (
-                    <span key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      <span style={{ width: 5, height: 5, borderRadius: 1, background: k.color, display: 'inline-block' }} />
-                      {k.label}
-                    </span>
-                  ))}
-                </div>
+            <WHeader icon={<Zap size={12} />} title="Workflows" right={<span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)' }}>AI ⟷ System Pulse</span>} />
+            <WorkflowPulseGraph activeWf={activeWf} totalWf={workflows.length} pulseSpeedSec={wfPulseSec} />
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+              <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>nach Kategorie</p>
+              <MiniBar data={wfKats} />
+              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '3px 8px' }}>
+                {wfKats.map(k => (
+                  <span key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: 1, background: k.color, display: 'inline-block' }} />
+                    {k.label}
+                  </span>
+                ))}
               </div>
             </div>
           </Card>
@@ -569,60 +586,9 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* ── Research Outputs Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
-
-        {/* Top Trends */}
-        <Card>
-          <WHeader icon={<TrendingUp size={12} />} title="Top Trends" right={<Link href="/workflows" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>n8n <ExternalLink size={8} /></Link>} />
-          {trends.length === 0 ? (
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Noch keine Daten — Workflow läuft täglich um 07:00</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {trends.map((t, i) => {
-                const score = t.Score ?? 0;
-                const sentColor = (t.Sentiment ?? '').toLowerCase().includes('positiv') ? '#34d399' : (t.Sentiment ?? '').toLowerCase().includes('negativ') ? '#f87171' : '#fbbf24';
-                return (
-                  <div key={t.Id ?? i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: i < trends.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', width: 14, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
-                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.Thema}>{t.Thema ?? '—'}</span>
-                    {t.Wachstum_Prozent != null && (
-                      <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: t.Wachstum_Prozent > 0 ? '#34d399' : '#f87171', flexShrink: 0 }}>
-                        {t.Wachstum_Prozent > 0 ? '+' : ''}{t.Wachstum_Prozent}%
-                      </span>
-                    )}
-                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, color: sentColor, flexShrink: 0, minWidth: 20, textAlign: 'right' }}>{score}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        {/* Sentiment-Ticker */}
-        <Card>
-          <WHeader icon={<Activity size={12} />} title="Sentiment-Ticker" right="alle 4h" />
-          {sentiments.length === 0 ? (
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Noch keine Daten — Workflow läuft alle 4 Stunden</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {sentiments.map((s, i) => {
-                const sent = (s.Sentiment ?? '').toLowerCase();
-                const color = sent.includes('positiv') ? '#34d399' : sent.includes('negativ') ? '#f87171' : '#fbbf24';
-                const label = sent.includes('positiv') ? '↑' : sent.includes('negativ') ? '↓' : '→';
-                return (
-                  <div key={s.Id ?? i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', borderBottom: i < sentiments.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <span style={{ fontSize: 11, color, flexShrink: 0, width: 12, textAlign: 'center' }}>{label}</span>
-                    <span style={{ flex: 1, fontSize: 10.5, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.Thema}>{s.Thema ?? '—'}</span>
-                    {s.Quelle && <span style={{ fontSize: 8.5, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0, background: 'var(--layer-3)', padding: '1px 4px', borderRadius: 3 }}>{s.Quelle}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        {/* Content-Chancen */}
+      {/* ── Research: Area Charts + Sparklines + Content ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2.1fr) minmax(220px, 0.9fr)', gap: 10, marginBottom: 10 }}>
+        <TrendSentimentViz trends={trends} sentiments={sentiments} />
         <Card>
           <WHeader icon={<Rocket size={12} />} title="Content-Chancen" right="täglich" />
           {contentOps.length === 0 ? (
@@ -856,39 +822,9 @@ export default function OverviewPage() {
           </div>
         </Card>
 
-        {/* Activity Feed */}
+        {/* Activity Feed — Live Mission Control Ticker */}
         <Card>
-          <WHeader icon={<Activity size={12} />} title="Activity Feed" right="live" />
-          {activity.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {[
-                { icon: '▸', text: 'Dashboard gestartet', sub: 'system', color: '#60a5fa', ts: Date.now() - 5000 },
-                { icon: '▸', text: 'Services werden geprüft…', sub: 'health-check', color: '#34d399', ts: Date.now() - 3000 },
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: 11, width: 16, textAlign: 'center', flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.text}</p>
-                    <p style={{ margin: 0, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{item.sub}</p>
-                  </div>
-                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(new Date(item.ts).toISOString())}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 180, overflowY: 'auto' }}>
-              {activity.map(item => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 2px', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: 11, width: 16, textAlign: 'center', flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.text}</p>
-                    <p style={{ margin: 0, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{item.sub}</p>
-                  </div>
-                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(new Date(item.ts).toISOString())}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <LiveActivityFeed />
         </Card>
       </div>
 
