@@ -8,6 +8,13 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
     environment:
       - DATABASE_URL=postgresql+asyncpg://aios_user:${DB_PASSWORD:-aios_pass}@aios-db:5432/aios_db
       - REDIS_URL=redis://aios-redis:6379/0
@@ -57,6 +64,13 @@ services:
     restart: unless-stopped
     ports:
       - "8002:8002"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
     environment:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - NEXUS_CORE_URL=http://nexus-core:8000
@@ -90,8 +104,15 @@ services:
     image: redis:7-alpine
     container_name: aios-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec
     ports:
       - "6379:6379"
+    volumes:
+      - aios-redis-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - aios-network
     healthcheck:
@@ -158,6 +179,7 @@ networks:
 
 volumes:
   aios-db-data:
+  aios-redis-data:
   loki-data:
   prometheus-data:
   grafana-data:
