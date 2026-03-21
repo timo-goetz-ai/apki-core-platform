@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   BookOpen, RefreshCw, ExternalLink, AlertTriangle,
   Layers, Zap, Puzzle, Anchor, Users, Settings2, Bot, FileText, Brain,
+  Link, Server, Copy, Check,
 } from 'lucide-react';
 
 // ─── NocoDB config ────────────────────────────────────────────────────────────
@@ -18,21 +19,38 @@ const TABLE_IDS: Record<string, string> = {
   subagents:       'm6kwm1cedzeou6w',
   prompts:         'mijlvsujsgqa92m',
   knowledge_items: 'm9hgs3y3iz9xtgl',
-  clients:         'mxfirejid6z3h5g',
-  cursor_configs:  'mzzgzfzgatrauwy',
 };
 
 type TabKey = 'rules' | 'skills' | 'plugins' | 'hooks' | 'agents' | 'subagents' | 'prompts' | 'knowledge_items';
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'rules',           label: 'Rules',         icon: <Layers size={13} /> },
-  { key: 'skills',          label: 'Skills',         icon: <Zap size={13} /> },
-  { key: 'plugins',         label: 'Plugins',        icon: <Puzzle size={13} /> },
-  { key: 'hooks',           label: 'Hooks',          icon: <Anchor size={13} /> },
-  { key: 'agents',          label: 'Agents',         icon: <Bot size={13} /> },
-  { key: 'subagents',       label: 'SubAgents',      icon: <Users size={13} /> },
-  { key: 'prompts',         label: 'Prompts',        icon: <FileText size={13} /> },
-  { key: 'knowledge_items', label: 'Knowledge',      icon: <Brain size={13} /> },
+  { key: 'rules',           label: 'Rules',       icon: <Layers size={13} /> },
+  { key: 'skills',          label: 'Skills',       icon: <Zap size={13} /> },
+  { key: 'plugins',         label: 'Plugins',      icon: <Puzzle size={13} /> },
+  { key: 'hooks',           label: 'Hooks',        icon: <Anchor size={13} /> },
+  { key: 'agents',          label: 'Agents',       icon: <Bot size={13} /> },
+  { key: 'subagents',       label: 'SubAgents',    icon: <Users size={13} /> },
+  { key: 'prompts',         label: 'Prompts',      icon: <FileText size={13} /> },
+  { key: 'knowledge_items', label: 'Knowledge',    icon: <Brain size={13} /> },
+];
+
+// ─── Quick links & API addresses ──────────────────────────────────────────────
+const QUICK_LINKS = [
+  { label: 'n8n Workflows',  url: 'http://10.0.1.29:5678',                         color: '#fbbf24', desc: 'Workflow-Editor' },
+  { label: 'NocoDB',         url: 'https://nocodb.automation-plus-ki.de',           color: '#34d399', desc: 'Datenbank-UI' },
+  { label: 'Grafana',        url: 'https://grafana.automation-plus-ki.de',          color: '#f97316', desc: 'Monitoring' },
+  { label: 'Prometheus',     url: 'https://prometheus.automation-plus-ki.de',       color: '#a78bfa', desc: 'Metriken' },
+  { label: 'Coolify',        url: 'https://coolify.automation-plus-ki.de',          color: '#38bdf8', desc: 'Deployment' },
+  { label: 'Authentik',      url: 'https://auth.automation-plus-ki.de',             color: '#fb923c', desc: 'Identity Provider' },
+];
+
+const API_ENDPOINTS = [
+  { label: 'n8n API',          url: 'http://10.0.1.29:5678/api/v1',                desc: 'Workflows & Executions',    auth: 'X-N8N-API-KEY' },
+  { label: 'NocoDB API',       url: 'https://nocodb.automation-plus-ki.de/api/v1', desc: 'Tabellen & Datensätze',     auth: 'xc-token' },
+  { label: 'Nexus Core API',   url: 'https://api.automation-plus-ki.de',           desc: 'Python FastAPI Backend',    auth: 'Bearer Token' },
+  { label: 'Dashboard API',    url: '/api/nocodb/table?id=TABLE_ID',               desc: 'Interne Next.js Routen',    auth: 'Session' },
+  { label: 'Prometheus API',   url: 'http://10.0.1.29:9090/api/v1',               desc: 'Metriken & Queries',        auth: 'kein Auth' },
+  { label: 'Grafana API',      url: 'https://grafana.automation-plus-ki.de/api',   desc: 'Dashboards & Alerting',     auth: 'Bearer Token' },
 ];
 
 type Row = Record<string, unknown>;
@@ -58,19 +76,42 @@ function statusColor(status: string | undefined): { bg: string; text: string; do
   return { bg: 'rgba(100,116,139,0.12)', text: '#94a3b8', dot: '#64748b' };
 }
 
+// ─── Copy button ──────────────────────────────────────────────────────────────
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      style={{
+        padding: '2px 6px', borderRadius: 4, cursor: 'pointer',
+        background: 'transparent', border: '1px solid transparent',
+        color: 'var(--text-muted)', fontSize: 10,
+        display: 'inline-flex', alignItems: 'center', gap: 3,
+        transition: 'all 0.1s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
+      title="Kopieren"
+    >
+      {copied ? <Check size={10} style={{ color: '#34d399' }} /> : <Copy size={10} />}
+    </button>
+  );
+}
+
+// ─── Row item ─────────────────────────────────────────────────────────────────
 function SkeletonRow() {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: '2fr 1fr 3fr', gap: 16,
-      padding: '12px 16px', borderBottom: '1px solid var(--border, #2d3748)',
+      padding: '12px 16px', borderBottom: '1px solid var(--border)',
       alignItems: 'center',
     }}>
       {[140, 70, 220].map((w, i) => (
-        <div key={i} style={{
-          height: 12, width: w, borderRadius: 4,
-          background: 'var(--layer-3, #2a3347)',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }} />
+        <div key={i} style={{ height: 12, width: w, borderRadius: 4, background: 'var(--layer-3)' }} />
       ))}
     </div>
   );
@@ -78,24 +119,16 @@ function SkeletonRow() {
 
 function EmptyState({ tab }: { tab: string }) {
   return (
-    <div style={{
-      padding: '48px 24px', textAlign: 'center',
-      color: 'var(--text-secondary, #94a3b8)',
-    }}>
-      <BookOpen size={32} style={{ margin: '0 auto 12px', opacity: 0.35, display: 'block' }} />
+    <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+      <BookOpen size={32} style={{ margin: '0 auto 12px', opacity: 0.3, display: 'block' }} />
       <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>
         Noch keine Einträge in <strong>{tab}</strong>
       </p>
       <a
-        href={`${NOCO_BASE}`}
+        href={NOCO_BASE}
         target="_blank"
         rel="noreferrer"
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          marginTop: 12, fontSize: 13,
-          color: 'var(--accent-blue, #3b82f6)',
-          textDecoration: 'none',
-        }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12, fontSize: 13, color: 'var(--accent-blue)', textDecoration: 'none' }}
       >
         In NocoDB hinzufügen <ExternalLink size={11} />
       </a>
@@ -104,64 +137,51 @@ function EmptyState({ tab }: { tab: string }) {
 }
 
 function RowItem({ row, index }: { row: Row; index: number }) {
-  // Derive the most useful columns dynamically
-  const name = String(row.Name ?? row.name ?? row.Titel ?? row.title ?? row.Title ?? '—');
+  const name      = String(row.Name ?? row.name ?? row.Titel ?? row.title ?? row.Title ?? '—');
   const statusRaw = row.Status ?? row.status ?? row.active;
   const statusStr: string | undefined = typeof statusRaw === 'boolean'
     ? (statusRaw ? 'Aktiv' : 'Inaktiv')
     : typeof statusRaw === 'string' ? statusRaw : undefined;
-  const desc = String(row.Beschreibung ?? row.description ?? row.Description ?? row.content ?? row.Content ?? '');
+  const desc  = String(row.Beschreibung ?? row.description ?? row.Description ?? row.content ?? row.Content ?? '');
   const badge = statusColor(statusStr);
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
-      gap: 12,
-      padding: '13px 20px',
-      borderBottom: '1px solid var(--border, #2d3748)',
-      background: index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
-      transition: 'background 0.1s',
-    }}
+    <div
+      style={{
+        display: 'grid', gridTemplateColumns: '1fr auto', gap: 12,
+        padding: '13px 20px', borderBottom: '1px solid var(--border)',
+        background: index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+        transition: 'background 0.1s',
+      }}
       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(56,189,248,0.04)')}
       onMouseLeave={e => (e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)')}
     >
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 13, fontWeight: 600,
-            color: 'var(--text-primary, #f1f5f9)',
-          }}>
-            {String(name)}
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+            {name}
           </span>
           {desc && (
-            <span style={{
-              fontSize: 12, color: 'var(--text-secondary, #94a3b8)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              maxWidth: 400,
-            }}>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
               {String(desc).slice(0, 120)}{String(desc).length > 120 ? '…' : ''}
             </span>
           )}
         </div>
-        {/* Extra meta fields */}
         <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
           {Object.entries(row)
             .filter(([k]) => !['Id', 'id', 'Name', 'name', 'Titel', 'title', 'Title',
-                               'Status', 'status', 'active', 'Beschreibung', 'description',
-                               'Description', 'content', 'Content',
-                               'CreatedAt', 'UpdatedAt', 'nc_order'].includes(k))
+              'Status', 'status', 'active', 'Beschreibung', 'description',
+              'Description', 'content', 'Content', 'CreatedAt', 'UpdatedAt', 'nc_order'].includes(k))
             .slice(0, 4)
             .map(([k, v]) => (
-              <span key={k} style={{ fontSize: 10, color: 'var(--text-muted, #64748b)', fontFamily: 'var(--font-mono, monospace)' }}>
+              <span key={k} style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 <span style={{ opacity: 0.6 }}>{k}: </span>
                 {String(v ?? '—').slice(0, 40)}
               </span>
             ))}
         </div>
       </div>
-
-      {status !== undefined && (
+      {statusStr !== undefined && (
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -169,7 +189,7 @@ function RowItem({ row, index }: { row: Row; index: number }) {
             background: badge.bg, color: badge.text,
           }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: badge.dot, flexShrink: 0 }} />
-            {typeof status === 'boolean' ? (status ? 'Aktiv' : 'Deaktiviert') : String(status)}
+            {statusStr}
           </span>
         </div>
       )}
@@ -177,29 +197,22 @@ function RowItem({ row, index }: { row: Row; index: number }) {
   );
 }
 
-// ─── Stat cards ───────────────────────────────────────────────────────────────
-function StatCard({ label, value, color, icon }: {
-  label: string; value: number | string; color: string; icon: React.ReactNode;
-}) {
+function StatCard({ label, value, color, icon }: { label: string; value: number | string; color: string; icon: React.ReactNode }) {
   return (
     <div style={{
-      background: 'var(--layer-2, #1e2535)',
-      border: '1px solid var(--border, #2d3748)',
+      background: 'var(--layer-2)', border: '1px solid var(--border)',
       borderRadius: 12, padding: '16px 20px',
-      display: 'flex', alignItems: 'center', gap: 14,
-      flex: '1 1 180px',
+      display: 'flex', alignItems: 'center', gap: 14, flex: '1 1 160px',
     }}>
       <div style={{
-        width: 40, height: 40, borderRadius: 10,
-        background: 'var(--layer-3, #2a3347)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
+        width: 38, height: 38, borderRadius: 9, background: 'var(--layer-3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
         <span style={{ color }}>{icon}</span>
       </div>
       <div>
         <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', marginTop: 3 }}>{label}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 3 }}>{label}</div>
       </div>
     </div>
   );
@@ -208,10 +221,11 @@ function StatCard({ label, value, color, icon }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function KnowledgePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('rules');
-  const [data, setData] = useState<Partial<Record<TabKey, Row[]>>>({});
-  const [loading, setLoading] = useState<Partial<Record<TabKey, boolean>>>({});
-  const [errors, setErrors] = useState<Partial<Record<TabKey, string>>>({});
-  const [counts, setCounts] = useState<Partial<Record<TabKey, number>>>({});
+  const [data, setData]           = useState<Partial<Record<TabKey, Row[]>>>({});
+  const [loading, setLoading]     = useState<Partial<Record<TabKey, boolean>>>({});
+  const [errors, setErrors]       = useState<Partial<Record<TabKey, string>>>({});
+  const [counts, setCounts]       = useState<Partial<Record<TabKey, number>>>({});
+  const [section, setSection]     = useState<'data' | 'links' | 'api'>('data');
 
   const loadTab = useCallback(async (tab: TabKey) => {
     const tableId = TABLE_IDS[tab];
@@ -229,37 +243,24 @@ export default function KnowledgePage() {
     }
   }, []);
 
-  // Load all tabs for counts on mount
-  useEffect(() => {
-    TABS.forEach(t => loadTab(t.key));
-  }, [loadTab]);
+  useEffect(() => { TABS.forEach(t => loadTab(t.key)); }, [loadTab]);
 
-  const currentRows = data[activeTab] ?? [];
-  const isLoading = loading[activeTab] ?? false;
+  const currentRows  = data[activeTab] ?? [];
+  const isLoading    = loading[activeTab] ?? false;
   const currentError = errors[activeTab];
 
-  // Stat card values
-  const rulesCount = counts.rules ?? '…';
-  const pluginsCount = counts.plugins ?? '…';
-  const subagentsCount = counts.subagents ?? '…';
-  const knowledgeCount = counts.knowledge_items ?? '…';
-
   return (
-    <div style={{ padding: '24px 32px', minHeight: '100vh', fontFamily: 'var(--font-ui, inherit)' }}>
+    <div style={{ padding: '24px 32px', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{
-            margin: 0, fontSize: 22, fontWeight: 700,
-            color: 'var(--text-primary, #f1f5f9)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <BookOpen size={22} color="var(--accent-blue, #3b82f6)" />
             Knowledge Base
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary, #94a3b8)' }}>
-            AI_SYSTEM Datenzentrum — Regeln, Skills, Agenten &amp; mehr aus NocoDB
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+            AI_SYSTEM Datenzentrum — Regeln, Skills, Agenten, API-Adressen &amp; Quick Links
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -268,10 +269,8 @@ export default function KnowledgePage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '7px 12px', borderRadius: 8, fontSize: 13,
-              background: 'var(--layer-2, #1e2535)',
-              border: '1px solid var(--border, #2d3748)',
-              color: 'var(--text-secondary, #94a3b8)',
-              cursor: 'pointer',
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', cursor: 'pointer',
             }}
           >
             <RefreshCw size={13} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
@@ -284,140 +283,214 @@ export default function KnowledgePage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: 'var(--accent-blue, #3b82f6)',
-              color: '#fff', textDecoration: 'none',
+              background: 'var(--accent-blue, #3b82f6)', color: '#fff', textDecoration: 'none',
             }}
           >
-            In NocoDB öffnen <ExternalLink size={13} />
+            NocoDB öffnen <ExternalLink size={13} />
           </a>
         </div>
       </div>
 
-      {/* Stat cards */}
+      {/* ── Stat cards ── */}
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 28 }}>
-        <StatCard label="Total Rules"      value={rulesCount}    color="#3b82f6" icon={<Layers size={18} />} />
-        <StatCard label="Active Plugins"   value={pluginsCount}  color="#a855f7" icon={<Puzzle size={18} />} />
-        <StatCard label="SubAgents"        value={subagentsCount} color="#22c55e" icon={<Settings2 size={18} />} />
-        <StatCard label="Knowledge Items"  value={knowledgeCount} color="#f59e0b" icon={<Brain size={18} />} />
+        <StatCard label="Rules"          value={counts.rules ?? '…'}          color="#3b82f6" icon={<Layers size={18} />} />
+        <StatCard label="Plugins"        value={counts.plugins ?? '…'}        color="#a855f7" icon={<Puzzle size={18} />} />
+        <StatCard label="SubAgents"      value={counts.subagents ?? '…'}      color="#22c55e" icon={<Settings2 size={18} />} />
+        <StatCard label="Knowledge Items" value={counts.knowledge_items ?? '…'} color="#f59e0b" icon={<Brain size={18} />} />
       </div>
 
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex', gap: 4, flexWrap: 'wrap',
-        marginBottom: 16,
-        background: 'var(--layer-2, #1e2535)',
-        border: '1px solid var(--border, #2d3748)',
-        borderRadius: 12, padding: 6,
-      }}>
-        {TABS.map(t => {
-          const isActive = t.key === activeTab;
-          const count = counts[t.key];
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', borderRadius: 8, fontSize: 13,
-                fontWeight: isActive ? 600 : 400,
-                background: isActive ? 'var(--accent-blue, #3b82f6)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--text-secondary, #94a3b8)',
-                border: 'none', cursor: 'pointer',
-                transition: 'all 0.12s ease',
-              }}
-            >
-              {t.icon}
-              {t.label}
-              {count !== undefined && (
-                <span style={{
-                  padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 700,
-                  background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--layer-3, #2a3347)',
-                  color: isActive ? '#fff' : 'var(--text-muted, #64748b)',
-                }}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Table panel */}
-      <div style={{
-        background: 'var(--layer-2, #1e2535)',
-        border: '1px solid var(--border, #2d3748)',
-        borderRadius: 12,
-        overflow: 'hidden',
-      }}>
-        {/* Panel header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 20px',
-          borderBottom: '1px solid var(--border, #2d3748)',
-          background: 'var(--layer-3, #2a3347)',
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #f1f5f9)' }}>
-            {TABS.find(t => t.key === activeTab)?.label ?? activeTab}
-            {currentRows.length > 0 && (
-              <span style={{
-                marginLeft: 8, fontSize: 11, fontWeight: 400,
-                color: 'var(--text-muted, #64748b)',
-              }}>
-                {currentRows.length} Einträge
-              </span>
-            )}
-          </span>
-          <a
-            href={`${NOCO_BASE}/dashboard`}
-            target="_blank"
-            rel="noreferrer"
+      {/* ── Section switcher ── */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+        {([
+          { id: 'data',  label: 'Wissensdaten',  icon: <Brain size={13} /> },
+          { id: 'links', label: 'Quick Links',   icon: <Link size={13} /> },
+          { id: 'api',   label: 'API-Adressen',  icon: <Server size={13} /> },
+        ] as const).map(s => (
+          <button
+            key={s.id}
+            onClick={() => setSection(s.id)}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontSize: 12, color: 'var(--accent-blue, #3b82f6)',
-              textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+              fontWeight: section === s.id ? 600 : 400,
+              background: section === s.id ? 'rgba(59,130,246,0.12)' : 'var(--layer-2)',
+              border: section === s.id ? '1px solid rgba(59,130,246,0.3)' : '1px solid var(--border)',
+              color: section === s.id ? '#60a5fa' : 'var(--text-secondary)',
+              transition: 'all 0.12s',
             }}
           >
-            Hinzufügen <ExternalLink size={11} />
-          </a>
-        </div>
+            {s.icon} {s.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Content */}
-        {currentError ? (
+      {/* ── Section: Wissensdaten ── */}
+      {section === 'data' && (
+        <>
+          {/* Tab bar */}
           <div style={{
-            padding: '32px 24px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            color: 'var(--text-secondary, #94a3b8)',
+            display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 16,
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: 6,
           }}>
-            <AlertTriangle size={24} color="#ef4444" />
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#ef4444' }}>Fehler beim Laden</p>
-            <p style={{ margin: 0, fontSize: 13 }}>{currentError}</p>
-            <button
-              onClick={() => loadTab(activeTab)}
-              style={{
-                marginTop: 8, padding: '7px 16px', borderRadius: 8, fontSize: 13,
-                background: 'var(--layer-3, #2a3347)',
-                border: '1px solid var(--border, #2d3748)',
-                color: 'var(--text-primary, #f1f5f9)', cursor: 'pointer',
-              }}
-            >
-              Erneut versuchen
-            </button>
+            {TABS.map(t => {
+              const isActive = t.key === activeTab;
+              const count    = counts[t.key];
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px', borderRadius: 8, fontSize: 13,
+                    fontWeight: isActive ? 600 : 400,
+                    background: isActive ? 'var(--accent-blue, #3b82f6)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    border: 'none', cursor: 'pointer', transition: 'all 0.12s',
+                  }}
+                >
+                  {t.icon} {t.label}
+                  {count !== undefined && (
+                    <span style={{
+                      padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 700,
+                      background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--layer-3)',
+                      color: isActive ? '#fff' : 'var(--text-muted)',
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        ) : isLoading ? (
-          <div>
-            {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+
+          {/* Table panel */}
+          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 20px', borderBottom: '1px solid var(--border)',
+              background: 'var(--layer-3)',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {TABS.find(t => t.key === activeTab)?.label ?? activeTab}
+                {currentRows.length > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>
+                    {currentRows.length} Einträge
+                  </span>
+                )}
+              </span>
+              <a
+                href={`${NOCO_BASE}/dashboard`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--accent-blue, #3b82f6)', textDecoration: 'none' }}
+              >
+                Hinzufügen <ExternalLink size={11} />
+              </a>
+            </div>
+            {currentError ? (
+              <div style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--text-secondary)' }}>
+                <AlertTriangle size={24} color="#ef4444" />
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#ef4444' }}>Fehler beim Laden</p>
+                <p style={{ margin: 0, fontSize: 13 }}>{currentError}</p>
+                <button onClick={() => loadTab(activeTab)} style={{ marginTop: 8, padding: '7px 16px', borderRadius: 8, fontSize: 13, background: 'var(--layer-3)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  Erneut versuchen
+                </button>
+              </div>
+            ) : isLoading ? (
+              <div>{Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}</div>
+            ) : currentRows.length === 0 ? (
+              <EmptyState tab={TABS.find(t => t.key === activeTab)?.label ?? activeTab} />
+            ) : (
+              <div>{currentRows.map((row, i) => <RowItem key={String(row.Id ?? row.id ?? i)} row={row} index={i} />)}</div>
+            )}
           </div>
-        ) : currentRows.length === 0 ? (
-          <EmptyState tab={TABS.find(t => t.key === activeTab)?.label ?? activeTab} />
-        ) : (
-          <div>
-            {currentRows.map((row, i) => (
-              <RowItem key={String(row.Id ?? row.id ?? i)} row={row} index={i} />
+        </>
+      )}
+
+      {/* ── Section: Quick Links ── */}
+      {section === 'links' && (
+        <div>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+            Direktzugriff auf alle wichtigen Services im AIOS-Stack.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {QUICK_LINKS.map(link => (
+              <a
+                key={link.url}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block', textDecoration: 'none',
+                  background: 'var(--layer-2)', border: '1px solid var(--border)',
+                  borderRadius: 12, padding: '16px 20px',
+                  transition: 'border-color 0.12s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = link.color + '44'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: link.color, boxShadow: `0 0 5px ${link.color}80`, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{link.label}</span>
+                  </div>
+                  <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                </div>
+                <p style={{ margin: '0 0 8px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{link.desc}</p>
+                <p style={{ margin: '0 0 0 16px', fontSize: 10, fontFamily: 'var(--font-mono)', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {link.url}
+                </p>
+              </a>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
+      {/* ── Section: API-Adressen ── */}
+      {section === 'api' && (
+        <div>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+            Interne und externe API-Endpunkte für Agenten, Workflows und Integrationen.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {API_ENDPOINTS.map(ep => (
+              <div
+                key={ep.url}
+                style={{
+                  background: 'var(--layer-2)', border: '1px solid var(--border)',
+                  borderRadius: 10, padding: '14px 18px',
+                  display: 'grid', gridTemplateColumns: '200px 1fr auto', gap: 16, alignItems: 'center',
+                }}
+              >
+                <div>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{ep.label}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{ep.desc}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <code style={{
+                    flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)',
+                    color: '#38bdf8', background: 'rgba(56,189,248,0.06)',
+                    padding: '4px 8px', borderRadius: 5, border: '1px solid rgba(56,189,248,0.12)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block',
+                  }}>
+                    {ep.url}
+                  </code>
+                  <CopyBtn text={ep.url} />
+                </div>
+                <span style={{
+                  fontSize: 10, fontFamily: 'var(--font-mono)',
+                  padding: '3px 8px', borderRadius: 5,
+                  background: 'var(--layer-3)', border: '1px solid var(--border)',
+                  color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0,
+                }}>
+                  {ep.auth}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

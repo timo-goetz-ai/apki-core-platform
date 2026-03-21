@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart2, RefreshCw, ExternalLink, AlertCircle, CheckCircle, Activity, Database } from 'lucide-react';
+import {
+  BarChart2, RefreshCw, ExternalLink, AlertCircle, CheckCircle,
+  Activity, Database, LayoutDashboard, Layers,
+} from 'lucide-react';
 
 interface GrafanaDashboard { id: number; title: string; url: string; tags: string[]; type: string }
 interface PrometheusTarget { labels: { job: string; instance: string }; health: string; lastScrape: string; lastError?: string }
@@ -19,11 +22,35 @@ const GRAFANA_URL = 'https://grafana.automation-plus-ki.de';
 
 type Tab = 'overview' | 'dashboards' | 'prometheus' | 'datasources';
 
+// ── Quick-link card ────────────────────────────────────────────────────────────
+function QuickLink({ href, label, desc, color }: { href: string; label: string; desc: string; color: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'block', textDecoration: 'none', padding: '14px 16px',
+        background: 'var(--layer-2)', border: '1px solid var(--border)',
+        borderRadius: 10, transition: 'border-color 0.12s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = color + '55'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</span>
+        <ExternalLink size={11} style={{ color: 'var(--text-muted)' }} />
+      </div>
+      <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>{desc}</p>
+    </a>
+  );
+}
+
 export default function AnalyticsPage() {
-  const [tab, setTab]           = useState<Tab>('overview');
-  const [grafana, setGrafana]   = useState<GrafanaData | null>(null);
-  const [prom, setProm]         = useState<PrometheusData | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [tab, setTab]               = useState<Tab>('overview');
+  const [grafana, setGrafana]       = useState<GrafanaData | null>(null);
+  const [prom, setProm]             = useState<PrometheusData | null>(null);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
@@ -45,7 +72,7 @@ export default function AnalyticsPage() {
   const jobs        = Object.keys(prom?.byJob ?? {}).length;
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'overview',    label: 'Overview'     },
+    { id: 'overview',    label: 'Übersicht'    },
     { id: 'dashboards',  label: 'Dashboards'   },
     { id: 'prometheus',  label: 'Prometheus'   },
     { id: 'datasources', label: 'Datasources'  },
@@ -60,21 +87,23 @@ export default function AnalyticsPage() {
           <BarChart2 size={20} style={{ color: '#a78bfa' }} />
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Analytics</h1>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Grafana · Prometheus</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              Grafana · Prometheus · {prom?.targets.length ?? '…'} Targets
+            </p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={load} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
-            background: 'var(--layer-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
-            cursor: 'pointer', fontSize: 12,
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12,
           }}>
             <RefreshCw size={12} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
             Refresh
           </button>
           <a href={GRAFANA_URL} target="_blank" rel="noopener noreferrer" style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
-            background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)',
+            background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)',
             color: '#f97316', fontSize: 12, fontWeight: 600, textDecoration: 'none',
           }}>
             Grafana öffnen <ExternalLink size={11} />
@@ -85,14 +114,15 @@ export default function AnalyticsPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Dashboards',   value: grafana?.dashboards.length ?? '…', color: '#f97316', icon: <BarChart2 size={14} /> },
-          { label: 'Targets UP',   value: upTargets || '…',                  color: '#34d399', icon: <CheckCircle size={14} /> },
+          { label: 'Dashboards',   value: grafana?.dashboards.length ?? '…', color: '#f97316',              icon: <LayoutDashboard size={14} /> },
+          { label: 'Targets UP',   value: upTargets || '…',                  color: '#34d399',              icon: <CheckCircle size={14} /> },
           { label: 'Targets DOWN', value: downTargets,                        color: downTargets > 0 ? '#f87171' : 'var(--text-muted)', icon: <AlertCircle size={14} /> },
-          { label: 'Jobs',         value: jobs || '…',                        color: '#a78bfa', icon: <Activity size={14} /> },
+          { label: 'Jobs',         value: jobs || '…',                        color: '#a78bfa',              icon: <Activity size={14} /> },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12,
-            padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--layer-2)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: '16px 20px',
+            display: 'flex', alignItems: 'center', gap: 12,
           }}>
             <span style={{ color: stat.color, opacity: 0.8 }}>{stat.icon}</span>
             <div>
@@ -108,66 +138,144 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 2, marginBottom: 20, borderBottom: '1px solid var(--border)' }}>
         {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '8px 16px', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-              background: 'none', border: 'none', borderBottom: `2px solid ${tab === t.id ? '#a78bfa' : 'transparent'}`,
-              color: tab === t.id ? '#a78bfa' : 'var(--text-muted)',
-              transition: 'all 0.12s', marginBottom: -1,
-            }}
-          >{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '8px 16px', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            background: 'none', border: 'none',
+            borderBottom: `2px solid ${tab === t.id ? '#a78bfa' : 'transparent'}`,
+            color: tab === t.id ? '#a78bfa' : 'var(--text-muted)',
+            transition: 'all 0.12s', marginBottom: -1,
+          }}>
+            {t.label}
+          </button>
         ))}
       </div>
 
-      {/* Tab content */}
+      {/* ── Overview ── */}
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Grafana embed */}
-          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Grafana Live</span>
-              <a href={GRAFANA_URL} target="_blank" rel="noopener noreferrer" style={{ color: '#f97316', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
-                Vollbild <ExternalLink size={10} />
+
+          {/* Grafana access card — native, no iFrame */}
+          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 9,
+                background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <BarChart2 size={16} style={{ color: '#f97316' }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Grafana</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {grafana?.dashboards.length ?? '…'} Dashboards · {grafana?.plugins.length ?? '…'} Plugins
+                </p>
+              </div>
+              <a
+                href={GRAFANA_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '6px 12px', borderRadius: 7,
+                  background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)',
+                  color: '#f97316', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+                }}
+              >
+                Öffnen <ExternalLink size={10} />
               </a>
             </div>
-            <iframe
-              src={`${GRAFANA_URL}?kiosk=tv`}
-              style={{ width: '100%', height: 400, border: 'none', display: 'block' }}
-              title="Grafana"
-            />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { label: 'Grafana Home',      url: GRAFANA_URL,                          desc: 'Dashboard-Übersicht'       },
+                { label: 'Explore (PromQL)',  url: `${GRAFANA_URL}/explore`,             desc: 'Metriken & Log-Abfragen'   },
+                { label: 'Alerting',          url: `${GRAFANA_URL}/alerting`,            desc: 'Alert-Regeln & Status'     },
+                { label: 'Datasources',       url: `${GRAFANA_URL}/connections/datasources`, desc: 'Datenquellen-Verwaltung' },
+              ].map(link => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', borderRadius: 8,
+                    background: 'var(--layer-1)', border: '1px solid var(--border)',
+                    textDecoration: 'none', transition: 'border-color 0.1s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(249,115,22,0.3)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+                >
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{link.label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{link.desc}</span>
+                  </div>
+                  <ExternalLink size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Prometheus targets summary */}
-          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
-            <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Prometheus jobs */}
+          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <Activity size={14} style={{ color: '#a78bfa' }} />
-              Prometheus Jobs
-            </p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+                Prometheus Jobs
+              </p>
+              <a
+                href="https://prometheus.automation-plus-ki.de"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)',
+                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                UI öffnen <ExternalLink size={10} />
+              </a>
+            </div>
             {loading ? (
               <div style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>Lade…</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {Object.entries(prom?.byJob ?? {}).slice(0, 12).map(([job, targets]) => {
-                  const up = targets.filter(t => t.health === 'up').length;
+                {Object.entries(prom?.byJob ?? {}).slice(0, 14).map(([job, targets]) => {
+                  const up    = targets.filter(t => t.health === 'up').length;
                   const total = targets.length;
                   const allUp = up === total;
                   return (
                     <div key={job} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 7,
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 10px', borderRadius: 7,
                       background: allUp ? 'rgba(52,211,153,0.04)' : 'rgba(248,113,113,0.04)',
                     }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: allUp ? '#34d399' : '#f87171', flexShrink: 0, boxShadow: allUp ? '0 0 5px #34d399' : 'none' }} />
-                      <span style={{ flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job}</span>
-                      <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: allUp ? '#34d399' : '#f87171', flexShrink: 0 }}>{up}/{total}</span>
+                      <span style={{
+                        width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                        background: allUp ? '#34d399' : '#f87171',
+                        boxShadow: allUp ? '0 0 4px #34d39980' : 'none',
+                      }} />
+                      <span style={{
+                        flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)',
+                        color: 'var(--text-secondary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {job}
+                      </span>
+                      <span style={{
+                        fontSize: 10, fontFamily: 'var(--font-mono)',
+                        color: allUp ? '#34d399' : '#f87171', flexShrink: 0,
+                      }}>
+                        {up}/{total}
+                      </span>
                     </div>
                   );
                 })}
                 {Object.keys(prom?.byJob ?? {}).length === 0 && (
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Keine Prometheus-Daten</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    Keine Prometheus-Daten verfügbar.
+                  </p>
                 )}
               </div>
             )}
@@ -175,44 +283,48 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* ── Dashboards ── */}
       {tab === 'dashboards' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ height: 100, borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-            ))
-          ) : grafana?.dashboards.map(db => (
-            <a
-              key={db.id}
-              href={`${GRAFANA_URL}${db.url}`}
-              target="_blank" rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
-            >
-              <div style={{
-                background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10,
-                padding: '14px 16px', cursor: 'pointer', transition: 'all 0.12s',
-              }}
-              onMouseEnter={e => { (e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'); (e.currentTarget.style.background = 'rgba(249,115,22,0.04)'); }}
-              onMouseLeave={e => { (e.currentTarget.style.borderColor = 'var(--border)'); (e.currentTarget.style.background = 'var(--layer-2)'); }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>{db.title}</p>
-                  <ExternalLink size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <div>
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+              {grafana?.dashboards.length ?? 0} Dashboards · direkt in Grafana öffnen
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ height: 90, borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)' }} />
+              ))
+            ) : grafana?.dashboards.map(db => (
+              <a key={db.id} href={`${GRAFANA_URL}${db.url}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', cursor: 'pointer', transition: 'all 0.12s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(249,115,22,0.35)'; (e.currentTarget as HTMLDivElement).style.background = 'rgba(249,115,22,0.03)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-2)'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>{db.title}</p>
+                    <ExternalLink size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                    {db.tags.slice(0, 4).map(tag => (
+                      <span key={tag} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.18)' }}>{tag}</span>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                  {db.tags.slice(0, 4).map(tag => (
-                    <span key={tag} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)' }}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-            </a>
-          ))}
-          {!loading && !grafana?.dashboards.length && (
-            <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>Keine Dashboards gefunden.</p>
-          )}
+              </a>
+            ))}
+            {!loading && !grafana?.dashboards.length && (
+              <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
+                Keine Dashboards — Grafana-Auth erforderlich.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
+      {/* ── Prometheus ── */}
       {tab === 'prometheus' && (
         <div>
           {loading ? (
@@ -227,7 +339,7 @@ export default function AnalyticsPage() {
                     padding: '8px 12px', borderRadius: 8,
                     background: 'var(--layer-2)', border: '1px solid var(--border)',
                   }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isUp ? '#34d399' : '#f87171', boxShadow: isUp ? '0 0 5px #34d399' : 'none' }} />
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isUp ? '#34d399' : '#f87171', boxShadow: isUp ? '0 0 4px #34d39980' : 'none' }} />
                     <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', flex: 1 }}>{target.labels.job}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flex: 2 }}>{target.labels.instance}</span>
                     <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: isUp ? '#34d399' : '#f87171' }}>{target.health}</span>
@@ -242,16 +354,15 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* ── Datasources ── */}
       {tab === 'datasources' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ height: 80, borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div key={i} style={{ height: 80, borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)' }} />
             ))
           ) : grafana?.datasources?.map(ds => (
-            <div key={ds.id} style={{
-              background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px',
-            }}>
+            <div key={ds.id} style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Database size={13} style={{ color: '#a78bfa', flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{ds.name}</span>
@@ -264,6 +375,20 @@ export default function AnalyticsPage() {
           {!loading && !grafana?.datasources?.length && (
             <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>Keine Datasources.</p>
           )}
+        </div>
+      )}
+
+      {/* ── Quick links (always visible at bottom of overview) ── */}
+      {tab === 'overview' && (
+        <div style={{ marginTop: 20 }}>
+          <p style={{ margin: '0 0 10px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>
+            Weitere Monitoring-Tools
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <QuickLink href="https://prometheus.automation-plus-ki.de/targets" label="Prometheus Targets" desc="Health-Status aller Scrape-Ziele" color="#f97316" />
+            <QuickLink href="https://alertmanager.automation-plus-ki.de" label="Alertmanager" desc="Alert Routing & Silences" color="#f87171" />
+            <QuickLink href={`${GRAFANA_URL}/explore`} label="Grafana Explore" desc="PromQL & Loki Log-Abfragen" color="#a78bfa" />
+          </div>
         </div>
       )}
     </div>
