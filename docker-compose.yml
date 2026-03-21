@@ -27,7 +27,10 @@ services:
       - ./services/nexus-core:/app
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - aios-network
+      - frontend-net   # admin-dashboard → nexus-core
+      - workers-net    # crew-api → nexus-core
+      - data-net       # nexus-core → db, redis, browserless
+      - monitoring-net # prometheus scraping
     depends_on:
       aios-db:
         condition: service_healthy
@@ -52,7 +55,7 @@ services:
       - NEXT_PUBLIC_NEXUS_API_URL=http://localhost:8000
       - NEXT_PUBLIC_WS_URL=ws://localhost:8000
     networks:
-      - aios-network
+      - frontend-net   # only nexus-core visible, not db/redis
     depends_on:
       - nexus-core
 
@@ -76,7 +79,7 @@ services:
       - NEXUS_CORE_URL=http://nexus-core:8000
       - LOG_LEVEL=debug
     networks:
-      - aios-network
+      - workers-net    # only nexus-core visible, not db/redis
     depends_on:
       - nexus-core
 
@@ -85,7 +88,7 @@ services:
     container_name: aios-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # dev only: bind to localhost, not 0.0.0.0
     environment:
       - POSTGRES_USER=aios_user
       - POSTGRES_PASSWORD=${DB_PASSWORD:-aios_pass}
@@ -93,7 +96,7 @@ services:
     volumes:
       - aios-db-data:/var/lib/postgresql/data
     networks:
-      - aios-network
+      - data-net       # only nexus-core can reach this
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aios_user -d aios_db"]
       interval: 10s
@@ -106,7 +109,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --appendfsync everysec
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # dev only: bind to localhost, not 0.0.0.0
     volumes:
       - aios-redis-data:/data
     deploy:
@@ -114,7 +117,7 @@ services:
         limits:
           memory: 256M
     networks:
-      - aios-network
+      - data-net       # only nexus-core can reach this
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -126,13 +129,13 @@ services:
     container_name: aios-browserless
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"  # dev only: localhost only
     environment:
       - CONNECTION_TIMEOUT=60000
       - MAX_CONCURRENT_SESSIONS=5
       - TOKEN=${BROWSERLESS_TOKEN:-local-dev-token}
     networks:
-      - aios-network
+      - data-net       # only nexus-core can reach this
     shm_size: 1gb
 
   aios-loki:
@@ -146,7 +149,7 @@ services:
       - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - aios-network
+      - monitoring-net
 
   prometheus:
     image: prom/prometheus:latest
@@ -158,7 +161,7 @@ services:
       - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     networks:
-      - aios-network
+      - monitoring-net
 
   grafana:
     image: grafana/grafana:latest
@@ -171,11 +174,24 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     networks:
-      - aios-network
+      - monitoring-net
 
 networks:
-  aios-network:
+  # admin-dashboard and crew-api can only reach nexus-core, not data services
+  frontend-net:
     driver: bridge
+    internal: false
+  workers-net:
+    driver: bridge
+    internal: false
+  # db, redis, browserless: only reachable from nexus-core
+  data-net:
+    driver: bridge
+    internal: true   # no direct internet access from data services
+  # prometheus/grafana/loki: scraping and dashboards
+  monitoring-net:
+    driver: bridge
+    internal: false
 
 volumes:
   aios-db-data:
