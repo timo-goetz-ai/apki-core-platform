@@ -67,6 +67,7 @@ jobs:
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-nexus-core.sarif
           category: trivy-nexus-core
@@ -124,6 +125,7 @@ jobs:
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-admin-dashboard.sarif
           category: trivy-admin-dashboard
@@ -177,6 +179,7 @@ jobs:
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-crew-api.sarif
           category: trivy-crew-api
@@ -231,6 +234,7 @@ jobs:
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-landing-page.sarif
           category: trivy-landing-page
