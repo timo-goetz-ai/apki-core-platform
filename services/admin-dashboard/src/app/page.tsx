@@ -454,10 +454,10 @@ export default function OverviewPage() {
 
       <GrafanaEmbedPanel />
 
-      {/* ── Main Grid: 3 columns ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(380px, 1.4fr) 220px', gap: 10, marginBottom: 10 }}>
+      {/* ── Main Grid: 2 columns ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.1fr) minmax(320px, 1fr)', gap: 10, marginBottom: 10 }}>
 
-        {/* Col 1: Honeycomb Health Hub (Prometheus-gestütztes Leuchten) */}
+        {/* Col 1: Honeycomb Health Hub */}
         <Card>
           <WHeader icon={<Activity size={12} />} title="Health Hub" right={`${onlineCount}/${totalCount} · Prom`} />
           <HoneycombStatusMap
@@ -468,129 +468,140 @@ export default function OverviewPage() {
           />
         </Card>
 
-        {/* Col 2: Workflows + Deployments */}
+        {/* Col 2: Workflows List + Error Logs + Knowledge */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-          {/* Workflows: Node Graph + Kategorie-Dichte */}
-          <Card>
-            <WHeader icon={<Zap size={12} />} title="Workflows" right={<span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)' }}>AI ⟷ System Pulse</span>} />
-            <WorkflowPulseGraph activeWf={activeWf} totalWf={workflows.length} pulseSpeedSec={wfPulseSec} />
-            <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-              <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>nach Kategorie</p>
-              <MiniBar data={wfKats} />
-              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '3px 8px' }}>
-                {wfKats.map(k => (
-                  <span key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    <span style={{ width: 5, height: 5, borderRadius: 1, background: k.color, display: 'inline-block' }} />
-                    {k.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          {/* Deployments */}
+          {/* Aktive Workflows */}
           <Card>
             <WHeader
-              icon={<Rocket size={12} />}
-              title="Deployments"
-              right={<Link href="/deployments" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
+              icon={<Zap size={12} />}
+              title="Workflows"
+              right={
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#34d399' }}>{activeWf} aktiv</span>
+                  <Link href="/workflows" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3, fontSize: 9 }}>alle <ExternalLink size={8} /></Link>
+                </div>
+              }
             />
-            {deployments.length === 0 ? (
+            {workflows.length === 0 ? (
               <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 0 }}>Lade…</p>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                {deployments.map(dep => {
-                  const color = dep.status === 'running' ? '#34d399' : dep.status === 'stopped' ? '#f87171' : '#fbbf24';
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {workflows.slice(0, 8).map(wf => {
+                  const isActive = ['aktiv','active'].includes((wf.Status ?? '').toLowerCase());
+                  const katColor = KAT_COLOR[wf.Kategorie] ?? '#475569';
                   return (
-                    <div key={dep.id} style={{
+                    <div key={wf.Id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '5px 8px', borderRadius: 6,
                       background: 'var(--layer-1)', border: '1px solid var(--border)',
-                      borderRadius: 6, padding: '7px 8px',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                        <Dot color={color} />
-                        <span style={{ flex: 1, fontSize: 10, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dep.name}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', background: 'var(--layer-3)', padding: '1px 4px', borderRadius: 3 }}>{dep.kind}</span>
-                        <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{timeAgo(dep.updatedAt)}</span>
-                      </div>
+                      <span style={{
+                        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                        background: isActive ? '#34d399' : '#475569',
+                        boxShadow: isActive ? '0 0 4px #34d39980' : 'none',
+                      }} />
+                      <span style={{ flex: 1, fontSize: 11, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wf.Name}</span>
+                      {wf.Kategorie && (
+                        <span style={{
+                          fontSize: 8, fontFamily: 'var(--font-mono)', color: katColor,
+                          background: `${katColor}15`, padding: '1px 5px', borderRadius: 3, flexShrink: 0,
+                        }}>{wf.Kategorie}</span>
+                      )}
                     </div>
                   );
                 })}
+                {workflows.length > 8 && (
+                  <p style={{ margin: '4px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textAlign: 'center' }}>
+                    +{workflows.length - 8} weitere
+                  </p>
+                )}
+              </div>
+            )}
+            {/* Kategorie-Bar */}
+            {wfKats.length > 0 && (
+              <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                <MiniBar data={wfKats} />
+                <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
+                  {wfKats.map(k => (
+                    <span key={k.label} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 8, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: 1, background: k.color, display: 'inline-block' }} />
+                      {k.label} ({k.value})
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </Card>
-        </div>
 
-        {/* Col 3: Error Logs + Knowledge */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Error Logs + Knowledge side by side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
 
-          {/* Error Logs */}
-          <Card>
-            <WHeader
-              icon={<ScrollText size={12} />}
-              title="Error Logs"
-              right={<Link href="/agentic-os/logs" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
-            />
-            {openErrors === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0' }}>
-                <CheckCircle2 size={12} style={{ color: '#34d399' }} />
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Keine Fehler</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {errorLogs.map(log => (
-                  <div key={String(log.Id)} style={{
-                    padding: '6px 7px', borderRadius: 5,
-                    background: 'var(--layer-1)', border: `1px solid ${LOG_COLOR[log.level] ?? '#475569'}22`,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-                      <span style={{
-                        fontSize: 7.5, fontFamily: 'var(--font-mono)', fontWeight: 700,
-                        color: LOG_COLOR[log.level], textTransform: 'uppercase',
-                        padding: '1px 4px', borderRadius: 3,
-                        background: `${LOG_COLOR[log.level]}18`,
-                      }}>{log.level}</span>
-                      <span style={{ flex: 1, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.service}</span>
-                      <span style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(log.ts)}</span>
+            {/* Error Logs */}
+            <Card>
+              <WHeader
+                icon={<ScrollText size={12} />}
+                title="Error Logs"
+                right={<Link href="/agentic-os/logs" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>alle <ExternalLink size={8} /></Link>}
+              />
+              {openErrors === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0' }}>
+                  <CheckCircle2 size={12} style={{ color: '#34d399' }} />
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Keine Fehler</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {errorLogs.map(log => (
+                    <div key={String(log.Id)} style={{
+                      padding: '6px 7px', borderRadius: 5,
+                      background: 'var(--layer-1)', border: `1px solid ${LOG_COLOR[log.level] ?? '#475569'}22`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                        <span style={{
+                          fontSize: 7.5, fontFamily: 'var(--font-mono)', fontWeight: 700,
+                          color: LOG_COLOR[log.level], textTransform: 'uppercase',
+                          padding: '1px 4px', borderRadius: 3,
+                          background: `${LOG_COLOR[log.level]}18`,
+                        }}>{log.level}</span>
+                        <span style={{ flex: 1, fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.service}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.message}</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.message}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
 
-          {/* Knowledge Base */}
-          <Card>
-            <WHeader icon={<Database size={12} />} title="Knowledge" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {[
-                { label: 'Agents',    value: agentCount,   icon: <Bot size={10} />,       href: '/agentic-os/engine-room/agents',         color: '#a78bfa' },
-                { label: 'Workflows', value: workflows.length, icon: <Zap size={10} />,   href: '/workflows',                             color: '#38bdf8' },
-                { label: 'Prompts',   value: promptCount,  icon: <FileText size={10} />,   href: '/agentic-os/knowledge/prompts',          color: '#34d399' },
-                { label: 'Templates', value: '—',          icon: <TrendingUp size={10} />, href: '/templates',                            color: '#fb923c' },
-                { label: 'Projekte',  value: '—',          icon: <GitBranch size={10} />,  href: '/agentic-os/management/active-projects', color: '#fbbf24' },
-              ].map(row => (
-                <Link key={row.label} href={row.href} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '5px 6px', borderRadius: 5,
-                    transition: 'background 0.1s',
-                  }}
-                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-3)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
-                  >
-                    <span style={{ color: row.color }}>{row.icon}</span>
-                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-secondary)' }}>{row.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{row.value}</span>
-                  </div>
+            {/* Knowledge Base */}
+            <Card>
+              <WHeader icon={<Database size={12} />} title="Knowledge" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {[
+                  { label: 'Agents',    value: agentCount,       icon: <Bot size={10} />,       href: '/agentic-os/engine-room/agents',  color: '#a78bfa' },
+                  { label: 'Workflows', value: workflows.length,  icon: <Zap size={10} />,       href: '/workflows',                      color: '#38bdf8' },
+                  { label: 'Prompts',   value: promptCount,       icon: <FileText size={10} />,  href: '/agentic-os/knowledge/prompts',   color: '#34d399' },
+                  { label: 'Templates', value: '—',               icon: <TrendingUp size={10} />,href: '/templates',                      color: '#fb923c' },
+                  { label: 'Projekte',  value: '—',               icon: <GitBranch size={10} />, href: '/agentic-os/management/active-projects', color: '#fbbf24' },
+                ].map(row => (
+                  <Link key={row.label} href={row.href} style={{ textDecoration: 'none' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 7,
+                      padding: '5px 6px', borderRadius: 5,
+                      transition: 'background 0.1s',
+                    }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-3)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+                    >
+                      <span style={{ color: row.color }}>{row.icon}</span>
+                      <span style={{ flex: 1, fontSize: 11, color: 'var(--text-secondary)' }}>{row.label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{row.value}</span>
+                    </div>
                 </Link>
               ))}
             </div>
           </Card>
         </div>
+      </div>
       </div>
 
       {/* ── Research: Area Charts + Sparklines + Content ── */}
