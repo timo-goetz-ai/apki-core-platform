@@ -192,7 +192,13 @@ export default function OverviewPage() {
   const [sentiments,  setSentiments]  = useState<SentimentRow[]>([]);
   const [contentOps,  setContentOps]  = useState<ContentOppRow[]>([]);
   const [promData, setPromData] = useState<PromSnapshot | null>(null);
-  const [costs, setCosts] = useState<{ openrouter: { credit: number | null; limit: number | null; isFreeTier?: boolean; error: string | null }; n8n: { executions24h: number | null; executionsTotal: number | null; error: string | null } } | null>(null);
+  const [costs, setCosts] = useState<{
+    openrouter: { credit: number | null; limit: number | null; isFreeTier?: boolean; valid: boolean; error: string | null };
+    anthropic:  { valid: boolean; model: string | null; error: string | null };
+    gemini:     { valid: boolean; model: string | null; error: string | null };
+    raycast:    { type: string; note: string; valid: boolean };
+    n8n:        { executions24h: number | null; executionsTotal: number | null; error: string | null };
+  } | null>(null);
   const prevOnline = useRef(0);
 
   useEffect(() => {
@@ -458,27 +464,48 @@ export default function OverviewPage() {
 
         {/* API Kosten Card */}
         <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>API Kosten</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>API Status</span>
             <span style={{ color: '#a78bfa', display: 'flex' }}><CreditCard size={12} /></span>
           </div>
           {costs ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>
-                  {costs.openrouter.credit != null ? `$${costs.openrouter.credit.toFixed(3)}` : costs.openrouter.isFreeTier ? '$0.00' : '—'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[
+                {
+                  label: 'OpenRouter',
+                  ok: costs.openrouter.valid,
+                  info: costs.openrouter.isFreeTier ? 'Free' : costs.openrouter.credit != null ? `$${costs.openrouter.credit.toFixed(3)}` : costs.openrouter.error ?? '—',
+                },
+                {
+                  label: 'Anthropic',
+                  ok: costs.anthropic.valid,
+                  info: costs.anthropic.valid ? (costs.anthropic.model?.replace('claude-','').slice(0,12) ?? 'OK') : costs.anthropic.error ?? '—',
+                },
+                {
+                  label: 'Gemini',
+                  ok: costs.gemini.valid,
+                  info: costs.gemini.valid ? 'OK' : costs.gemini.error ?? '—',
+                },
+                {
+                  label: 'Raycast',
+                  ok: true,
+                  info: 'Abo',
+                },
+              ].map(({ label, ok, info }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#34d399' : '#f87171', display: 'inline-block', flexShrink: 0 }} />
+                    <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{label}</span>
+                  </div>
+                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: ok ? 'var(--text-primary)' : '#f87171' }}>{info}</span>
+                </div>
+              ))}
+              <div style={{ borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 4 }}>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {costs.n8n.executions24h != null ? `${costs.n8n.executions24h} Runs/24h` : '—'}
                 </span>
               </div>
-              <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  {costs.openrouter.isFreeTier ? 'Free Tier · kein Limit' : costs.openrouter.limit != null ? `Limit: $${costs.openrouter.limit}` : costs.openrouter.error ?? 'OpenRouter'}
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  {costs.n8n.executions24h != null ? `${costs.n8n.executions24h} Runs/24h` : '— Runs/24h'}
-                  {costs.n8n.executionsTotal != null ? ` · ${costs.n8n.executionsTotal} total` : ''}
-                </span>
-              </div>
-            </>
+            </div>
           ) : (
             <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Laden…</span>
           )}
