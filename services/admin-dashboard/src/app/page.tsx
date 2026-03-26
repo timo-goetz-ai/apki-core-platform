@@ -8,7 +8,7 @@ import {
   Zap, Rocket, Database, FileText, GitBranch,
   ScrollText, TrendingUp, Bot, Server, Play,
   ArrowUpRight, ArrowDownRight,
-  ScanSearch, Github, Workflow, Rss, BookOpen,
+  ScanSearch, Github, Workflow, Rss, BookOpen, CreditCard,
 } from 'lucide-react';
 import { HoneycombStatusMap, type ServiceStatus } from '@/components/overview/HoneycombStatusMap';
 import { WorkflowPulseGraph } from '@/components/overview/WorkflowPulseGraph';
@@ -192,6 +192,7 @@ export default function OverviewPage() {
   const [sentiments,  setSentiments]  = useState<SentimentRow[]>([]);
   const [contentOps,  setContentOps]  = useState<ContentOppRow[]>([]);
   const [promData, setPromData] = useState<PromSnapshot | null>(null);
+  const [costs, setCosts] = useState<{ openrouter: { credit: number | null; limit: number | null; isFreeTier?: boolean; error: string | null }; n8n: { executions24h: number | null; executionsTotal: number | null; error: string | null } } | null>(null);
   const prevOnline = useRef(0);
 
   useEffect(() => {
@@ -203,7 +204,7 @@ export default function OverviewPage() {
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes, trendRes, sentRes, oppRes, promRes] = await Promise.allSettled([
+    const [svcRes, wfRes, logRes, depRes, agRes, prRes, actRes, scanRes, trendRes, sentRes, oppRes, promRes, costRes] = await Promise.allSettled([
       fetch('/api/services').then(r => r.json()),
       fetch('/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=100').then(r => r.json()),
       fetch('/api/nocodb/error-logs').then(r => r.json()),
@@ -216,6 +217,7 @@ export default function OverviewPage() {
       fetch('/api/nocodb/table?id=moigzpvd4yw1d0a&limit=8').then(r => r.json()),
       fetch('/api/nocodb/table?id=m7ehbmbi5t2w0dw&limit=5').then(r => r.json()),
       fetch('/api/monitoring/prometheus').then(r => r.json()),
+      fetch('/api/costs').then(r => r.json()),
     ]);
 
     if (svcRes.status === 'fulfilled') {
@@ -282,6 +284,9 @@ export default function OverviewPage() {
     }
     if (promRes.status === 'fulfilled' && promRes.value && !promRes.value.error) {
       setPromData(promRes.value as PromSnapshot);
+    }
+    if (costRes.status === 'fulfilled' && costRes.value) {
+      setCosts(costRes.value);
     }
 
     setTimeout(() => setRefreshing(false), 500);
@@ -412,7 +417,7 @@ export default function OverviewPage() {
       </div>
 
       {/* ── KPI Strip ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 12 }}>
         {[
           {
             label: 'Services', value: `${onlineCount}/${totalCount}`, sub: `${onlinePct}% uptime`,
@@ -450,6 +455,34 @@ export default function OverviewPage() {
             <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 3, display: 'block' }}>{kpi.sub}</span>
           </div>
         ))}
+
+        {/* API Kosten Card */}
+        <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>API Kosten</span>
+            <span style={{ color: '#a78bfa', display: 'flex' }}><CreditCard size={12} /></span>
+          </div>
+          {costs ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {costs.openrouter.credit != null ? `$${costs.openrouter.credit.toFixed(3)}` : costs.openrouter.isFreeTier ? '$0.00' : '—'}
+                </span>
+              </div>
+              <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {costs.openrouter.isFreeTier ? 'Free Tier · kein Limit' : costs.openrouter.limit != null ? `Limit: $${costs.openrouter.limit}` : costs.openrouter.error ?? 'OpenRouter'}
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {costs.n8n.executions24h != null ? `${costs.n8n.executions24h} Runs/24h` : '— Runs/24h'}
+                  {costs.n8n.executionsTotal != null ? ` · ${costs.n8n.executionsTotal} total` : ''}
+                </span>
+              </div>
+            </>
+          ) : (
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Laden…</span>
+          )}
+        </div>
       </div>
 
       <GrafanaEmbedPanel />
