@@ -1,14 +1,18 @@
-"""AIOS Control Bot — Standalone Telegram Bot for AIOS infrastructure control.
+"""AIOS Co-Pilot Bot — Proaktiver KI-Assistent für das AIOS-Ökosystem.
 
-Replaces the n8n-based 70_TELEGRAM_ASSISTANT workflow chain.
+Ersetzt die n8n-basierte 70_TELEGRAM_ASSISTANT Workflow-Kette.
 
-Root cause of the original failure:
-  The n8n AI Intent Classifier used Google's native Gemini API format
-  (contents/parts) instead of OpenRouter's OpenAI-compatible format (messages/content),
-  causing a 400 error on every request. Every message defaulted to UNKNOWN → Help text.
+Architektur:
+- intents.py: Deterministische Keyword-Klassifizierung (kein AI-Overhead für einfache Befehle)
+- api_clients.py: Direkte HTTP-Clients für n8n, NocoDB, Prometheus, Coolify
+- ai_agent.py: ConversationMemory (Window Buffer) + AI-Antwortgenerierung via OpenRouter
+- charts.py: QuickChart.io PNG-Generierung
 
-This bot uses deterministic keyword matching (intents.py) + optional AI fallback
-with the CORRECT OpenRouter format, ensuring every message gets a real response.
+Der Bot ist kein passiver Status-Anzeiger, sondern ein proaktiver Co-Pilot:
+- Interpretiert Metriken menschlich verständlich
+- Erinnert sich an die letzten 6 Nachrichten pro User (Window Buffer Memory)
+- Stellt Rückfragen statt generische Antworten bei unklaren Anfragen
+- Erkennt Zusammenhänge zwischen Systemen
 """
 from __future__ import annotations
 
@@ -31,6 +35,7 @@ from telegram.ext import (
     filters,
 )
 
+import ai_agent
 import api_clients as api
 import charts
 from intents import classify, Intent
@@ -50,6 +55,9 @@ logger = logging.getLogger(__name__)
 
 # Shared async HTTP client (created in post_init, closed in post_shutdown)
 http_client: httpx.AsyncClient | None = None
+
+# Conversation memory: per-user Window Buffer (last 6 turns)
+memory = ai_agent.ConversationMemory(max_turns=6)
 
 
 # ─── Auth decorator ───────────────────────────────────────────────────────────
@@ -195,10 +203,28 @@ async def handle_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         running = sum(1 for a in apps if "running" in str(a.get("status", "")).lower())
         lines.append(f"\n*Coolify Services:*\n• {running}/{len(apps)} laufen")
 
-    now_str = datetime.now(timezone(timedelta(hours=2))).strftime("%d.%m. %H:%M")
-    header = f"{status_icon} *AIOS System Status*\n\n"
-    text = header + "\n".join(lines) + f"\n\n_Stand: {now_str} Uhr_"
-    await msg.edit_text(truncate(text), parse_mode="Markdown")
+    # Prepare data context for AI interpretation
+    exec_stats = api.calc_execution_stats(executions, hours=24) if not isinstance(executions, Exception) else None
+    data_ctx = {
+        "workflows": {"total": len(workflows) if not isinstance(workflows, Exception) else "n/a",
+                      "active": sum(1 for w in workflows if w.get("active")) if not isinstance(workflows, Exception) else "n/a"},
+        "executions_24h": exec_stats,
+        "alerts": [{"name": a.get("labels",{}).get("alertname"), "severity": a.get("labels",{}).get("severity")} for a in alerts] if not isinstance(alerts, Exception) else "n/a",
+        "coolify_services": {"total": len(apps), "running": sum(1 for a in apps if "running" in str(a.get("status","")).lower())} if not isinstance(apps, Exception) else "n/a",
+    }
+
+    # Try AI interpretation first
+    user_msg = update.message.text if update.message else "status"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+
+    if ai_text:
+        await msg.edit_text(truncate(ai_text), parse_mode="Markdown")
+    else:
+        now_str = datetime.now(timezone(timedelta(hours=2))).strftime("%d.%m. %H:%M")
+        header = f"{status_icon} *AIOS System Status*\n\n"
+        text = header + "\n".join(lines) + f"\n\n_Stand: {now_str} Uhr_"
+        await msg.edit_text(truncate(text), parse_mode="Markdown")
 
     # Chart: execution stats
     if not isinstance(executions, Exception):
@@ -370,7 +396,24 @@ async def handle_monitoring(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 line += f"\n  _{summary}_"
             lines.append(line)
 
-    await msg.edit_text(truncate("\n".join(lines)), parse_mode="Markdown")
+    # AI interpretation for monitoring data
+    user_id  = update.effective_user.id
+    user_msg = update.message.text if update.message else "monitoring"
+    cpu_val  = float(cpu_data.get("result", [{}])[0].get("value", [0, 0])[1]) if not isinstance(cpu_data, Exception) and cpu_data.get("result") else None
+    mem_val  = float(mem_data.get("result", [{}])[0].get("value", [0, 0])[1]) if not isinstance(mem_data, Exception) and mem_data.get("result") else None
+    data_ctx = {
+        "cpu_percent": round(cpu_val, 1) if cpu_val is not None else "n/a",
+        "ram_percent": round(mem_val, 1) if mem_val is not None else "n/a",
+        "cpu_status": "kritisch" if cpu_val and cpu_val > 80 else "erhöht" if cpu_val and cpu_val > 60 else "normal",
+        "ram_status": "kritisch" if mem_val and mem_val > 85 else "erhöht" if mem_val and mem_val > 70 else "normal",
+        "alerts_firing": len(alerts) if not isinstance(alerts, Exception) else "n/a",
+        "alerts": [{"name": a.get("labels", {}).get("alertname"), "severity": a.get("labels", {}).get("severity")} for a in (alerts[:5] if not isinstance(alerts, Exception) else [])],
+    }
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    if ai_text:
+        await msg.edit_text(truncate(ai_text), parse_mode="Markdown")
+    else:
+        await msg.edit_text(truncate("\n".join(lines)), parse_mode="Markdown")
 
 
 # ─── Alerts ───────────────────────────────────────────────────────────────────
@@ -408,7 +451,20 @@ async def handle_activity(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         date   = fmt_date(e.get("startedAt") or e.get("createdAt"))
         lines.append(f"{icon} `{name}`\n   {date}")
 
-    await msg.edit_text(truncate("\n\n".join(lines)), parse_mode="Markdown")
+    fallback = truncate("\n\n".join(lines))
+    stats = api.calc_execution_stats(executions, hours=24)
+    data_ctx = {
+        "total_24h": stats["total"], "success_24h": stats["success"],
+        "errors_24h": stats["errors"], "avg_runtime_s": stats["avg_runtime_s"],
+        "recent_executions": [
+            {"name": e.get("workflowData", {}).get("name") or "?", "status": e.get("status")}
+            for e in executions[:5]
+        ],
+    }
+    user_msg = update.message.text if update.message else "activity"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
 
 # ─── Logs ─────────────────────────────────────────────────────────────────────
@@ -423,10 +479,10 @@ async def handle_logs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     lines = [f"*❌ Fehler-Executions* (letzte 7 Tage, {len(errors)} gefunden)\n"]
+    error_details = []
     for e in errors[:10]:
         name = e.get("workflowData", {}).get("name") or e.get("workflow", {}).get("name") or "?"
         date = fmt_date(e.get("startedAt") or e.get("createdAt"))
-        # Try to get error message
         err_msg = ""
         try:
             result_data = e.get("data", {}).get("resultData", {})
@@ -442,8 +498,14 @@ async def handle_logs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except Exception:
             pass
         lines.append(f"❌ `{name}`\n   {date}" + (f"\n   _{err_msg}_" if err_msg else ""))
+        error_details.append({"workflow": name, "error": err_msg or "unbekannt"})
 
-    await msg.edit_text(truncate("\n\n".join(lines)), parse_mode="Markdown")
+    fallback = truncate("\n\n".join(lines))
+    data_ctx = {"errors_count": len(errors), "errors": error_details[:5]}
+    user_msg = update.message.text if update.message else "logs"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
 
 # ─── Deployments ──────────────────────────────────────────────────────────────
@@ -475,7 +537,16 @@ async def handle_deployments(update: Update, context: ContextTypes.DEFAULT_TYPE)
         for a in other:
             lines.append(f"  ⚪ `{a.get('name','?')}` — {a.get('status','?')}")
 
-    await msg.edit_text(truncate("\n".join(lines)), parse_mode="Markdown")
+    fallback = truncate("\n".join(lines))
+    data_ctx = {
+        "total_services": len(apps),
+        "running": len(running), "stopped": len(stopped),
+        "services": [{"name": a.get("name"), "status": a.get("status")} for a in apps[:10]],
+    }
+    user_msg = update.message.text if update.message else "deployments"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
 
 # ─── Trends ───────────────────────────────────────────────────────────────────
@@ -499,7 +570,12 @@ async def handle_trends(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         date  = fmt_date(r.get("CreatedAt") or r.get("created_at"))
         lines.append(f"{i}. *{title}*\nScore: {score}  |  {date}")
 
-    await msg.edit_text(truncate("\n\n".join(lines)), parse_mode="Markdown")
+    fallback = truncate("\n\n".join(lines))
+    data_ctx = {"trends": [{"title": _get_field(r,"Title","title","Trend","keyword"), "score": _get_field(r,"Score","score","Engagement","engagement")} for r in rows]}
+    user_msg = update.message.text if update.message else "trends"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
     try:
         config = charts.build_trends_bar_chart(rows)
@@ -533,7 +609,17 @@ async def handle_sentiment(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         date  = fmt_date(r.get("CreatedAt") or r.get("created_at"))
         lines.append(f"{i}. {icon} *{topic}*\n   {sent}  |  {date}")
 
-    await msg.edit_text(truncate("\n\n".join(lines)), parse_mode="Markdown")
+    fallback = truncate("\n\n".join(lines))
+    pos = sum(1 for r in rows if "positive" in _get_field(r,"Sentiment","sentiment","Stimmung","").lower())
+    neg = sum(1 for r in rows if "negative" in _get_field(r,"Sentiment","sentiment","Stimmung","").lower())
+    data_ctx = {
+        "sentiment_summary": {"positive": pos, "neutral": len(rows)-pos-neg, "negative": neg},
+        "topics": [{"topic": _get_field(r,"topic","Topic","Title","title"), "sentiment": _get_field(r,"Sentiment","sentiment","Stimmung")} for r in rows],
+    }
+    user_msg = update.message.text if update.message else "sentiment"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
     try:
         config = charts.build_sentiment_pie_chart(rows)
@@ -592,7 +678,17 @@ async def handle_analytics(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         "_Detailansicht: `trends`, `sentiment`, `content`_",
         f"_NocoDB: {api.NOCODB_BASE_URL}_",
     ]
-    await msg.edit_text("\n".join(lines), parse_mode="Markdown")
+    fallback = "\n".join(lines)
+    data_ctx = {
+        "trends_count": trends_count if not isinstance(trends_count, Exception) else "n/a",
+        "sentiment_count": sentiment_count if not isinstance(sentiment_count, Exception) else "n/a",
+        "content_opportunities": content_count if not isinstance(content_count, Exception) else "n/a",
+        "content_pipeline": pipeline_count if not isinstance(pipeline_count, Exception) else "n/a",
+    }
+    user_msg = update.message.text if update.message else "analytics"
+    user_id = update.effective_user.id
+    ai_text = await ai_agent.generate_response(http_client, user_msg, data_ctx, memory, user_id)
+    await msg.edit_text(truncate(ai_text) if ai_text else fallback, parse_mode="Markdown")
 
 
 # ─── Content Factory ──────────────────────────────────────────────────────────
@@ -789,6 +885,7 @@ INTENT_HANDLERS = {
 @require_auth
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = update.message.text or ""
+    user_id = update.effective_user.id
     intent = await classify(http_client, text)
     logger.info("Message: %r → intent: %s (workflow: %s)", text[:60], intent.name, intent.workflow_name)
 
@@ -801,6 +898,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if intent.name == "TRIGGER_WORKFLOW" and intent.workflow_name:
         await _trigger_workflow(update, intent.workflow_name)
         return
+
+    # For HELP intent with natural language (not a direct /hilfe command):
+    # Ask a clarifying question if the message looks like a real question
+    if intent.name == "HELP" and len(text) > 10 and not text.lower().startswith(("hilfe", "help", "/", "was kann")):
+        clarification = await ai_agent.ask_clarification(http_client, text, memory, user_id)
+        if clarification:
+            await update.message.reply_text(clarification, parse_mode="Markdown")
+            return
 
     handler = INTENT_HANDLERS.get(intent.name, handle_help)
     await handler(update, context)

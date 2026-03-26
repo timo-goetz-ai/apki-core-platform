@@ -121,8 +121,10 @@ _DEACTIVATE2_RE = re.compile(r"^deaktiviere\s+den\s+workflow\s+[\"']?(.+?)[\"']?
 
 # ─── AI fallback ──────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """Du bist ein Intent-Classifier für einen AIOS-Telegram-Admin-Bot.
-Klassifiziere die Benutzeranfrage in EINEN der folgenden Intents und antworte NUR mit validem JSON.
+_SYSTEM_PROMPT = """Du bist der Intent-Classifier des AIOS Co-Pilot Bots für Timo.
+Der Bot hat Zugriff auf n8n-Workflows, NocoDB, Prometheus und Coolify.
+Analysiere die Anfrage im Kontext des AIOS-Ökosystems (Automation, YouTube-Nischen, Content-Pipeline, Server-Monitoring).
+Klassifiziere in EINEN Intent und antworte NUR mit validem JSON (keine Erklärung, kein Markdown).
 
 Erlaubte Intents:
 STATUS_OVERVIEW, LIST_WORKFLOWS, ACTIVATE_WORKFLOW, DEACTIVATE_WORKFLOW, TRIGGER_WORKFLOW,
