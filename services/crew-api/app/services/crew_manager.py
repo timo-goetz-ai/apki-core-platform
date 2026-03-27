@@ -56,11 +56,17 @@ class CrewManager:
 
     def _build_llm(self, model: str) -> LLM:
         if self.settings.gemini_api_key:
-            # Gemini direct — map openrouter model names to gemini/ prefix
-            gemini_model = model.replace("openrouter/google/", "gemini/").replace("openrouter/", "gemini/")
-            if not gemini_model.startswith("gemini/"):
-                gemini_model = f"gemini/{gemini_model}"
-            return LLM(model=gemini_model, api_key=self.settings.gemini_api_key)
+            # Use Google's OpenAI-compatible endpoint with crewai's native openai provider
+            bare_model = (
+                model.replace("openrouter/google/", "")
+                .replace("openrouter/", "")
+                .replace("gemini/", "")
+            )
+            return LLM(
+                model=f"openai/{bare_model}",
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                api_key=self.settings.gemini_api_key,
+            )
         if self.settings.openrouter_api_key:
             return LLM(
                 model=model,
