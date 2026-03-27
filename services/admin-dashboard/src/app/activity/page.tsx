@@ -1,344 +1,526 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Activity, Rocket, Globe, Settings2, Server,
-  CheckCircle2, Clock,
-} from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-type ActivityType = 'deploy' | 'dns' | 'config' | 'service';
-type ActivityFilter = 'all' | ActivityType;
+// ── Status colors (only these, per design rules) ──────────────────────────────
+const C = {
+  success: '#34d399',
+  warning: '#f59e0b',
+  error:   '#ef4444',
+  unknown: '#94a3b8',
+} as const;
 
-interface ActivityEntry {
-  id: string;
-  type: ActivityType;
-  time: string;
-  title: string;
-  desc: string;
-  status: 'success' | 'warning' | 'error';
-  tags?: string[];
+// ── Types ─────────────────────────────────────────────────────────────────────
+type FilterKey = 'all' | 'n8n' | 'content' | 'errors';
+
+interface LiveEvent {
+  id:    string;
+  icon:  string;
+  text:  string;
+  sub:   string;
+  ts:    number;
+  color: string;
+  type:  string;
+  ok:    boolean;
 }
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const ACTIVITY: ActivityEntry[] = [
-  {
-    id: '1',
-    type: 'deploy',
-    time: '2026-03-17 14:23',
-    title: 'Admin Dashboard deployed',
-    desc: 'Build #47 · AI Command Center + Model redesign',
-    status: 'success',
-    tags: ['Build #47', 'Next.js 14'],
-  },
-  {
-    id: '2',
-    type: 'config',
-    time: '2026-03-17 12:11',
-    title: 'NocoDB an PostgreSQL angebunden',
-    desc: 'NC_DB konfiguriert · Bucket noco-aios aktiv',
-    status: 'success',
-    tags: ['PostgreSQL', 'S3'],
-  },
-  {
-    id: '3',
-    type: 'deploy',
-    time: '2026-03-16 21:08',
-    title: 'NocoDB nach Coolify migriert',
-    desc: 'Standalone Service · S3-Storage konfiguriert',
-    status: 'success',
-    tags: ['Coolify', 'Migration'],
-  },
-  {
-    id: '4',
-    type: 'dns',
-    time: '2026-03-15 09:45',
-    title: 'DNS: admin.automation-plus-ki.de',
-    desc: 'Route auf neues Dashboard umgestellt',
-    status: 'success',
-    tags: ['Cloudflare', 'admin.*'],
-  },
-  {
-    id: '5',
-    type: 'deploy',
-    time: '2026-03-14 16:30',
-    title: 'Ollama Container gestartet',
-    desc: 'Lokale LLMs: llama3.2, phi3, qwen2.5',
-    status: 'success',
-    tags: ['Ollama', 'GPU', 'Hetzner'],
-  },
-  {
-    id: '6',
-    type: 'service',
-    time: '2026-03-12 11:54',
-    title: 'Infra-Dashboard migriert',
-    desc: 'ghcr.io/timogoetz1988/aios-admin-dashboard',
-    status: 'success',
-    tags: ['GHCR', 'Docker'],
-  },
-  {
-    id: '7',
-    type: 'config',
-    time: '2026-03-11 08:30',
-    title: 'Grafana + Prometheus integriert',
-    desc: 'Datasources konfiguriert · Dashboards importiert',
-    status: 'success',
-    tags: ['Grafana', 'Prometheus'],
-  },
-  {
-    id: '8',
-    type: 'config',
-    time: '2026-03-10 14:15',
-    title: 'Multi-Provider LLM Routing konfiguriert',
-    desc: 'OpenRouter · Anthropic · Google AI Studio · Ollama',
-    status: 'success',
-    tags: ['LLM', 'OpenRouter'],
-  },
-  {
-    id: '9',
-    type: 'service',
-    time: '2026-03-08 10:00',
-    title: 'Authentik SSO aktiviert',
-    desc: 'n8n + AppFlowy via OAuth2 geschützt',
-    status: 'success',
-    tags: ['Authentik', 'SSO', 'OAuth2'],
-  },
-  {
-    id: '10',
-    type: 'deploy',
-    time: '2026-03-05 16:45',
-    title: 'Hetzner CPX42 eingerichtet',
-    desc: 'Server 46.224.145.109 · Coolify installiert',
-    status: 'success',
-    tags: ['Hetzner', 'CPX42'],
-  },
-];
-
-const FILTERS: { key: ActivityFilter; label: string }[] = [
-  { key: 'all',     label: 'Alle'      },
-  { key: 'deploy',  label: 'Deploy'    },
-  { key: 'dns',     label: 'DNS'       },
-  { key: 'config',  label: 'Config'    },
-  { key: 'service', label: 'Service'   },
-];
-
-const TYPE_CONFIG: Record<ActivityType, { icon: React.ReactNode; color: string; label: string }> = {
-  deploy:  { icon: <Rocket size={13} />,   color: '#38bdf8', label: 'Deploy'  },
-  dns:     { icon: <Globe size={13} />,    color: '#34d399', label: 'DNS'     },
-  config:  { icon: <Settings2 size={13} />,color: '#fbbf24', label: 'Config'  },
-  service: { icon: <Server size={13} />,   color: '#a78bfa', label: 'Service' },
-};
-
-const STATUS_CONFIG = {
-  success: { color: '#34d399', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.2)',  label: 'Erfolg'  },
-  warning: { color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.2)',  label: 'Warnung' },
-  error:   { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', label: 'Fehler'  },
-};
-
-function formatRelativeTime(timeStr: string): string {
-  const date = new Date(timeStr);
-  const now = new Date('2026-03-17T15:00:00');
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffHours < 1) return 'Gerade eben';
-  if (diffHours < 24) return `vor ${diffHours}h`;
-  if (diffDays === 1) return 'Gestern';
-  return `vor ${diffDays} Tagen`;
+interface GroupedEntry {
+  dateLabel: string;
+  entries: LiveEvent[];
 }
 
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } };
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtTimestamp(ts: number): string {
+  return new Date(ts).toLocaleTimeString('de-DE', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+}
 
-export default function ActivityPage() {
-  const [filter, setFilter] = useState<ActivityFilter>('all');
+function fmtDateLabel(ts: number): string {
+  const d = new Date(ts);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
 
-  const filtered = filter === 'all'
-    ? ACTIVITY
-    : ACTIVITY.filter(e => e.type === filter);
+  if (d.toDateString() === today.toDateString()) {
+    return `Heute, ${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+  if (d.toDateString() === yesterday.toDateString()) {
+    return `Gestern, ${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+  return d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function getDateKey(ts: number): string {
+  return new Date(ts).toDateString();
+}
+
+function groupByDate(events: LiveEvent[]): GroupedEntry[] {
+  const groups: Record<string, LiveEvent[]> = {};
+  const order: string[] = [];
+  for (const e of events) {
+    const key = getDateKey(e.ts);
+    if (!groups[key]) { groups[key] = []; order.push(key); }
+    groups[key].push(e);
+  }
+  return order.map(key => ({
+    dateLabel: fmtDateLabel(groups[key][0].ts),
+    entries: groups[key],
+  }));
+}
+
+function sourceLabel(type: string): string {
+  if (type.startsWith('n8n'))    return 'n8n';
+  if (type === 'content')        return 'content';
+  if (type === 'prometheus-alert') return 'alert';
+  if (type === 'scanner')        return 'scanner';
+  return type.replace(/-/g, ' ');
+}
+
+function statusColor(ok: boolean, color: string): string {
+  if (color === '#34d399') return C.success;
+  if (color === '#f87171' || color === '#ef4444' || color === '#e11d48') return C.error;
+  if (color === '#f59e0b' || color === '#fbbf24') return C.warning;
+  return ok ? C.success : C.error;
+}
+
+function exportCsv(events: LiveEvent[]) {
+  const header = 'Timestamp,Type,Text,Sub,Status';
+  const rows = events.map(e =>
+    `"${new Date(e.ts).toISOString()}","${e.type}","${e.text.replace(/"/g, '""')}","${e.sub}","${e.ok ? 'success' : 'error'}"`
+  );
+  const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `activity-${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Filter tab button ─────────────────────────────────────────────────────────
+function FilterTab({ label, active, count, onClick }: {
+  label: string; active: boolean; count: number; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '4px 12px',
+        borderRadius: 5,
+        border: active ? '1px solid rgba(148,163,184,0.35)' : '1px solid transparent',
+        background: active ? 'var(--layer-2, #1c1f23)' : 'transparent',
+        color: active ? 'var(--text-primary, #e8eaed)' : 'var(--text-secondary, #8c9196)',
+        fontSize: 12,
+        fontWeight: active ? 600 : 400,
+        fontFamily: 'var(--font-ui)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        transition: 'all 0.1s',
+      }}
+      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary, #e8eaed)'; }}
+      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, #8c9196)'; }}
+    >
+      {label}
+      <span style={{
+        fontSize: 10,
+        fontFamily: 'var(--font-mono)',
+        padding: '1px 5px',
+        borderRadius: 3,
+        background: active ? 'var(--layer-3, #252a2f)' : 'rgba(148,163,184,0.08)',
+        color: active ? 'var(--text-secondary)' : 'var(--text-muted, #4a5058)',
+        minWidth: 18,
+        textAlign: 'center',
+      }}>
+        {count}
+      </span>
+    </button>
+  );
+}
+
+// ── Activity row ──────────────────────────────────────────────────────────────
+function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
+  const [hovered, setHovered] = useState(false);
+  const col = statusColor(event.ok, event.color);
+  const src = sourceLabel(event.type);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{ padding: '28px 28px 48px', position: 'relative', zIndex: 1 }}
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '88px 72px 1fr 80px',
+        alignItems: 'center',
+        gap: 0,
+        padding: '9px 16px',
+        borderBottom: isLast ? 'none' : '1px solid var(--border, #252a2f)',
+        background: hovered ? 'var(--layer-1, #151719)' : 'transparent',
+        transition: 'background 0.1s',
+        cursor: 'default',
+      }}
     >
-      {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(167,139,250,0.15))',
-            border: '1px solid rgba(52,211,153,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Activity size={17} style={{ color: '#34d399' }} />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
-              Aktivität
-            </h1>
-            <p style={{ margin: 0, fontSize: 12, color: '#475569', fontFamily: 'var(--font-mono)' }}>
-              System-Changelog · {ACTIVITY.length} Einträge
-            </p>
-          </div>
+      {/* Timestamp */}
+      <span style={{
+        fontSize: 11,
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--text-muted, #4a5058)',
+        userSelect: 'none',
+      }}>
+        {fmtTimestamp(event.ts)}
+      </span>
+
+      {/* Source badge */}
+      <div>
+        <span style={{
+          display: 'inline-block',
+          padding: '2px 7px',
+          borderRadius: 4,
+          background: 'var(--layer-3, #252a2f)',
+          border: '1px solid var(--border, #252a2f)',
+          fontSize: 10,
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text-secondary, #8c9196)',
+          whiteSpace: 'nowrap',
+        }}>
+          {src}
+        </span>
+      </div>
+
+      {/* Description */}
+      <div style={{ overflow: 'hidden', paddingRight: 12 }}>
+        <div style={{
+          fontSize: 12,
+          color: 'var(--text-primary, #e8eaed)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {event.text}
         </div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {Object.entries(TYPE_CONFIG).map(([type, cfg]) => {
-          const count = ACTIVITY.filter(e => e.type === type).length;
-          return (
-            <div key={type} style={{
-              flex: 1, background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.08)',
-              borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
-              transition: 'border-color 0.12s',
-            }}
-            onClick={() => setFilter(type as ActivityType)}
-            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(148,163,184,0.18)'}
-            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(148,163,184,0.08)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, color: cfg.color }}>
-                {cfg.icon}
-                <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{cfg.label}</span>
-              </div>
-              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#f1f5f9' }}>{count}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
-        {FILTERS.map(f => {
-          const isActive = filter === f.key;
-          return (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              style={{
-                padding: '5px 14px', borderRadius: 999, cursor: 'pointer',
-                border: isActive ? '1px solid rgba(56,189,248,0.35)' : '1px solid rgba(148,163,184,0.1)',
-                background: isActive ? 'rgba(56,189,248,0.1)' : 'rgba(22,27,34,0.6)',
-                color: isActive ? '#38bdf8' : '#94a3b8',
-                fontSize: 12, fontWeight: isActive ? 600 : 400,
-                transition: 'all 0.12s',
-              }}
-              onMouseEnter={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.2)'; el.style.color = '#f1f5f9'; } }}
-              onMouseLeave={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = '#94a3b8'; } }}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Timeline */}
-      <div style={{ maxWidth: 720 }}>
-        <motion.div
-          key={filter}
-          variants={container}
-          initial="hidden"
-          animate="show"
-          style={{ position: 'relative' }}
-        >
-          {/* Vertical line */}
+        {event.sub && (
           <div style={{
-            position: 'absolute', left: 17, top: 0, bottom: 0, width: 1,
-            background: 'linear-gradient(180deg, rgba(56,189,248,0.2) 0%, rgba(148,163,184,0.06) 60%, transparent 100%)',
-          }} />
-
-          {filtered.map((entry, idx) => {
-            const typeCfg = TYPE_CONFIG[entry.type];
-            const statusCfg = STATUS_CONFIG[entry.status];
-            const isLast = idx === filtered.length - 1;
-
-            return (
-              <motion.div
-                key={entry.id}
-                variants={item}
-                style={{
-                  display: 'flex', gap: 16,
-                  paddingBottom: isLast ? 0 : 20,
-                  position: 'relative',
-                }}
-              >
-                {/* Icon node */}
-                <div style={{
-                  width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                  background: `${typeCfg.color}18`,
-                  border: `1px solid ${typeCfg.color}35`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: typeCfg.color, zIndex: 1, marginTop: 2,
-                }}>
-                  {typeCfg.icon}
-                </div>
-
-                {/* Content card */}
-                <div style={{
-                  flex: 1, background: 'rgba(22,27,34,0.75)',
-                  border: '1px solid rgba(148,163,184,0.08)',
-                  borderRadius: 10, padding: '14px 16px',
-                  transition: 'border-color 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(148,163,184,0.16)'}
-                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(148,163,184,0.08)'}
-                >
-                  {/* Card header */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 2 }}>
-                        {entry.title}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>{entry.desc}</p>
-                    </div>
-                    {/* Status badge */}
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      padding: '2px 9px', borderRadius: 999, flexShrink: 0, marginLeft: 12,
-                      background: statusCfg.bg, border: `1px solid ${statusCfg.border}`,
-                      fontSize: 10, fontWeight: 600, color: statusCfg.color,
-                      fontFamily: 'var(--font-mono)',
-                    }}>
-                      <CheckCircle2 size={9} />
-                      {statusCfg.label}
-                    </span>
-                  </div>
-
-                  {/* Footer: time + tags */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontFamily: 'var(--font-mono)', color: '#475569' }}>
-                      <Clock size={9} />
-                      {formatRelativeTime(entry.time)}
-                      <span style={{ opacity: 0.5 }}>·</span>
-                      {entry.time}
-                    </span>
-                    {entry.tags?.map(tag => (
-                      <span key={tag} style={{
-                        padding: '1px 7px', borderRadius: 4,
-                        background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)',
-                        fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)',
-                      }}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+            fontSize: 10,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-muted, #4a5058)',
+            marginTop: 1,
+          }}>
+            {event.sub}
+          </div>
+        )}
       </div>
 
-      {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#475569', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-          Keine Aktivitäten in dieser Kategorie.
+      {/* Status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+        <span style={{
+          width: 5, height: 5, borderRadius: '50%',
+          background: col, flexShrink: 0,
+        }} />
+        <span style={{
+          fontSize: 10,
+          fontFamily: 'var(--font-mono)',
+          color: col,
+        }}>
+          {event.ok ? 'success' : 'error'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function ActivityPage() {
+  const [events,      setEvents]      = useState<LiveEvent[]>([]);
+  const [filter,      setFilter]      = useState<FilterKey>('all');
+  const [search,      setSearch]      = useState('');
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [spinning,    setSpinning]    = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const fetchActivity = useCallback(async () => {
+    setSpinning(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/activity/live', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json() as { events: LiveEvent[] };
+      setEvents(d.events ?? []);
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+      setSpinning(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchActivity();
+    const iv = setInterval(fetchActivity, 30000);
+    return () => clearInterval(iv);
+  }, [fetchActivity]);
+
+  // ── Filter + search ────────────────────────────────────────────────────────
+  const filtered = events.filter(e => {
+    if (filter === 'n8n'     && !e.type.startsWith('n8n'))      return false;
+    if (filter === 'content' && e.type !== 'content')            return false;
+    if (filter === 'errors'  && e.ok)                            return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!e.text.toLowerCase().includes(q) && !e.sub.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const countFor = (k: FilterKey) => {
+    if (k === 'all')     return events.length;
+    if (k === 'n8n')     return events.filter(e => e.type.startsWith('n8n')).length;
+    if (k === 'content') return events.filter(e => e.type === 'content').length;
+    if (k === 'errors')  return events.filter(e => !e.ok).length;
+    return 0;
+  };
+
+  const grouped = groupByDate(filtered);
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  const successCount = events.filter(e => e.ok).length;
+  const errorCount   = events.filter(e => !e.ok).length;
+  const successRate  = events.length ? Math.round((successCount / events.length) * 100) : 100;
+
+  return (
+    <div style={{
+      padding: '24px 28px 48px',
+      background: 'var(--layer-0, #0f1011)',
+      minHeight: '100vh',
+      fontFamily: 'var(--font-ui, system-ui)',
+      color: 'var(--text-primary, #e8eaed)',
+    }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+            Activity Log
+          </h1>
+          <p style={{ margin: '2px 0 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, #4a5058)' }}>
+            {lastUpdated
+              ? `Updated ${lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+              : 'Loading…'}
+            {' · '}{events.length} events
+          </p>
+        </div>
+        <button
+          onClick={() => exportCsv(filtered)}
+          disabled={filtered.length === 0}
+          style={{
+            padding: '5px 12px', borderRadius: 6, fontSize: 12,
+            background: 'var(--layer-2, #1c1f23)',
+            border: '1px solid var(--border, #252a2f)',
+            color: 'var(--text-secondary, #8c9196)',
+            cursor: filtered.length === 0 ? 'default' : 'pointer',
+            opacity: filtered.length === 0 ? 0.4 : 1,
+            fontFamily: 'var(--font-ui)',
+            transition: 'opacity 0.1s',
+          }}
+          onMouseEnter={e => { if (filtered.length > 0) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, #8c9196)'; }}
+        >
+          Export CSV
+        </button>
+      </div>
+
+      {/* ── Stats strip ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 8,
+        marginBottom: 20,
+      }}>
+        {[
+          { label: 'Total Events',  value: events.length,   color: 'var(--text-primary)' },
+          { label: 'Success',       value: successCount,    color: C.success              },
+          { label: 'Errors',        value: errorCount,      color: errorCount > 0 ? C.error : 'var(--text-muted)' },
+          { label: 'Success Rate',  value: `${successRate}%`, color: successRate >= 90 ? C.success : successRate >= 70 ? C.warning : C.error },
+        ].map(stat => (
+          <div key={stat.label} style={{
+            background: 'var(--layer-2, #1c1f23)',
+            border: '1px solid var(--border, #252a2f)',
+            borderRadius: 8,
+            padding: '12px 16px',
+          }}>
+            <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 6 }}>
+              {stat.label}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: stat.color }}>
+              {loading ? '…' : stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Toolbar: filters + search ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 16,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['all', 'n8n', 'content', 'errors'] as FilterKey[]).map(k => (
+            <FilterTab
+              key={k}
+              label={k.charAt(0).toUpperCase() + k.slice(1)}
+              active={filter === k}
+              count={countFor(k)}
+              onClick={() => setFilter(k)}
+            />
+          ))}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 180, maxWidth: 280, marginLeft: 'auto' }}>
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="Search…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--border, #252a2f)',
+              background: 'var(--layer-2, #1c1f23)',
+              color: 'var(--text-primary, #e8eaed)',
+              fontSize: 12,
+              fontFamily: 'var(--font-ui)',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'var(--border-bright, #353b42)'}
+            onBlur={e  => (e.target as HTMLInputElement).style.borderColor = 'var(--border, #252a2f)'}
+          />
+        </div>
+
+        {spinning && (
+          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            refreshing…
+          </span>
+        )}
+      </div>
+
+      {/* ── Error state ── */}
+      {error && (
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: 8,
+          background: 'rgba(239,68,68,0.07)',
+          border: '1px solid rgba(239,68,68,0.25)',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.error, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: C.error }}>{error}</span>
+          <button
+            onClick={fetchActivity}
+            style={{
+              marginLeft: 'auto', padding: '3px 10px', borderRadius: 5, fontSize: 11,
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              color: C.error, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
-    </motion.div>
+
+      {/* ── Log table ── */}
+      {loading ? (
+        <div style={{
+          background: 'var(--layer-2, #1c1f23)',
+          border: '1px solid var(--border, #252a2f)',
+          borderRadius: 8,
+          padding: '32px 16px',
+          textAlign: 'center',
+          fontSize: 12,
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text-muted)',
+        }}>
+          Loading activity…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{
+          background: 'var(--layer-2, #1c1f23)',
+          border: '1px solid var(--border, #252a2f)',
+          borderRadius: 8,
+          padding: '40px 16px',
+          textAlign: 'center',
+          fontSize: 12,
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text-muted)',
+        }}>
+          No events match the current filter.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {/* Table column header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '88px 72px 1fr 80px',
+            padding: '6px 16px 6px',
+            borderBottom: '1px solid var(--border, #252a2f)',
+            marginBottom: 0,
+          }}>
+            {['Time', 'Source', 'Event', 'Status'].map(h => (
+              <span key={h} style={{
+                fontSize: 10,
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.1em',
+                color: 'var(--text-muted, #4a5058)',
+              }}>{h}</span>
+            ))}
+            <span /> {/* Status right-aligned, no header text needed beyond label */}
+          </div>
+
+          {grouped.map(group => (
+            <div key={group.dateLabel}>
+              {/* Date separator */}
+              <div style={{
+                padding: '8px 16px',
+                fontSize: 10,
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.1em',
+                color: 'var(--text-muted, #4a5058)',
+                background: 'var(--layer-1, #151719)',
+                borderBottom: '1px solid var(--border, #252a2f)',
+                borderTop: '1px solid var(--border, #252a2f)',
+              }}>
+                {group.dateLabel}
+              </div>
+
+              {/* Rows */}
+              <div style={{
+                background: 'var(--layer-2, #1c1f23)',
+                borderBottom: '1px solid var(--border, #252a2f)',
+              }}>
+                {group.entries.map((e, i) => (
+                  <ActivityRow
+                    key={e.id}
+                    event={e}
+                    isLast={i === group.entries.length - 1}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
