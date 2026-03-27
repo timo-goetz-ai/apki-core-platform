@@ -1,313 +1,527 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Rocket, RefreshCw, ExternalLink, Globe, Clock,
-  Play, Square, RotateCcw, Server, Container, AlertCircle,
-} from 'lucide-react';
+
+/* ─── Types ─────────────────────────────────────────────────────── */
+
+interface DeploymentEntry {
+  id: string;
+  sha: string;
+  message: string;
+  author: string;
+  ts: string;
+  branch: string;
+  status: 'success' | 'building' | 'failed' | 'unknown';
+  services: string[];
+}
 
 interface CoolifyService {
-  id: string; name: string; kind: string; status: string;
-  fqdn: string | null; repo: string | null; updatedAt: string | null;
+  id: string;
+  name: string;
+  kind: string;
+  status: string;
+  fqdn: string | null;
+  repo: string | null;
+  updatedAt: string | null;
 }
+
+/* ─── Helpers ────────────────────────────────────────────────────── */
 
 function timeAgo(iso: string | null): string {
   if (!iso) return '—';
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'gerade eben';
-  if (m < 60) return `vor ${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `vor ${h}h`;
-  return `vor ${Math.floor(h / 24)}d`;
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  } catch { return '—'; }
 }
 
-function statusColor(s: string) {
-  if (s === 'running')                    return '#34d399';
-  if (s === 'stopped' || s === 'exited') return '#f87171';
-  if (s === 'starting' || s === 'restarting') return '#fbbf24';
-  return '#475569';
+function statusColor(s: string): string {
+  if (s === 'running')                         return '#34d399';
+  if (s === 'stopped' || s === 'exited')       return '#ef4444';
+  if (s === 'starting' || s === 'restarting')  return '#f59e0b';
+  return '#94a3b8';
 }
 
-function statusLabel(s: string) {
-  if (s === 'running')    return 'running';
-  if (s === 'stopped')    return 'stopped';
-  if (s === 'exited')     return 'exited';
-  if (s === 'starting')   return 'starting';
-  if (s === 'restarting') return 'restarting';
-  return s || 'unknown';
+function deployStatusColor(s: DeploymentEntry['status']): string {
+  if (s === 'success')  return '#34d399';
+  if (s === 'building') return '#f59e0b';
+  if (s === 'failed')   return '#ef4444';
+  return '#94a3b8';
 }
+
+function deployStatusLabel(s: DeploymentEntry['status']): string {
+  if (s === 'success')  return 'deployed';
+  if (s === 'building') return 'building';
+  if (s === 'failed')   return 'failed';
+  return 'unknown';
+}
+
+/* ─── Page ───────────────────────────────────────────────────────── */
 
 export default function DeploymentsPage() {
-  const [services, setServices]   = useState<CoolifyService[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const [commits, setCommits]       = useState<DeploymentEntry[]>([]);
+  const [services, setServices]     = useState<CoolifyService[]>([]);
+  const [loadingC, setLoadingC]     = useState(true);
+  const [loadingS, setLoadingS]     = useState(true);
+  const [errorC, setErrorC]         = useState<string | null>(null);
+  const [errorS, setErrorS]         = useState<string | null>(null);
+  const [restartingId, setRestartingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionId, setActionId]   = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
-    setError(null);
+  const loadCommits = useCallback(async () => {
+    setLoadingC(true);
+    setErrorC(null);
     try {
-      const res = await fetch('/api/coolify/services');
+      const res = await fetch('/api/deployments/history');
       const data = await res.json();
-      if (data.error && !data.services?.length) setError(data.error);
-      else setServices(data.services ?? []);
+      if (data.error && !data.commits?.length) setErrorC(data.error);
+      else setCommits(data.commits ?? []);
     } catch (e) {
-      setError(String(e));
+      setErrorC(String(e));
     } finally {
-      setLoading(false);
-      setTimeout(() => setRefreshing(false), 600);
+      setLoadingC(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const runAction = async (id: string, action: 'deploy' | 'restart' | 'stop') => {
-    setActionId(`${id}-${action}`);
+  const loadServices = useCallback(async () => {
+    setLoadingS(true);
+    setErrorS(null);
     try {
-      await fetch('/api/coolify/deploy', {
+      const res = await fetch('/api/coolify/services');
+      const data = await res.json();
+      if (data.error && !data.services?.length) setErrorS(data.error);
+      else setServices(data.services ?? []);
+    } catch (e) {
+      setErrorS(String(e));
+    } finally {
+      setLoadingS(false);
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadCommits(), loadServices()]);
+    setRefreshing(false);
+  }, [loadCommits, loadServices]);
+
+  useEffect(() => {
+    loadCommits();
+    loadServices();
+  }, [loadCommits, loadServices]);
+
+  const handleRestart = async (id: string) => {
+    setRestartingId(id);
+    try {
+      await fetch(`/api/coolify/deploy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: id, action }),
+        body: JSON.stringify({ uuid: id, action: 'restart' }),
       });
-      setTimeout(load, 2000);
+      setTimeout(loadServices, 2000);
     } catch { /* silent */ }
-    finally { setTimeout(() => setActionId(null), 2000); }
+    finally { setTimeout(() => setRestartingId(null), 2000); }
   };
 
   const running  = services.filter(s => s.status === 'running').length;
-  const stopped  = services.filter(s => s.status === 'stopped' || s.status === 'exited').length;
-  const apps     = services.filter(s => s.kind === 'app');
-  const svcs     = services.filter(s => s.kind === 'service');
+  const exited   = services.filter(s => s.status === 'stopped' || s.status === 'exited').length;
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Rocket size={20} style={{ color: '#38bdf8' }} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Deployments</h1>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Coolify · Hetzner CPX42</p>
-          </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            Deployments
+          </h1>
+          <p style={{ margin: '4px 0 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            TimoGoetz1988/aios · main
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={load} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
-            background: 'var(--layer-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
-            cursor: 'pointer', fontSize: 12,
-          }}>
-            <RefreshCw size={12} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={refresh}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontFamily: 'var(--font-mono)',
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', cursor: 'pointer',
+            }}
+          >
+            <span style={{ display: 'inline-block', animation: refreshing ? 'spin 0.7s linear infinite' : 'none', fontSize: 13 }}>↺</span>
             Refresh
           </button>
+          <a
+            href="https://github.com/TimoGoetz1988/aios/actions"
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontFamily: 'var(--font-mono)',
+              background: 'var(--layer-2)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', textDecoration: 'none',
+            }}
+          >
+            GitHub Actions ↗
+          </a>
           <a
             href="https://coolify.automation-plus-ki.de"
             target="_blank" rel="noopener noreferrer"
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
-              background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)',
-              color: '#34d399', fontSize: 12, fontWeight: 600, textDecoration: 'none',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontFamily: 'var(--font-mono)',
+              background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.3)',
+              color: '#34d399', textDecoration: 'none', fontWeight: 600,
             }}
           >
-            In Coolify öffnen <ExternalLink size={11} />
+            Deploy now ↗
           </a>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+      {/* ── Stats strip ────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Gesamt',    value: services.length, color: 'var(--text-primary)', icon: <Server size={14} /> },
-          { label: 'Running',   value: running,          color: '#34d399',            icon: <Play size={14} /> },
-          { label: 'Stopped',   value: stopped,          color: '#f87171',            icon: <Square size={14} /> },
-          { label: 'Apps',      value: apps.length,      color: '#38bdf8',            icon: <Container size={14} /> },
+          { label: 'Commits',  value: loadingC ? '…' : String(commits.length), color: 'var(--text-primary)' },
+          { label: 'Running',  value: loadingS ? '…' : String(running),         color: '#34d399' },
+          { label: 'Exited',   value: loadingS ? '…' : String(exited),          color: exited > 0 ? '#ef4444' : 'var(--text-muted)' },
+          { label: 'Services', value: loadingS ? '…' : String(services.length), color: 'var(--text-primary)' },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12,
-            padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10,
+            padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 90,
           }}>
-            <span style={{ color: stat.color, opacity: 0.8 }}>{stat.icon}</span>
-            <div>
-              <p style={{ margin: 0, fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-mono)', color: stat.color, lineHeight: 1 }}>
-                {loading ? '…' : stat.value}
-              </p>
-              <p style={{ margin: 0, fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 3 }}>
-                {stat.label}
-              </p>
-            </div>
+            <span style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: stat.color, lineHeight: 1 }}>
+              {stat.value}
+            </span>
+            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {stat.label}
+            </span>
           </div>
         ))}
       </div>
 
-      {error && (
+      {/* ── Commit history table ─────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 8, marginBottom: 20,
-          background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 12,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 10,
         }}>
-          <AlertCircle size={14} />
-          {error}
-        </div>
-      )}
-
-      {/* Apps section */}
-      {apps.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <p style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            Applications · {apps.length}
-          </p>
-          <motion.div
-            initial="hidden" animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}
-          >
-            {apps.map(svc => (
-              <ServiceCard key={svc.id} svc={svc} actionId={actionId} onAction={runAction} />
-            ))}
-          </motion.div>
-        </div>
-      )}
-
-      {/* Services section */}
-      {svcs.length > 0 && (
-        <div>
-          <p style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            Services · {svcs.length}
-          </p>
-          <motion.div
-            initial="hidden" animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}
-          >
-            {svcs.map(svc => (
-              <ServiceCard key={svc.id} svc={svc} actionId={actionId} onAction={runAction} />
-            ))}
-          </motion.div>
-        </div>
-      )}
-
-      {!loading && services.length === 0 && !error && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'var(--font-mono)' }}>
-          Keine Deployments gefunden. Coolify API prüfen.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ServiceCard({ svc, actionId, onAction }: {
-  svc: CoolifyService;
-  actionId: string | null;
-  onAction: (id: string, action: 'deploy' | 'restart' | 'stop') => void;
-}) {
-  const color = statusColor(svc.status);
-  const isRunning = svc.status === 'running';
-  const isBusy = actionId?.startsWith(svc.id) ?? false;
-  const domain = svc.fqdn ? svc.fqdn.replace(/^https?:\/\//, '').split('/')[0] : null;
-
-  return (
-    <motion.div
-      variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
-      style={{
-        background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12,
-        padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12,
-        position: 'relative', overflow: 'hidden',
-      }}
-    >
-      {/* Top accent */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${color}50, transparent)` }} />
-
-      {/* Title row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <span style={{
-          width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 5,
-          boxShadow: isRunning ? `0 0 6px ${color}` : 'none',
-          animation: isRunning ? 'status-pulse 2.5s ease-in-out infinite' : 'none',
-        }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc.name}</p>
-          {domain && (
-            <a href={`https://${domain}`} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 3, fontSize: 10, color: '#38bdf8', textDecoration: 'none' }}
-            >
-              <Globe size={9} />
-              {domain}
-            </a>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
-          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 5, color, background: color + '18', border: `1px solid ${color}30`, fontFamily: 'var(--font-mono)' }}>
-            {statusLabel(svc.status)}
+          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Commit History · main
           </span>
-          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 5, color: 'var(--text-muted)', background: 'var(--layer-3)', fontFamily: 'var(--font-mono)' }}>
-            {svc.kind}
-          </span>
-        </div>
-      </div>
-
-      {/* Meta */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-        {svc.repo && (
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
-            {svc.repo.replace('https://github.com/', '')}
-          </span>
-        )}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-          <Clock size={9} />
-          {timeAgo(svc.updatedAt)}
-        </span>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        <ActionBtn
-          label="Deploy" icon={<Rocket size={11} />} color="#38bdf8"
-          disabled={isBusy} onClick={() => onAction(svc.id, 'deploy')}
-        />
-        <ActionBtn
-          label="Restart" icon={<RotateCcw size={11} />} color="#fbbf24"
-          disabled={isBusy} onClick={() => onAction(svc.id, 'restart')}
-        />
-        {svc.fqdn && (
           <a
-            href={`https://${domain}`} target="_blank" rel="noopener noreferrer"
-            style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4,
-              padding: '5px 10px', borderRadius: 7, fontSize: 11,
-              background: 'transparent', border: '1px solid var(--border)',
-              color: 'var(--text-muted)', textDecoration: 'none', transition: 'all 0.12s',
-            }}
-            onMouseEnter={e => { (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.4)'); (e.currentTarget.style.color = '#38bdf8'); }}
-            onMouseLeave={e => { (e.currentTarget.style.borderColor = 'var(--border)'); (e.currentTarget.style.color = 'var(--text-muted)'); }}
+            href="https://github.com/TimoGoetz1988/aios/commits/main"
+            target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textDecoration: 'none' }}
           >
-            <ExternalLink size={10} /> Öffnen
+            View all on GitHub ↗
           </a>
-        )}
-      </div>
-    </motion.div>
-  );
-}
+        </div>
 
-function ActionBtn({ label, icon, color, disabled, onClick }: {
-  label: string; icon: React.ReactNode; color: string; disabled: boolean; onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 5,
-        padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 500,
-        background: color + '10', border: `1px solid ${color}30`,
-        color, cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1, transition: 'all 0.12s',
-      }}
-      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.background = color + '20'; e.currentTarget.style.borderColor = color + '50'; } }}
-      onMouseLeave={e => { e.currentTarget.style.background = color + '10'; e.currentTarget.style.borderColor = color + '30'; }}
-    >
-      {icon} {label}
-    </button>
+        {errorC && (
+          <div style={{
+            padding: '10px 14px', borderRadius: 7, marginBottom: 10, fontSize: 12,
+            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+            fontFamily: 'var(--font-mono)',
+          }}>
+            {errorC}
+          </div>
+        )}
+
+        <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '80px 1fr 140px 90px 100px 90px',
+            gap: 0,
+            padding: '8px 16px',
+            borderBottom: '1px solid var(--border)',
+            fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            background: 'var(--layer-2)',
+          }}>
+            <span>SHA</span>
+            <span>Message</span>
+            <span>Author</span>
+            <span>Time</span>
+            <span>Services</span>
+            <span>Status</span>
+          </div>
+
+          {loadingC && (
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              Loading commits…
+            </div>
+          )}
+
+          {!loadingC && commits.length === 0 && !errorC && (
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              No commits found. Check GITHUB_TOKEN env var.
+            </div>
+          )}
+
+          {commits.map((c, idx) => {
+            const sColor = deployStatusColor(c.status);
+            const isOdd  = idx % 2 === 1;
+            return (
+              <div
+                key={c.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '80px 1fr 140px 90px 100px 90px',
+                  gap: 0,
+                  padding: '9px 16px',
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  background: isOdd ? 'rgba(255,255,255,0.012)' : 'transparent',
+                  alignItems: 'center',
+                  fontSize: 12,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isOdd ? 'rgba(255,255,255,0.012)' : 'transparent'; }}
+              >
+                {/* SHA */}
+                <a
+                  href={`https://github.com/TimoGoetz1988/aios/commit/${c.id}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
+                    color: '#94a3b8', textDecoration: 'none',
+                    background: 'var(--layer-3)', padding: '2px 7px', borderRadius: 4,
+                    display: 'inline-block', width: 'fit-content',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#94a3b8'; }}
+                >
+                  {c.sha}
+                </a>
+
+                {/* Message */}
+                <span style={{
+                  color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap', paddingRight: 12, fontFamily: 'var(--font-ui)',
+                }}>
+                  {c.message}
+                </span>
+
+                {/* Author */}
+                <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.author}
+                </span>
+
+                {/* Time */}
+                <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  {timeAgo(c.ts)}
+                </span>
+
+                {/* Services */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                  {c.services.slice(0, 2).map(svc => (
+                    <span key={svc} style={{
+                      fontSize: 9, padding: '1px 6px', borderRadius: 3,
+                      background: 'var(--layer-3)', color: 'var(--text-muted)',
+                      fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+                    }}>
+                      {svc}
+                    </span>
+                  ))}
+                  {c.services.length > 2 && (
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      +{c.services.length - 2}
+                    </span>
+                  )}
+                </div>
+
+                {/* Status + Rollback */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: sColor, fontSize: 9 }}>●</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: sColor }}>
+                    {deployStatusLabel(c.status)}
+                  </span>
+                  <a
+                    href="https://coolify.automation-plus-ki.de"
+                    target="_blank" rel="noopener noreferrer"
+                    title="Rollback via Coolify"
+                    style={{
+                      marginLeft: 4, fontSize: 9, padding: '2px 6px', borderRadius: 4,
+                      background: 'var(--layer-3)', border: '1px solid var(--border)',
+                      color: 'var(--text-muted)', textDecoration: 'none',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}
+                  >
+                    ↩
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Active Services (Coolify) ─────────────────────────── */}
+      <div>
+        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
+          Active Services · Coolify
+        </span>
+
+        {errorS && (
+          <div style={{
+            padding: '10px 14px', borderRadius: 7, marginBottom: 10, fontSize: 12,
+            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+            fontFamily: 'var(--font-mono)',
+          }}>
+            {errorS}
+          </div>
+        )}
+
+        <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '200px 130px 1fr 80px',
+            padding: '8px 16px',
+            borderBottom: '1px solid var(--border)',
+            fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            background: 'var(--layer-2)',
+          }}>
+            <span>Service</span>
+            <span>Status</span>
+            <span>Domain</span>
+            <span></span>
+          </div>
+
+          {loadingS && (
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              Loading services…
+            </div>
+          )}
+
+          {!loadingS && services.length === 0 && !errorS && (
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              No services found. Check COOLIFY_URL and COOLIFY_API_KEY.
+            </div>
+          )}
+
+          {services.map((svc, idx) => {
+            const color   = statusColor(svc.status);
+            const isOdd   = idx % 2 === 1;
+            const domain  = svc.fqdn ? svc.fqdn.replace(/^https?:\/\//, '').split('/')[0] : null;
+            const isDown  = svc.status === 'stopped' || svc.status === 'exited';
+            const isBusy  = restartingId === svc.id;
+
+            return (
+              <div
+                key={svc.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '200px 130px 1fr 80px',
+                  padding: '10px 16px',
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  background: isOdd ? 'rgba(255,255,255,0.012)' : 'transparent',
+                  alignItems: 'center',
+                  fontSize: 12,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isOdd ? 'rgba(255,255,255,0.012)' : 'transparent'; }}
+              >
+                {/* Name */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0,
+                    boxShadow: svc.status === 'running' ? `0 0 5px ${color}` : 'none',
+                  }} />
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {svc.name}
+                  </span>
+                  <span style={{
+                    fontSize: 9, padding: '1px 5px', borderRadius: 3,
+                    background: 'var(--layer-3)', color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-mono)',
+                  }}>
+                    {svc.kind}
+                  </span>
+                </div>
+
+                {/* Status */}
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color }}>
+                  {svc.status || 'unknown'}
+                </span>
+
+                {/* Domain */}
+                <div>
+                  {domain ? (
+                    <a
+                      href={`https://${domain}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#94a3b8', textDecoration: 'none' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#94a3b8'; }}
+                    >
+                      {domain} ↗
+                    </a>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>—</span>
+                  )}
+                </div>
+
+                {/* Action */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  {isDown ? (
+                    <button
+                      onClick={() => handleRestart(svc.id)}
+                      disabled={isBusy}
+                      style={{
+                        padding: '4px 10px', borderRadius: 5, fontSize: 11, fontFamily: 'var(--font-mono)',
+                        background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+                        color: '#f59e0b', cursor: isBusy ? 'not-allowed' : 'pointer',
+                        opacity: isBusy ? 0.6 : 1,
+                      }}
+                    >
+                      {isBusy ? '…' : 'Restart'}
+                    </button>
+                  ) : (
+                    <a
+                      href="https://coolify.automation-plus-ki.de"
+                      target="_blank" rel="noopener noreferrer"
+                      style={{
+                        padding: '4px 10px', borderRadius: 5, fontSize: 11, fontFamily: 'var(--font-mono)',
+                        background: 'transparent', border: '1px solid var(--border)',
+                        color: 'var(--text-muted)', textDecoration: 'none',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-bright)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)'; }}
+                    >
+                      Manage
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+          <a
+            href="https://coolify.automation-plus-ki.de"
+            target="_blank" rel="noopener noreferrer"
+            style={{ color: 'var(--text-muted)', textDecoration: 'none' }}
+          >
+            Manage all in Coolify ↗
+          </a>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
   );
 }
