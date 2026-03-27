@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 const HEALTH_CHECKS = [
   // Interne Docker-Hostnamen für Services auf demselben Server (kein Cloudflare-Loop)
   { id: "nexus-core",     url: "http://aios-nexus-core:8000/health" },
-  { id: "infra",          url: "http://046279494c60465d88e337efb54d5504-211054072190:3000/api/health" },
+  { id: "infra",          url: "http://localhost:3000/api/health" },
   { id: "voice",          url: "http://voice-api-ckgw404o88ow0ccs00cow8k8:8000/health" },
   // Homestack-Services via öffentliche URL (eigenes Netzwerk)
   { id: "n8n",            url: "https://n8n.automation-plus-ki.de/healthz" },
@@ -15,7 +15,7 @@ const HEALTH_CHECKS = [
   { id: "mailpit",        url: "https://mail.automation-plus-ki.de" },
   { id: "agents",         url: "https://agents.automation-plus-ki.de" },
   { id: "qdrant",         url: "https://qdrant.automation-plus-ki.de/healthz" },
-  { id: "homepage",       url: "https://dashboard.automation-plus-ki.de" },
+  { id: "homepage",       url: "https://automation-plus-ki.de" },
   { id: "mcp-grafana",    url: "https://mcp-grafana.automation-plus-ki.de/health" },
   { id: "mcp-nocodb",     url: "https://mcp-nocodb.automation-plus-ki.de/health" },
   { id: "mcp-postgres",   url: "https://mcp-postgres.automation-plus-ki.de/health" },
@@ -35,7 +35,7 @@ const HEALTH_CHECKS = [
 
 async function checkHealth(id: string, url: string): Promise<{ id: string; status: "online" | "degraded" | "offline"; latency?: number }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+  const timer = setTimeout(() => controller.abort(), 3000);
   const t0 = Date.now();
   try {
     const res = await fetch(url, {
