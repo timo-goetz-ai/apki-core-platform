@@ -84,6 +84,24 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 **NocoDB Login:** `ai_studio@timo-goetz-ai.de` / `NocoDB2026Admin`
 **n8n Login:** `admin@timo-goetz-ai.de` / `Aios2026!`
 
+## Authentik SSO — OAuth2 Provider (Stand 2026-03-27)
+
+Authentik: `https://auth.automation-plus-ki.de` | Admin: `akadmin` / `ai_studio@timo-goetz-ai.de`
+API-Token (akadmin): `25ePGtroeI1neB1n9OvKeKI1v6ojRg3InQFabXszrat9N6xnKzjw1lZMP2Lk`
+
+| Service | client_id | Typ |
+|---------|-----------|-----|
+| n8n | `KiVQUem542T047KvDduDXjloaQYLF3dFd0X7ZNEa` | Forward Auth |
+| Admin Dashboard | `nstQ0xU5RXyNq35liCqRe6wnHfJIIPsLWSfdN7qf` | Forward Auth |
+| AIOS Dashboard | `pMrUHmcAbP95cd2Ev1hV72kv8MOrZ7MHDsTF3EUQ` | Forward Auth |
+| Grafana | `rAERcNo8Fk7ZEOuFkMEX6pcMCfk4eRy6X5lIAUml` | Proxy Auth |
+| NocoDB | `V0HDsDvI0MYBpqcHvdp0ueO7Do7UwsNL0JEVp8tD` | Forward Auth |
+| Coolify | `yTBQgGHqRE94QNeOiSjMnYxcDTxgNcTlCV6GTDVH` | Forward Auth |
+| Postiz | `1srfgfgKwaYyw6WlvyNYK7Zp1pb5IaIB1d52qXKy` | Forward Auth |
+| Prometheus | `o0ccmAtRQVchiXDCWMorsbgiQkhpza9BLgDukaPV` | Forward Auth |
+
+Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider aktiv)
+
 ## NocoDB Table-IDs (Research-Outputs)
 
 | Tabelle | ID | Beschreibung |
