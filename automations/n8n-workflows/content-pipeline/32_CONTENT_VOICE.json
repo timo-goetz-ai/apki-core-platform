@@ -1,0 +1,184 @@
+{
+  "name": "32_CONTENT_VOICE",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "content-voice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: { pipeline_job_id, text_content, voice_id?, speed? }\nconst body = $input.first().json.body ?? $input.first().json;\n\nif (!body.text_content) throw new Error('text_content fehlt im Request');\nif (!body.pipeline_job_id) throw new Error('pipeline_job_id fehlt im Request');\n\n// Text kürzen falls zu lang (Fish Audio limit: ~4000 chars)\nconst text = String(body.text_content).slice(0, 4000);\n\nreturn [{ json: {\n  pipeline_job_id: body.pipeline_job_id,\n  text,\n  voice_id: body.voice_id ?? '',\n  speed: body.speed ?? 1.0,\n  format: 'mp3'\n} }];"
+      },
+      "id": "prepare-tts",
+      "name": "TTS vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fish.audio/v1/tts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization",  "value": "=Bearer {{ $vars.FISH_AUDIO_API_KEY }}" },
+            { "name": "Content-Type",   "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "text",          "value": "={{ $json.text }}" },
+            { "name": "reference_id",  "value": "={{ $json.voice_id }}" },
+            { "name": "format",        "value": "mp3" },
+            { "name": "mp3_bitrate",   "value": 128 },
+            { "name": "normalize",     "value": true },
+            { "name": "streaming",     "value": false },
+            { "name": "prosody",       "value": "={ \"speed\": {{ $json.speed }}, \"volume\": 0 }" }
+          ]
+        },
+        "options": {
+          "responseFormat": "file",
+          "timeout": 120000
+        }
+      },
+      "id": "fish-audio-tts",
+      "name": "Fish Audio: TTS generieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dateiname für S3\nconst jobId = $('TTS vorbereiten').item.json.pipeline_job_id;\nconst ts = new Date().toISOString().replace(/[:.]/g, '-');\nconst fileName = `voice-${jobId}-${ts}.mp3`;\nconst date = new Date().toISOString().split('T')[0];\n\nreturn [{ json: {\n  ...$input.first().json,\n  fileName,\n  s3Key: `assets/audio/${date}/${fileName}`,\n  s3Url: `https://noco-aios.fsn1.your-objectstorage.com/assets/audio/${date}/${fileName}`,\n  pipeline_job_id: $('TTS vorbereiten').item.json.pipeline_job_id\n} }];"
+      },
+      "id": "build-filename",
+      "name": "Dateiname erstellen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://noco-aios.fsn1.your-objectstorage.com/{{ $json.s3Key }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "audio/mpeg" },
+            { "name": "x-amz-acl",   "value": "public-read" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": { "timeout": 60000 }
+      },
+      "id": "upload-s3",
+      "name": "S3 Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/m2u6y7ibyxt9tzp/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "source_service",  "value": "fishaudio" },
+            { "name": "asset_type",      "value": "audio" },
+            { "name": "s3_url",          "value": "={{ $('Dateiname erstellen').item.json.s3Url }}" },
+            { "name": "file_name",       "value": "={{ $('Dateiname erstellen').item.json.fileName }}" },
+            { "name": "mime_type",       "value": "audio/mpeg" },
+            { "name": "pipeline_job_id", "value": "={{ $('Dateiname erstellen').item.json.pipeline_job_id }}" },
+            { "name": "status",          "value": "ready" },
+            { "name": "created_at",      "value": "={{ $now.toISO() }}" }
+          ]
+        }
+      },
+      "id": "nocodb-asset",
+      "name": "NocoDB: media_assets anlegen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/m48nvpornrxuba9/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "Id",         "value": "={{ $('Dateiname erstellen').item.json.pipeline_job_id }}" },
+            { "name": "audio_url",  "value": "={{ $('Dateiname erstellen').item.json.s3Url }}" },
+            { "name": "stage",      "value": "publish" },
+            { "name": "status",     "value": "idle" },
+            { "name": "updated_at", "value": "={{ $now.toISO() }}" }
+          ]
+        }
+      },
+      "id": "update-pipeline",
+      "name": "Pipeline Job aktualisieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"audio_url\": \"{{ $('Dateiname erstellen').item.json.s3Url }}\", \"pipeline_job_id\": \"{{ $('Dateiname erstellen').item.json.pipeline_job_id }}\" }"
+      },
+      "id": "respond-ok",
+      "name": "Response OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger":              { "main": [[{ "node": "TTS vorbereiten",              "type": "main", "index": 0 }]] },
+    "TTS vorbereiten":              { "main": [[{ "node": "Fish Audio: TTS generieren",    "type": "main", "index": 0 }]] },
+    "Fish Audio: TTS generieren":   { "main": [[{ "node": "Dateiname erstellen",           "type": "main", "index": 0 }]] },
+    "Dateiname erstellen":          { "main": [[{ "node": "S3 Upload",                     "type": "main", "index": 0 }]] },
+    "S3 Upload":                    { "main": [[{ "node": "NocoDB: media_assets anlegen",  "type": "main", "index": 0 }]] },
+    "NocoDB: media_assets anlegen": { "main": [[{ "node": "Pipeline Job aktualisieren",    "type": "main", "index": 0 }]] },
+    "Pipeline Job aktualisieren":   { "main": [[{ "node": "Response OK",                   "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": true },
+  "pinData": {},
+  "versionId": "32_CONTENT_VOICE_v1",
+  "tags": [{ "name": "content-pipeline" }]
+}
