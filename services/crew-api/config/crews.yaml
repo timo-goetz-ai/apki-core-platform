@@ -5,7 +5,7 @@ crews:
   # Inputs: topic, category, target_platforms, pipeline_job_id (optional)
   content_generation_crew:
     name: "Content Generation Crew"
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
     agents:
       - id: researcher
         role: "Content Research Specialist"
@@ -94,7 +94,7 @@ crews:
   # Inputs: topic, opportunity_summary, platform
   niche_analysis_crew:
     name: "Niche Analysis Crew"
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
     agents:
       - id: audience_analyst
         role: "Audience & Niche Research Specialist"
@@ -173,7 +173,7 @@ crews:
   # Inputs: trends_summary, sentiment_summary, top_opportunities
   content_forecast_crew:
     name: "Content Forecast Crew"
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
     agents:
       - id: trend_analyst
         role: "Trend Intelligence Analyst"
@@ -262,7 +262,7 @@ crews:
   # Inputs: topic, category, context
   deep_research_crew:
     name: "Deep Research Crew"
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
     agents:
       - id: researcher
         role: "Senior Research Analyst"
@@ -347,7 +347,7 @@ crews:
   # ── Quick Research Crew (leichtgewichtig, für Tests) ─────────────────────────
   quick_research_crew:
     name: "Quick Research Crew"
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
     agents:
       - id: analyst
         role: "Research Analyst"
