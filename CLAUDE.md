@@ -73,7 +73,7 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
 | Service | URL | Auth |
 |---------|-----|------|
-| n8n | `http://10.0.1.12:5678` (intern) | `X-N8N-API-KEY: n8n_api_191d56c7f262a4c859c0f77e6a5ee1115480fbd31d687b07` |
+| n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY: n8n_api_191d56c7f262a4c859c0f77e6a5ee1115480fbd31d687b07` |
 | NocoDB | `http://10.0.1.20:8080` (intern) / `https://nocodb.automation-plus-ki.de` | `xc-token: WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK` |
 | Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token in Coolify |
 | Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
@@ -105,6 +105,8 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 | `310_TREND_MONITOR` | `QXMKnvar7vGceevY` | tägl. 08:00 — **AKTIV** |
 | `320_SENTIMENT_TRACKER` | `bycPphxXy3Crhx4h` | Mo. 08:00 — **AKTIV** |
 | `330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
+| `430_DAILY_DIGEST` | `b1uFH47VF0RcahVS` | tägl. 08:00 — **AKTIV** |
+| `435_WEEKLY_SUMMARY` | `DQWIR7s5zaGRqNX2` | Mo. 09:00 — **AKTIV** |
 | `540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand |
 | `450_CONTENT_MASTER_FLOW` | `WWXFGPrz0tqPSow1` | on_demand |
 
@@ -177,7 +179,7 @@ Subagenten-Definitionen in `.claude/agents/`:
 
 ## Offene Aufgaben (Stand März 2026)
 
-- `agents`-Tabelle leer → manuell befüllen oder `52_AIOS_DISCOVERY` aktivieren
-- `60_DAILY_DIGEST` + `61_WEEKLY_SUMMARY` noch auf INAKTIV
-- Publishing Layer (`40_*` Workflows) wartet auf Blogify-Credentials
-- Research-Tabellen füllen sich ab nächstem geplanten Workflow-Lauf
+- `agents`-Tabelle leer → manuell befüllen oder `240_AIOS_DISCOVERY` aktivieren
+- Publishing Layer (`440_*` / `41_*` Workflows) wartet auf Blogify-Credentials (`BLOGIFY_CLIENT_ID`, `BLOGIFY_CLIENT_SECRET`, `BLOGIFY_INTEGRATION_ID`)
+- Research-Tabellen füllen sich täglich ab 08:00 / 09:30 Uhr (Schedules aktiv)
+- n8n interne IP: `10.0.1.16:5678` (Container: `homestack-n8n`)
