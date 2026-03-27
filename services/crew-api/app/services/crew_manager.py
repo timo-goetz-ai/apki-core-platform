@@ -55,14 +55,19 @@ class CrewManager:
         return self._crews.get(crew_id)
 
     def _build_llm(self, model: str) -> LLM:
-        api_key = self.settings.openrouter_api_key
-        if not api_key:
-            raise RuntimeError("OPENROUTER_API_KEY nicht konfiguriert")
-        return LLM(
-            model=model,
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        if self.settings.gemini_api_key:
+            # Gemini direct — map openrouter model names to gemini/ prefix
+            gemini_model = model.replace("openrouter/google/", "gemini/").replace("openrouter/", "gemini/")
+            if not gemini_model.startswith("gemini/"):
+                gemini_model = f"gemini/{gemini_model}"
+            return LLM(model=gemini_model, api_key=self.settings.gemini_api_key)
+        if self.settings.openrouter_api_key:
+            return LLM(
+                model=model,
+                base_url="https://openrouter.ai/api/v1",
+                api_key=self.settings.openrouter_api_key,
+            )
+        raise RuntimeError("Kein LLM API Key konfiguriert (GEMINI_API_KEY oder OPENROUTER_API_KEY)")
 
     async def start_crew(
         self, crew_id: str, inputs: dict, execution_id: str | None = None
