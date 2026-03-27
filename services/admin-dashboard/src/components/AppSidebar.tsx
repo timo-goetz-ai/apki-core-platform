@@ -8,6 +8,7 @@ import {
   BarChart2, Factory, Users, Activity,
   Database, Wrench, Globe, Settings,
   Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate, Kanban,
+  Layers, CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -35,11 +36,13 @@ const NAV_GROUPS: NavItem[][] = [
     { label: 'Analytics',     href: '/analytics',        icon: BarChart2       },
   ],
   [
-    { label: 'Content Factory', href: '/content-factory', icon: Factory       },
-    { label: 'Kanban',        href: '/kanban',           icon: Kanban          },
-    { label: 'Templates',     href: '/templates',        icon: LayoutTemplate  },
-    { label: 'Files',         href: '/files',            icon: FolderOpen      },
-    { label: 'Databases',     href: '/databases',        icon: Database        },
+    { label: 'Content Factory',  href: '/content-factory',   icon: Factory       },
+    { label: 'Batch Production', href: '/batch-production',  icon: Layers        },
+    { label: 'Content Planning', href: '/content-planning',  icon: CalendarDays  },
+    { label: 'Kanban',           href: '/kanban',            icon: Kanban        },
+    { label: 'Templates',        href: '/templates',         icon: LayoutTemplate },
+    { label: 'Files',            href: '/files',             icon: FolderOpen    },
+    { label: 'Databases',        href: '/databases',         icon: Database      },
   ],
   [
     { label: 'MCP Services',  href: '/mcp-plattform',   icon: Globe           },

@@ -35,6 +35,7 @@ class TaskCompletedEvent(BaseEvent):
 
 class ExecutionCompletedEvent(BaseEvent):
     type: Literal["execution_completed"] = "execution_completed"
+    result: str = ""
 
 
 class ExecutionErrorEvent(BaseEvent):

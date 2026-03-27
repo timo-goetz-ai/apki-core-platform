@@ -1,21 +1,371 @@
 crews:
-  research_crew:
-    name: "Research Crew"
+
+  # ── Content Generation Crew ──────────────────────────────────────────────────
+  # Triggern via POST /crews/content_generation_crew/start
+  # Inputs: topic, category, target_platforms, pipeline_job_id (optional)
+  content_generation_crew:
+    name: "Content Generation Crew"
+    model: "openrouter/google/gemini-2.0-flash-exp"
     agents:
       - id: researcher
-        role: "Research Analyst"
-        goal: "Find information"
+        role: "Content Research Specialist"
+        goal: >
+          Analysiere das gegebene Thema gründlich. Identifiziere die wichtigsten
+          Aspekte, aktuelle Relevanz, häufige Fragen und wertvolle Insights.
+          Liefere strukturierte Recherche-Ergebnisse als Grundlage für
+          hochwertigen Content.
+        backstory: >
+          Du bist ein erfahrener Content-Researcher mit Expertise in KI,
+          Technologie und digitalem Marketing. Du weißt wie man komplexe Themen
+          aufschlüsselt, die Pain Points der Zielgruppe identifiziert und
+          relevante Informationen klar strukturiert. Du schreibst auf Deutsch
+          und kennst den deutschsprachigen KI-Markt sehr gut.
         mcp_servers: []
+
       - id: writer
-        role: "Content Writer"
-        goal: "Write content"
+        role: "Content Writer & SEO Specialist"
+        goal: >
+          Schreibe auf Basis der Recherche einen hochwertigen, engagierenden
+          Artikel. Der Content soll informativ, gut strukturiert und für die
+          Zielplattformen optimiert sein. Integriere SEO-Keywords natürlich.
+        backstory: >
+          Du bist ein professioneller deutschsprachiger Content Writer
+          spezialisiert auf KI und Technologie. Deine Texte sind klar, präzise
+          und fesselnd. Du weißt wie man für verschiedene Plattformen (Blog,
+          LinkedIn, Instagram) schreibt und dabei sowohl Leser als auch
+          Suchmaschinen ansprichst. Du lieferst immer valides JSON als Output.
+        mcp_servers: []
+
     tasks:
       - id: research
         agent_id: researcher
-        description: "Research the topic"
+        description: >
+          Recherchiere das Thema "{topic}" für die Kategorie "{category}".
+
+          Analysiere:
+          1. Was ist das Kernthema und warum ist es gerade relevant?
+          2. Welche Aspekte sind für die Zielgruppe (deutschspr. KI-Interessierte) am wichtigsten?
+          3. Welche häufigen Fragen oder Missverständnisse gibt es zu diesem Thema?
+          4. Was sind die 3-5 wichtigsten Punkte die der Leser mitnehmen soll?
+          5. Welche SEO-Keywords eignen sich (5-8 Stück, deutsch)?
+
+          Zielplattformen: {target_platforms}
+        expected_output: >
+          Ein strukturierter Recherche-Report mit:
+          - Executive Summary (2-3 Sätze)
+          - 3-5 Kernpunkte mit kurzen Erklärungen
+          - 5-8 SEO-Keywords (kommasepariert)
+          - Empfohlene Artikel-Struktur (Überschriften-Vorschlag H1/H2)
+
       - id: write
         agent_id: writer
-        description: "Write article"
+        description: >
+          Schreibe einen vollständigen deutschen Artikel zum Thema "{topic}"
+          auf Basis des Recherche-Reports.
+
+          Anforderungen:
+          - Länge: 600-900 Wörter
+          - Sprache: Deutsch, professionell aber zugänglich
+          - Ton: Direkt, praxisorientiert, kein Buzzword-Bingo
+          - Struktur: Einleitung → Hauptteil (3-4 Abschnitte mit H2) → Fazit
+          - SEO: Keywords aus dem Recherche-Report natürlich einbauen
+          - Kategorie: {category}
+          - Zielplattformen: {target_platforms}
+
+          Liefere das Ergebnis als JSON-Objekt (kein Markdown drumherum):
+          {{
+            "title": "SEO-optimierter Titel (max. 60 Zeichen)",
+            "excerpt": "Meta-Description (max. 160 Zeichen)",
+            "seo_keywords": "keyword1, keyword2, keyword3",
+            "content": "Vollständiger Artikel in Markdown"
+          }}
+        expected_output: >
+          Valides JSON-Objekt mit den Feldern title, excerpt, seo_keywords
+          und content (Markdown-Artikel, 600-900 Wörter, auf Deutsch).
+        context_task_ids:
+          - research
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Niche Analysis Crew ───────────────────────────────────────────────────────
+  # Inputs: topic, opportunity_summary, platform
+  niche_analysis_crew:
+    name: "Niche Analysis Crew"
+    model: "openrouter/google/gemini-2.0-flash-exp"
+    agents:
+      - id: audience_analyst
+        role: "Audience & Niche Research Specialist"
+        goal: >
+          Analysiere Zielgruppen und Nischen präzise. Identifiziere
+          demografische Merkmale, Pain Points, Informationsbedürfnisse
+          und die besten Kanäle um sie zu erreichen.
+        backstory: >
+          Du bist ein erfahrener Marketing-Analyst mit Fokus auf
+          deutschsprachige KI- und Tech-Zielgruppen. Du kennst die
+          Unterschiede zwischen LinkedIn-Profis, Instagram-Followern und
+          Blog-Lesern und weißt welche Inhalte auf welcher Plattform
+          funktionieren.
+        mcp_servers: []
+
+      - id: opportunity_scorer
+        role: "Content Opportunity Evaluator"
+        goal: >
+          Bewerte Content-Chancen nach Potenzial, Wettbewerb und
+          strategischem Fit. Priorisiere Themen die maximale Reichweite
+          bei minimalem Wettbewerb bieten.
+        backstory: >
+          Du bist ein strategischer Content-Planer der datenbasiert
+          Prioritäten setzt. Du verstehst SEO-Grundlagen, Social Media
+          Algorithmen und weißt was in der DACH-Region im KI-Bereich
+          aktuell gefragt ist.
+        mcp_servers: []
+
+    tasks:
+      - id: audience_analysis
+        agent_id: audience_analyst
+        description: >
+          Analysiere die Zielgruppe für das Thema "{topic}" auf der
+          Plattform "{platform}".
+
+          Liefere:
+          1. Primäre Zielgruppe (Alter, Beruf, Interessen, Wissenslevel)
+          2. Sekundäre Zielgruppe
+          3. Top 3 Pain Points dieser Zielgruppe bezüglich des Themas
+          4. Was motiviert sie, diesen Content zu konsumieren?
+          5. Empfohlener Ton und Kommunikationsstil
+          6. Optimale Contentlänge und -format für die Plattform
+        expected_output: >
+          Strukturierter Audience-Report mit Primär-/Sekundärzielgruppe,
+          Pain Points, Motivationen und Kommunikationsempfehlungen.
+
+      - id: opportunity_scoring
+        agent_id: opportunity_scorer
+        description: >
+          Bewerte die Content-Chance "{topic}" basierend auf der
+          Audience-Analyse.
+
+          Kontext: {opportunity_summary}
+
+          Bewerte (Skala 1-10):
+          - Zielgruppen-Relevanz
+          - Wettbewerbssituation (10 = kaum Wettbewerb)
+          - Virales Potenzial
+          - SEO-Potenzial
+          - Evergreen-Faktor (Langlebigkeit)
+
+          Empfehle: Sofort produzieren / In 2 Wochen / Später / Skip
+          Begründung und optimaler Veröffentlichungszeitpunkt.
+        expected_output: >
+          Scoring-Matrix mit 5 Dimensionen (je 1-10), Gesamtscore,
+          klare Empfehlung (Produce Now/Later/Skip) und Timing-Hinweis.
+        context_task_ids:
+          - audience_analysis
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Content Forecast Crew ─────────────────────────────────────────────────────
+  # Inputs: trends_summary, sentiment_summary, top_opportunities
+  content_forecast_crew:
+    name: "Content Forecast Crew"
+    model: "openrouter/google/gemini-2.0-flash-exp"
+    agents:
+      - id: trend_analyst
+        role: "Trend Intelligence Analyst"
+        goal: >
+          Analysiere aktuelle Trends und Sentiments im KI-Bereich.
+          Erkenne Muster, Korrelationen und aufkommende Themen bevor
+          sie Mainstream werden.
+        backstory: >
+          Du bist ein Trend-Analyst der täglich Hunderte von Signalen
+          aus dem deutschsprachigen Tech-Raum auswertet. Du erkennst
+          früh welche Themen viral gehen und hast ein Gespür für den
+          Zeitgeist der DACH-KI-Community.
+        mcp_servers: []
+
+      - id: content_strategist
+        role: "Content Strategy Planner"
+        goal: >
+          Entwickle einen datenbasierten Content-Plan für die nächsten
+          2 Wochen. Empfehle konkrete Themen, Formate und Zeitpunkte
+          für maximale Reichweite und Engagement.
+        backstory: >
+          Du bist ein erfahrener Content-Stratege der aus Rohdaten
+          umsetzbare Redaktionspläne macht. Du denkst in Kampagnen,
+          verstehst Content-Kalender und weißt wie man Themen
+          sequenziell aufbaut um eine Audience langfristig zu binden.
+        mcp_servers: []
+
+    tasks:
+      - id: trend_interpretation
+        agent_id: trend_analyst
+        description: >
+          Analysiere die folgenden Trend- und Sentiment-Daten aus den
+          letzten 30 Tagen:
+
+          TRENDS:
+          {trends_summary}
+
+          SENTIMENT:
+          {sentiment_summary}
+
+          TOP OPPORTUNITIES:
+          {top_opportunities}
+
+          Identifiziere:
+          1. Die 3 stärksten aufsteigenden Trends
+          2. Themen die gerade ihren Peak haben (jetzt produzieren!)
+          3. Themen die nachlassen (vermeiden)
+          4. Überraschende Entwicklungen die besondere Chancen bieten
+          5. Stimmungslage der Community (optimistisch/skeptisch/neugierig)
+        expected_output: >
+          Trend-Analyse-Report: Top-Trends, Peak-Themen, nachlassende
+          Themen, Überraschungen und Community-Stimmung mit Begründungen.
+
+      - id: content_calendar
+        agent_id: content_strategist
+        description: >
+          Erstelle einen Content-Kalender für die nächsten 14 Tage
+          basierend auf der Trend-Analyse.
+
+          Erstelle JSON-Array mit 7 empfohlenen Content-Pieces:
+          [
+            {{
+              "topic": "Konkretes Thema",
+              "category": "KI-Tools|Tutorial|Review|News|Allgemein",
+              "publish_date": "YYYY-MM-DD",
+              "target_platforms": "blog,linkedin",
+              "priority": "high|medium|low",
+              "reasoning": "Warum jetzt?"
+            }}
+          ]
+
+          Variiere Kategorien und Plattformen. Verteile Inhalte sinnvoll
+          über die 2 Wochen. Starte mit den stärksten Trend-Themen.
+        expected_output: >
+          JSON-Array mit 7 Content-Piece-Empfehlungen inkl. Datum,
+          Kategorie, Plattform, Priorität und Begründung.
+        context_task_ids:
+          - trend_interpretation
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Deep Research Crew ────────────────────────────────────────────────────────
+  # Inputs: topic, category, context
+  deep_research_crew:
+    name: "Deep Research Crew"
+    model: "openrouter/google/gemini-2.0-flash-exp"
+    agents:
+      - id: researcher
+        role: "Senior Research Analyst"
+        goal: >
+          Recherchiere Themen tief und umfassend. Sammle Fakten,
+          Statistiken, Expertenmeinungen und Gegenargumente.
+          Bewerte Informationsqualität kritisch.
+        backstory: >
+          Du bist ein Senior-Analyst mit wissenschaftlichem Hintergrund
+          und jahrelanger Erfahrung in KI-Technologie-Recherche.
+          Du unterscheidest Fakten von Meinungen, kennst die wichtigsten
+          Quellen und Experten im DACH-KI-Raum und weißt wie man
+          komplexe Sachverhalte verständlich aufbereitet.
+        mcp_servers: []
+
+      - id: synthesizer
+        role: "Research Synthesis Specialist"
+        goal: >
+          Synthetisiere komplexe Recherche-Ergebnisse zu klaren,
+          umsetzbaren Briefings. Ziehe Schlussfolgerungen, erkenne
+          Implikationen und formuliere konkrete Handlungsempfehlungen.
+        backstory: >
+          Du bist ein Experte für Knowledge Synthesis. Du nimmst
+          komplexe Rohinformationen und destillierst sie zu prägnanten,
+          wertvollen Briefings die Content-Teams direkt nutzen können.
+          Du erkennst Muster, formulierst klare Thesen und scheust dich
+          nicht vor klaren Meinungen wo die Datenlage es hergibt.
+        mcp_servers: []
+
+    tasks:
+      - id: deep_research
+        agent_id: researcher
+        description: >
+          Führe eine tiefe Recherche zum Thema "{topic}" durch
+          (Kategorie: {category}).
+
+          Zusätzlicher Kontext: {context}
+
+          Recherchiere:
+          1. Kernfakten und aktuelle Entwicklungen (2024-2026)
+          2. Wichtige Statistiken und Zahlen
+          3. Pro-Argumente / Chancen
+          4. Contra-Argumente / Risiken und Kritik
+          5. Expertenmeinungen (wer sagt was?)
+          6. Praktische Anwendungsbeispiele
+          7. Was kommt als nächstes? (Ausblick)
+        expected_output: >
+          Umfassender Research-Report mit Fakten, Statistiken,
+          Pro/Contra-Argumente, Expertenmeinungen, Beispiele und Ausblick.
+
+      - id: synthesis_briefing
+        agent_id: synthesizer
+        description: >
+          Erstelle ein Redaktions-Briefing basierend auf dem Research-Report.
+
+          Das Briefing soll Content-Erstellern ermöglichen ohne weitere
+          Recherche sofort loszuschreiben.
+
+          Liefere JSON:
+          {{
+            "executive_summary": "3-4 Sätze Kernaussage",
+            "key_insights": ["insight1", "insight2", "insight3"],
+            "surprising_fact": "Das überraschendste Finding",
+            "main_thesis": "Die zentrale These für den Artikel",
+            "content_angle": "Empfohlener Blickwinkel/Framing",
+            "must_mention": ["Punkt1", "Punkt2", "Punkt3"],
+            "avoid": ["Was man vermeiden sollte"],
+            "hook_ideas": ["Möglicher Einstieg 1", "Möglicher Einstieg 2"],
+            "seo_keywords": "keyword1, keyword2, keyword3, keyword4, keyword5"
+          }}
+        expected_output: >
+          JSON-Briefing-Dokument mit Summary, Insights, These, Angle,
+          Must-Mentions, Avoids, Hook-Ideen und SEO-Keywords.
+        context_task_ids:
+          - deep_research
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Quick Research Crew (leichtgewichtig, für Tests) ─────────────────────────
+  quick_research_crew:
+    name: "Quick Research Crew"
+    model: "openrouter/google/gemini-2.0-flash-exp"
+    agents:
+      - id: analyst
+        role: "Research Analyst"
+        goal: "Analysiere das Thema und liefere eine prägnante Zusammenfassung."
+        backstory: >
+          Du bist ein schneller, präziser Analyst der komplexe Themen in wenigen
+          Sätzen auf den Punkt bringt. Du schreibst auf Deutsch.
+        mcp_servers: []
+
+    tasks:
+      - id: analyze
+        agent_id: analyst
+        description: >
+          Analysiere das Thema "{topic}" kurz und prägnant.
+          Liefere: 3 Kernpunkte, 3 relevante Keywords, eine Handlungsempfehlung.
+        expected_output: >
+          Strukturierte Analyse mit Kernpunkten, Keywords und Empfehlung.
+
     process: sequential
     webhooks:
       on_start: ""
