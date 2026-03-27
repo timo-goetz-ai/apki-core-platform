@@ -1,0 +1,216 @@
+{
+  "name": "350_CONTENT_FORECAST",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "triggerAtHour": 14, "triggerAtMinute": 0 }] },
+        "cronExpression": "0 14 * * 5"
+      },
+      "id": "schedule-trigger",
+      "name": "Freitag 14:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manuell starten",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 480]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mrdi13quucpnps4/records?limit=20&sort=-created_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-trends",
+      "name": "Trends der letzten 30 Tage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 260]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mvb46y3ncw21m1g/records?limit=10&sort=-created_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-sentiment",
+      "name": "Sentiment-Daten laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 440]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/m5abfrtfyr2j912/records?limit=10&sort=-created_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-opportunities",
+      "name": "Top Opportunities laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 620]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": { "values": [] },
+        "options": {}
+      },
+      "id": "merge-all",
+      "name": "Daten zusammenführen",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [680, 440]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle drei Datensätze zu einem Forecast-Prompt kombinieren\nconst items = $input.all();\n\nconst trends       = items[0]?.json?.list ?? [];\nconst sentiments   = items[1]?.json?.list ?? [];\nconst opportunities = items[2]?.json?.list ?? [];\n\nconst trendsText = trends.slice(0, 10).map((t, i) =>\n  `${i+1}. ${t.topic ?? t.keyword ?? t.title ?? JSON.stringify(t).substring(0,80)}`\n).join('\\n');\n\nconst sentimentText = sentiments.slice(0, 5).map((s) =>\n  `- ${s.topic ?? s.keyword ?? ''}: ${s.sentiment ?? s.score ?? s.label ?? 'neutral'}`\n).join('\\n');\n\nconst oppText = opportunities.slice(0, 8).map((o, i) =>\n  `${i+1}. ${o.topic ?? o.title ?? ''} (Score: ${o.opportunity_score ?? 'n/a'})`\n).join('\\n');\n\nconst today = new Date();\nconst in14Days = new Date(today.getTime() + 14*24*60*60*1000);\nconst dateRange = `${today.toISOString().split('T')[0]} bis ${in14Days.toISOString().split('T')[0]}`;\n\nconst prompt = `Du bist ein Content-Stratege spezialisiert auf KI-Themen im deutschsprachigen Raum (DACH).\n\nAnalysiere folgende Daten und erstelle einen 2-Wochen Content-Forecast.\n\n## AKTUELLE TRENDS (letzte 30 Tage)\n${trendsText || 'Keine Trend-Daten verfügbar'}\n\n## SENTIMENT-ANALYSE\n${sentimentText || 'Keine Sentiment-Daten verfügbar'}\n\n## TOP CONTENT-CHANCEN\n${oppText || 'Keine Opportunity-Daten verfügbar'}\n\n## DEIN AUFTRAG\nErstelle einen Content-Kalender für: ${dateRange}\n\nLiefere NUR valides JSON (kein Text drumherum):\n{\n  \"forecast_period\": \"${dateRange}\",\n  \"market_pulse\": \"2-3 Sätze zur aktuellen Stimmungslage\",\n  \"hot_topics_now\": [\"Thema1\", \"Thema2\", \"Thema3\"],\n  \"upcoming_topics\": [\"Thema1\", \"Thema2\"],\n  \"topics_declining\": [\"Thema1\"],\n  \"recommended_pieces\": [\n    {\n      \"topic\": \"Konkretes Thema\",\n      \"category\": \"KI-Tools\",\n      \"publish_date\": \"YYYY-MM-DD\",\n      \"target_platforms\": \"blog,linkedin\",\n      \"priority\": \"high\",\n      \"reasoning\": \"Kurze Begründung\"\n    }\n  ]\n}\nErstelle genau 7 recommended_pieces. Variiere Kategorien, Plattformen und Daten über 14 Tage.`;\n\nreturn [{ json: { prompt, date_range: dateRange } }];"
+      },
+      "id": "build-forecast-prompt",
+      "name": "Forecast-Prompt bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 440]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={{ $vars.GEMINI_API_KEY }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"contents\": [{ \"role\": \"user\", \"parts\": [{ \"text\": \"{{ $json.prompt }}\" }] }], \"generationConfig\": { \"temperature\": 0.6, \"maxOutputTokens\": 2048 } }"
+      },
+      "id": "gemini-forecast",
+      "name": "Gemini: Forecast generieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 440]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst raw = res.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';\n\nlet forecast = {};\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  if (match) forecast = JSON.parse(match[0]);\n} catch(_) {\n  forecast = { raw };\n}\n\nconst pieces = forecast.recommended_pieces ?? [];\nreturn pieces.map(p => ({ json: {\n  ...p,\n  market_pulse:      forecast.market_pulse ?? '',\n  forecast_period:   forecast.forecast_period ?? '',\n  hot_topics_now:    JSON.stringify(forecast.hot_topics_now ?? []),\n  upcoming_topics:   JSON.stringify(forecast.upcoming_topics ?? [])\n} }));"
+      },
+      "id": "parse-forecast",
+      "name": "Forecast parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 440]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mm1ssn0luruhzyx/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"piece_id\": \"forecast-{{ $now.format('YYYYMMDD') }}-{{ $itemIndex }}\", \"title\": \"{{ $json.topic }}\", \"topic\": \"{{ $json.topic }}\", \"category\": \"{{ $json.category }}\", \"status\": \"idea\", \"target_platforms\": \"{{ $json.target_platforms }}\", \"scheduled_at\": \"{{ $json.publish_date }}T09:00:00.000Z\", \"excerpt\": \"Forecast-Empfehlung: {{ $json.reasoning }}\" }"
+      },
+      "id": "create-idea-pieces",
+      "name": "Content-Pieces anlegen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 440]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"350_CONTENT_FORECAST\", \"action\": \"forecast.generated\", \"resource_type\": \"content_pieces\", \"result\": \"ok\" }"
+      },
+      "id": "audit-log",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 440]
+    }
+  ],
+  "connections": {
+    "Freitag 14:00": {
+      "main": [
+        [
+          { "node": "Trends der letzten 30 Tage", "type": "main", "index": 0 },
+          { "node": "Sentiment-Daten laden", "type": "main", "index": 0 },
+          { "node": "Top Opportunities laden", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Manuell starten": {
+      "main": [
+        [
+          { "node": "Trends der letzten 30 Tage", "type": "main", "index": 0 },
+          { "node": "Sentiment-Daten laden", "type": "main", "index": 0 },
+          { "node": "Top Opportunities laden", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Trends der letzten 30 Tage": {
+      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 0 }]]
+    },
+    "Sentiment-Daten laden": {
+      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 1 }]]
+    },
+    "Top Opportunities laden": {
+      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 2 }]]
+    },
+    "Daten zusammenführen": {
+      "main": [[{ "node": "Forecast-Prompt bauen", "type": "main", "index": 0 }]]
+    },
+    "Forecast-Prompt bauen": {
+      "main": [[{ "node": "Gemini: Forecast generieren", "type": "main", "index": 0 }]]
+    },
+    "Gemini: Forecast generieren": {
+      "main": [[{ "node": "Forecast parsen", "type": "main", "index": 0 }]]
+    },
+    "Forecast parsen": {
+      "main": [[{ "node": "Content-Pieces anlegen", "type": "main", "index": 0 }]]
+    },
+    "Content-Pieces anlegen": {
+      "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["research", "forecast", "content-planning"]
+}

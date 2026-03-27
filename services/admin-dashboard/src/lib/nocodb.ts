@@ -26,26 +26,32 @@ const TABLE_PROJEKTE = process.env.NOCODB_MCP_PROJEKTE_TABLE_ID ?? "";
 const TABLE_DIENSTE  = process.env.NOCODB_MCP_DIENSTE_TABLE_ID  ?? "";
 const TABLE_AUDIT    = process.env.NOCODB_MCP_AUDIT_TABLE_ID    ?? "";
 
-// ── Base & Table IDs (AI_SYSTEM + Dashboard bases) ──────────────────────────
-const AI_SYSTEM_BASE_ID  = process.env.NOCODB_AI_SYSTEM_BASE_ID  ?? 'pfx0ca6docorj8n';
-const DASHBOARD_BASE_ID  = process.env.NOCODB_DASHBOARD_BASE_ID  ?? 'pwxfagcnm6bru9w';
+// ── Content Base (pmox01979j55xbd) — verifizierte IDs 2026-03-27 ─────────────
+const CONTENT_BASE_ID = process.env.NOCODB_CONTENT_BASE_ID ?? 'pmox01979j55xbd';
+void CONTENT_BASE_ID; // suppress unused warning
 
-const TABLE_AGENTS         = process.env.NOCODB_AGENTS_TABLE_ID         ?? 'mjdp54ldeoxlb8s';
-const TABLE_TASKS          = process.env.NOCODB_TASKS_TABLE_ID          ?? 'mrt4iah96z7za7t';
-const TABLE_AGENT_RUNS     = process.env.NOCODB_AGENT_RUNS_TABLE_ID     ?? 'm0245soubmzha5r';
-const TABLE_PROMPTS        = process.env.NOCODB_PROMPTS_TABLE_ID        ?? 'mijlvsujsgqa92m';
-const TABLE_MCP_CONFIGS    = process.env.NOCODB_MCP_CONFIGS_TABLE_ID    ?? 'm128afvs767oxqa';
-const TABLE_KNOWLEDGE      = process.env.NOCODB_KNOWLEDGE_TABLE_ID      ?? 'm9hgs3y3iz9xtgl';
-const TABLE_PROJEKTE_NEW   = process.env.NOCODB_PROJEKTE_TABLE_ID       ?? 'mn4fqldtnb4f1qn';
-const TABLE_WORKFLOW_INDEX = process.env.NOCODB_WORKFLOW_INDEX_TABLE_ID ?? 'mlfy9vbmvhjt7si';
-const TABLE_LEADS          = process.env.NOCODB_LEADS_TABLE_ID          ?? 'm3y2aylkfn3ha0n';
+// Bestehende Tabellen in Content Base
+const TABLE_AGENTS         = process.env.NOCODB_AGENTS_TABLE_ID         ?? 'm8c0rpjwx5d4bu2';
+const TABLE_TASKS          = process.env.NOCODB_TASKS_TABLE_ID          ?? 'mjd39ltx4bq27qj';
+const TABLE_PROMPTS        = process.env.NOCODB_PROMPTS_TABLE_ID        ?? 'mlw20rrihtkbmew';
+const TABLE_KNOWLEDGE      = process.env.NOCODB_KNOWLEDGE_TABLE_ID      ?? 'mdnmls6h5zfrio1';
+const TABLE_PROJEKTE_NEW   = process.env.NOCODB_PROJEKTE_TABLE_ID       ?? 'mkbaqjiz5a2zaz4';
+const TABLE_LEADS          = process.env.NOCODB_LEADS_TABLE_ID          ?? 'mvjlin5dazwp69x';
+const TABLE_WORKFLOW_INDEX = process.env.NOCODB_WORKFLOW_INDEX_TABLE_ID ?? 'mfz43ghxesvn1yy';
+const TABLE_MCP_CONFIGS    = process.env.NOCODB_MCP_CONFIGS_TABLE_ID    ?? 'mk7cfi7stnj0hpc';
+
+// Neue Content-Infrastruktur-Tabellen (erstellt 2026-03-27)
+const TABLE_CONTENT_PIECES    = process.env.NOCODB_CONTENT_PIECES_TABLE_ID    ?? 'mm1ssn0luruhzyx';
+const TABLE_AGENT_EXECUTIONS  = process.env.NOCODB_AGENT_EXECUTIONS_TABLE_ID  ?? 'm02lg0vu1f81bh9';
+const TABLE_CONTENT_VERSIONS  = process.env.NOCODB_CONTENT_VERSIONS_TABLE_ID  ?? 'mzzemannneaes9g';
+const TABLE_DATA_SOURCES      = process.env.NOCODB_DATA_SOURCES_TABLE_ID      ?? 'me9zmh0uxnbzn5c';
+const TABLE_AUDIT_TRAIL_NEW   = process.env.NOCODB_AUDIT_TRAIL_TABLE_ID       ?? 'mgeh1epw96tgx3u';
+const TABLE_BATCH_JOBS        = process.env.NOCODB_BATCH_JOBS_TABLE_ID        ?? 'mg4p0eux8onz3nq';
 
 // suppress unused-variable warnings for IDs not yet used in queries
-void AI_SYSTEM_BASE_ID;
-void DASHBOARD_BASE_ID;
-void TABLE_AGENT_RUNS;
 void TABLE_MCP_CONFIGS;
 void TABLE_LEADS;
+void TABLE_DATA_SOURCES;
 
 export const isConfigured = () => !!TOKEN && !!TABLE_DIENSTE;
 
@@ -318,7 +324,7 @@ export async function createProject(data: Record<string, unknown>): Promise<Reco
 
 // ── Content Pipeline ─────────────────────────────────────────────────────────
 
-const TABLE_CONTENT_PIPELINE = process.env.NOCODB_CONTENT_PIPELINE_TABLE_ID ?? 'm48nvpornrxuba9';
+const TABLE_CONTENT_PIPELINE = process.env.NOCODB_CONTENT_PIPELINE_TABLE_ID ?? 'mgjsuwl4jwlyhdc';
 
 export interface PipelineJob {
   Id?: number;
@@ -481,7 +487,7 @@ export async function resolveErrorLog(id: string | number): Promise<void> {
 
 // ── Media Assets ──────────────────────────────────────────────────────────────
 
-const TABLE_MEDIA_ASSETS = process.env.NOCODB_MEDIA_ASSETS_TABLE_ID ?? 'm2u6y7ibyxt9tzp';
+const TABLE_MEDIA_ASSETS = process.env.NOCODB_MEDIA_ASSETS_TABLE_ID ?? 'msxl4hvogh62u4u';
 
 export type AssetType     = 'image' | 'audio' | 'video' | 'text' | 'pdf';
 export type AssetStatus   = 'processing' | 'ready' | 'published' | 'archived';
@@ -533,7 +539,7 @@ export async function updateMediaAssetStatus(id: number, status: AssetStatus): P
 
 // ── Publish Log ───────────────────────────────────────────────────────────────
 
-const TABLE_PUBLISH_LOG = process.env.NOCODB_PUBLISH_LOG_TABLE_ID ?? 'mpe25xaikbpr0wj';
+const TABLE_PUBLISH_LOG = process.env.NOCODB_PUBLISH_LOG_TABLE_ID ?? 'mcwxjf0na0ixkah';
 
 export type PublishStatus = 'pending' | 'published' | 'failed' | 'scheduled';
 
@@ -576,4 +582,233 @@ export async function updatePublishLogEntry(
     headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
     body: JSON.stringify({ Id: id, ...data }),
   });
+}
+
+// ── Content Pieces ────────────────────────────────────────────────────────────
+
+export type ContentStatus =
+  | 'idea' | 'research' | 'draft' | 'review'
+  | 'approved' | 'published' | 'archived';
+
+export type ContentCategory =
+  | 'KI-Tools' | 'Tutorial' | 'Review' | 'News' | 'Allgemein';
+
+export interface ContentPiece {
+  Id?: number;
+  piece_id: string;
+  title: string;
+  topic?: string;
+  category?: ContentCategory;
+  status: ContentStatus;
+  content_text?: string;
+  excerpt?: string;
+  seo_keywords?: string;
+  image_url?: string;
+  audio_url?: string;
+  gdrive_folder_id?: string;
+  gdrive_doc_id?: string;
+  source_opportunity_id?: string;
+  pipeline_job_id?: string;
+  target_platforms?: string;
+  scheduled_at?: string;
+  published_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function createContentPiece(
+  data: Omit<ContentPiece, 'Id'>
+): Promise<ContentPiece> {
+  return nocoPost<ContentPiece>(TABLE_CONTENT_PIECES, {
+    ...data,
+    created_at: data.created_at ?? new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function getContentPieces(
+  status?: ContentStatus,
+  limit = 100
+): Promise<ContentPiece[]> {
+  try {
+    const params: Record<string, string> = {
+      sort: '-created_at',
+      limit: String(limit),
+    };
+    if (status) params.where = `(status,eq,${status})`;
+    return await nocoGet<ContentPiece>(TABLE_CONTENT_PIECES, params);
+  } catch (e) {
+    console.warn('[NocoDB] getContentPieces Fehler:', e);
+    return [];
+  }
+}
+
+export async function getContentPiecesByDateRange(
+  from: string,
+  to: string
+): Promise<ContentPiece[]> {
+  try {
+    return await nocoGet<ContentPiece>(TABLE_CONTENT_PIECES, {
+      where: `(scheduled_at,gte,${from})~and(scheduled_at,lte,${to})`,
+      sort: 'scheduled_at',
+      limit: '500',
+    });
+  } catch (e) {
+    console.warn('[NocoDB] getContentPiecesByDateRange Fehler:', e);
+    return [];
+  }
+}
+
+export async function updateContentPiece(
+  id: number,
+  data: Partial<Omit<ContentPiece, 'Id'>>
+): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_CONTENT_PIECES}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, ...data, updated_at: new Date().toISOString() }),
+  });
+}
+
+// ── Agent Executions ──────────────────────────────────────────────────────────
+
+export type ExecutionStatus = 'started' | 'completed' | 'failed' | 'timeout';
+
+export interface AgentExecution {
+  Id?: number;
+  execution_id: string;
+  agent_id: string;
+  content_piece_id?: string;
+  task_id?: string;
+  status: ExecutionStatus;
+  input_json?: string;
+  output_json?: string;
+  error_message?: string;
+  duration_ms?: number;
+  tokens_used?: number;
+  cost_usd?: number;
+  started_at: string;
+  finished_at?: string;
+}
+
+export async function createAgentExecution(
+  data: Omit<AgentExecution, 'Id'>
+): Promise<AgentExecution> {
+  return nocoPost<AgentExecution>(TABLE_AGENT_EXECUTIONS, {
+    ...data,
+    execution_id: data.execution_id ?? crypto.randomUUID(),
+    started_at: data.started_at ?? new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function finishAgentExecution(
+  id: number,
+  result: Pick<AgentExecution, 'status' | 'output_json' | 'error_message' | 'duration_ms' | 'tokens_used' | 'cost_usd'>
+): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_AGENT_EXECUTIONS}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, ...result, finished_at: new Date().toISOString() }),
+  });
+}
+
+// ── Batch Jobs ────────────────────────────────────────────────────────────────
+
+export type BatchStatus = 'queued' | 'running' | 'partial' | 'done' | 'failed';
+
+export interface BatchJob {
+  Id?: number;
+  batch_id: string;
+  topics_json: string;
+  category: string;
+  steps_json: string;
+  status: BatchStatus;
+  total_count: number;
+  done_count: number;
+  error_count: number;
+  scheduled_at?: string;
+  started_at?: string;
+  finished_at?: string;
+  created_at?: string;
+}
+
+export async function createBatchJob(
+  topics: string[],
+  category: string,
+  steps: string[],
+  scheduledAt?: string
+): Promise<BatchJob> {
+  return nocoPost<BatchJob>(TABLE_BATCH_JOBS, {
+    batch_id:    crypto.randomUUID(),
+    topics_json: JSON.stringify(topics),
+    category,
+    steps_json:  JSON.stringify(steps),
+    status:      'queued',
+    total_count: topics.length,
+    done_count:  0,
+    error_count: 0,
+    scheduled_at: scheduledAt ?? null,
+    created_at:  new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function getBatchJobs(limit = 50): Promise<BatchJob[]> {
+  try {
+    return await nocoGet<BatchJob>(TABLE_BATCH_JOBS, {
+      sort: '-created_at',
+      limit: String(limit),
+    });
+  } catch (e) {
+    console.warn('[NocoDB] getBatchJobs Fehler:', e);
+    return [];
+  }
+}
+
+export async function updateBatchJob(
+  id: number,
+  data: Partial<Pick<BatchJob, 'status' | 'done_count' | 'error_count' | 'started_at' | 'finished_at'>>
+): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_BATCH_JOBS}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, ...data }),
+  });
+}
+
+// ── Audit Trail ───────────────────────────────────────────────────────────────
+
+export type AuditResult = 'ok' | 'error' | 'blocked';
+
+export interface AuditEntry {
+  audit_id: string;
+  ts: string;
+  actor: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  before_json?: string;
+  after_json?: string;
+  result: AuditResult;
+}
+
+export async function logAuditTrail(data: {
+  actor: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  result?: AuditResult;
+  after_json?: string;
+  before_json?: string;
+}): Promise<void> {
+  if (!TOKEN || !TABLE_AUDIT_TRAIL_NEW) return;
+  try {
+    await nocoPost(TABLE_AUDIT_TRAIL_NEW, {
+      audit_id:      crypto.randomUUID(),
+      ts:            new Date().toISOString(),
+      result:        'ok',
+      ...data,
+    } as Record<string, unknown>);
+  } catch (e) {
+    console.warn('[NocoDB] logAuditTrail Fehler:', e);
+  }
 }

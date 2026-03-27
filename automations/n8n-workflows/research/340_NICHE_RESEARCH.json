@@ -1,0 +1,162 @@
+{
+  "name": "340_NICHE_RESEARCH",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "triggerAtHour": 10, "triggerAtMinute": 0 }] },
+        "cronExpression": "0 10 * * 1"
+      },
+      "id": "schedule-trigger",
+      "name": "Montag 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manuell starten",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 480]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/m5abfrtfyr2j912/records?limit=5&sort=-created_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-opportunities",
+      "name": "Top Opportunities laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst items = res.list ?? [];\nif (!items.length) return [];\nreturn items.map(opp => ({ json: opp }));"
+      },
+      "id": "extract-items",
+      "name": "Items aufteilen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const opp = $input.first().json;\nconst topic   = opp.topic ?? opp.title ?? opp.keyword ?? 'KI-Thema';\nconst platform = opp.platform ?? 'blog,linkedin,instagram';\nconst summary  = opp.summary ?? opp.description ?? '';\n\nconst prompt = `Du bist ein Marketing-Analyst spezialisiert auf deutschsprachige KI- und Tech-Zielgruppen.\n\nAnalysiere die Zielgruppe und Nische für das Thema: \"${topic}\"\nPlattformen: ${platform}\n\n${summary ? `Kontext: ${summary}\\n\\n` : ''}Liefere eine strukturierte JSON-Analyse (keine Erklärungen drumherum, nur valides JSON):\n{\n  \"primary_audience\": {\n    \"age_range\": \"z.B. 28-45\",\n    \"professions\": [\"Beruf1\", \"Beruf2\"],\n    \"knowledge_level\": \"Beginner|Intermediate|Expert\",\n    \"interests\": [\"Interesse1\", \"Interesse2\"]\n  },\n  \"pain_points\": [\"Pain Point 1\", \"Pain Point 2\", \"Pain Point 3\"],\n  \"motivations\": [\"Motivation 1\", \"Motivation 2\"],\n  \"communication_style\": \"Beschreibung des optimalen Tons\",\n  \"best_format\": \"Empfohlenes Content-Format für die Plattform\",\n  \"content_gap\": \"Was fehlt aktuell in diesem Nischenbereich?\",\n  \"opportunity_score\": 8,\n  \"recommendation\": \"Produce Now|Produce Later|Skip\",\n  \"timing_hint\": \"Warum jetzt oder wann besser?\"\n}`;\n\nreturn [{ json: {\n  opp_id:    opp.Id,\n  topic,\n  platform,\n  prompt\n} }];"
+      },
+      "id": "build-prompt",
+      "name": "Gemini-Prompt bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={{ $vars.GEMINI_API_KEY }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"contents\": [{ \"role\": \"user\", \"parts\": [{ \"text\": \"{{ $json.prompt }}\" }] }], \"generationConfig\": { \"temperature\": 0.4, \"maxOutputTokens\": 1024 } }"
+      },
+      "id": "gemini-analyze",
+      "name": "Gemini: Nischen-Analyse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiRes = $input.first().json;\nconst rawText   = geminiRes.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';\nconst oppId     = $('Gemini-Prompt bauen').item.json.opp_id;\nconst topic     = $('Gemini-Prompt bauen').item.json.topic;\n\nlet analysis = {};\ntry {\n  const match = rawText.match(/\\{[\\s\\S]*\\}/);\n  if (match) analysis = JSON.parse(match[0]);\n} catch(_) {\n  analysis = { raw: rawText };\n}\n\nreturn [{ json: {\n  opp_id:          oppId,\n  topic,\n  niche_analysis:  JSON.stringify(analysis),\n  opportunity_score: analysis.opportunity_score ?? null,\n  recommendation:  analysis.recommendation ?? '',\n  content_gap:     analysis.content_gap ?? ''\n} }];"
+      },
+      "id": "extract-analysis",
+      "name": "Analyse extrahieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 380]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/m5abfrtfyr2j912/records/{{ $json.opp_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"niche_analysis\": \"{{ $json.niche_analysis }}\", \"opportunity_score\": {{ $json.opportunity_score ?? 0 }}, \"recommendation\": \"{{ $json.recommendation }}\", \"content_gap\": \"{{ $json.content_gap }}\" }"
+      },
+      "id": "update-opportunity",
+      "name": "Opportunity aktualisieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"340_NICHE_RESEARCH\", \"action\": \"niche.analyzed\", \"resource_type\": \"content_opportunity\", \"resource_id\": \"{{ $('Analyse extrahieren').item.json.opp_id }}\", \"result\": \"ok\" }"
+      },
+      "id": "audit-log",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 380]
+    }
+  ],
+  "connections": {
+    "Montag 10:00": {
+      "main": [[{ "node": "Top Opportunities laden", "type": "main", "index": 0 }]]
+    },
+    "Manuell starten": {
+      "main": [[{ "node": "Top Opportunities laden", "type": "main", "index": 0 }]]
+    },
+    "Top Opportunities laden": {
+      "main": [[{ "node": "Items aufteilen", "type": "main", "index": 0 }]]
+    },
+    "Items aufteilen": {
+      "main": [[{ "node": "Gemini-Prompt bauen", "type": "main", "index": 0 }]]
+    },
+    "Gemini-Prompt bauen": {
+      "main": [[{ "node": "Gemini: Nischen-Analyse", "type": "main", "index": 0 }]]
+    },
+    "Gemini: Nischen-Analyse": {
+      "main": [[{ "node": "Analyse extrahieren", "type": "main", "index": 0 }]]
+    },
+    "Analyse extrahieren": {
+      "main": [[{ "node": "Opportunity aktualisieren", "type": "main", "index": 0 }]]
+    },
+    "Opportunity aktualisieren": {
+      "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["research", "niche", "audience"]
+}

@@ -7,7 +7,7 @@ class NocoDBClient:
     def __init__(self, settings: Settings):
         self.base_url = (settings.nocodb_api_url or "").rstrip("/")
         self.token = settings.nocodb_api_token or ""
-        self._headers = {"xc-auth": self.token, "Content-Type": "application/json"}
+        self._headers = {"xc-token": self.token, "Content-Type": "application/json"}
 
     def _enabled(self) -> bool:
         return bool(self.base_url and self.token)
