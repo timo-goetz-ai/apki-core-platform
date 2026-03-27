@@ -68,6 +68,18 @@ export async function listVoices(): Promise<{ id: string; name: string; language
 }
 
 /**
+ * Health check — prüft ob API Key gültig ist
+ */
+export async function checkFishAudioHealth(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await listVoices();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
  * Convert ArrayBuffer to Base64 Data URL
  */
 export function audioToDataUrl(buffer: ArrayBuffer, format = "mp3"): string {

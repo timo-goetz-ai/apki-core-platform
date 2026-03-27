@@ -11,7 +11,7 @@ export async function GET() {
 
 // POST /api/content-factory/pipeline — neuen Job anlegen
 export async function POST(req: NextRequest) {
-  const { topic, category = 'Allgemein', steps = ['blog', 'image', 'voice'] } = await req.json();
+  const { topic, category = 'Allgemein', tone, target_platforms, source_opportunity_id } = await req.json();
 
   if (!topic) {
     return NextResponse.json({ error: 'topic erforderlich' }, { status: 400 });
@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
   const job = await createPipelineJob({
     topic,
     category,
-    steps_requested: JSON.stringify(steps),
+    tone,
+    target_platforms,
+    source_opportunity_id,
   });
 
   return NextResponse.json({ job });

@@ -67,7 +67,7 @@ Excerpt (1 Satz): ...`,
 
       const llmData = await llmRes.json() as { choices?: { message?: { content?: string } }[] };
       const blogContent = llmData.choices?.[0]?.message?.content ?? '';
-      await updatePipelineJob(jobId, { text_content: blogContent });
+      await updatePipelineJob(jobId, { content_text: blogContent });
     } catch (e) {
       errors.blog = String(e);
       await updatePipelineJob(jobId, {
@@ -85,7 +85,6 @@ Excerpt (1 Satz): ...`,
       const { imageUrl, inferenceId } = await generateHeroImage(job.topic, job.category);
       await updatePipelineJob(jobId, {
         image_url: imageUrl,
-        picsart_inference_id: inferenceId,
       });
     } catch (e) {
       errors.image = String(e);
@@ -100,12 +99,12 @@ Excerpt (1 Satz): ...`,
   if (steps.includes('voice')) {
     await updatePipelineJob(jobId, { stage: 'voice', status: 'running' });
     try {
-      // Excerpt aus text_content extrahieren (letzte aktualisierte Version holen)
+      // Excerpt aus content_text extrahieren (letzte aktualisierte Version holen)
       const current = await getPipelineJob(jobId);
-      const text = extractExcerpt(current?.text_content ?? job.topic);
+      const text = extractExcerpt(current?.content_text ?? job.topic);
       const audioBuffer = await textToSpeech(text, { speed: 1.0 });
       const audioDataUrl = audioToDataUrl(audioBuffer);
-      await updatePipelineJob(jobId, { audio_url: audioDataUrl });
+      await updatePipelineJob(jobId, { voice_url: audioDataUrl });
     } catch (e) {
       errors.voice = String(e);
       await updatePipelineJob(jobId, {
