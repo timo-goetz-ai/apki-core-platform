@@ -1,0 +1,452 @@
+{
+  "name": "70_TELEGRAM_ASSISTANT",
+  "nodes": [
+    {
+      "id": "tg-webhook",
+      "name": "Telegram Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "telegram-assistant"
+    },
+    {
+      "id": "tg-extract",
+      "name": "Extract & Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "parameters": {
+        "jsCode": "const body = $input.first().json?.body ?? $input.first().json;\n\n// Support both regular message and inline keyboard callback_query\nconst isCallback = !!body.callback_query;\nconst message = body.message ?? body.callback_query?.message ?? {};\nconst callbackData = body.callback_query?.data ?? null;\nconst callbackQueryId = body.callback_query?.id ?? null;\n\nconst chatId = message?.chat?.id ?? body.callback_query?.from?.id;\nconst fromId = message?.from?.id ?? body.callback_query?.from?.id;\nconst messageId = message?.message_id ?? null;\n\n// Text: prefer callback data for button presses, else message text\nconst text = callbackData ?? message?.text ?? '';\n\n// Security guard: only respond to allowed chat\nconst allowedChatId = $env.TELEGRAM_ALLOWED_CHAT_ID ? parseInt($env.TELEGRAM_ALLOWED_CHAT_ID) : null;\nconst blocked = allowedChatId !== null && chatId !== allowedChatId;\n\n// Detect if this is a confirmation callback (button press from inline keyboard)\nconst isConfirmation = isCallback && (callbackData?.startsWith('confirm_') || callbackData === 'cancel');\n\nreturn [{ json: {\n  chatId,\n  fromId,\n  messageId,\n  text,\n  isCallback,\n  callbackQueryId,\n  callbackData,\n  isConfirmation,\n  blocked\n} }];"
+      }
+    },
+    {
+      "id": "tg-guard-check",
+      "name": "Blocked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "check-blocked",
+              "leftValue": "={{ $json.blocked }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "tg-respond-200-silent",
+      "name": "Respond 200 Silent",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [860, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ok: true}) }}"
+      }
+    },
+    {
+      "id": "tg-respond-200-ok",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [860, 400],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ok: true}) }}"
+      }
+    },
+    {
+      "id": "tg-ack-callback",
+      "name": "ACK Callback Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ callback_query_id: $json.callbackQueryId ?? '' }) }}",
+        "options": { "timeout": 5000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "tg-is-callback",
+      "name": "Is Callback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1300, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cb-check",
+              "leftValue": "={{ $json.isCallback }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "tg-intent-ai",
+      "name": "AI Intent Classifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.OPENROUTER_API_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({\n  model: 'google/gemini-2.0-flash:free',\n  messages: [\n    {\n      role: 'system',\n      content: 'You are an intent classifier for an AIOS automation control bot. Analyze the user message and return ONLY valid JSON without markdown or explanation.\\n\\nAvailable intents:\\n- LIST_WORKFLOWS: show all n8n workflows\\n- ACTIVATE_WORKFLOW: enable/activate a workflow\\n- DEACTIVATE_WORKFLOW: disable/stop/deactivate a workflow\\n- TRIGGER_WORKFLOW: run/execute/start a workflow now\\n- UPDATE_SCHEDULE: change when a workflow runs (schedule/cron)\\n- STATUS_REPORT: system status, health check, overview\\n- N8N_STATS: n8n stats, execution statistics\\n- NOCODB_TRENDS: trend data, research trends, aktuelle Trends\\n- NOCODB_SENTIMENT: sentiment analysis data, Stimmung\\n- NOCODB_CONTENT: content opportunities, Content-Ideen\\n- ALERTS: alerts from Grafana or Prometheus\\n- HELP: list available commands, Hilfe, what can you do\\n- UNKNOWN: none of the above\\n\\nReturn this exact JSON structure:\\n{\"intent\":\"LIST_WORKFLOWS\",\"workflow_name\":null,\"workflow_id\":null,\"cron_expression\":null,\"cron_human\":null,\"confidence\":0.95}\\n\\nFor UPDATE_SCHEDULE: parse natural language schedule into cron expression.\\nExamples: \"zweimal täglich\" → \"0 8,20 * * *\" | \"jeden Tag um 7\" → \"0 7 * * *\" | \"stündlich\" → \"0 * * * *\"'\n    },\n    {\n      role: 'user',\n      content: $('Extract & Guard').first().json.text\n    }\n  ],\n  temperature: 0.1,\n  max_tokens: 200\n}) }}",
+        "options": { "timeout": 15000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "tg-parse-intent",
+      "name": "Parse Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 400],
+      "parameters": {
+        "jsCode": "const guardData = $('Extract & Guard').first().json;\nconst chatId = guardData.chatId;\nconst text = guardData.text;\n\nconst raw = $input.first().json?.choices?.[0]?.message?.content ?? '{}';\n\nlet parsed = { intent: 'UNKNOWN', workflow_name: null, workflow_id: null, cron_expression: null, cron_human: null, confidence: 0 };\ntry {\n  const cleaned = raw.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  parsed = { ...parsed, ...JSON.parse(cleaned) };\n} catch(e) {\n  parsed.intent = 'UNKNOWN';\n}\n\n// Map N8N_STATS to STATUS_REPORT for routing\nif (parsed.intent === 'N8N_STATS') parsed.intent = 'STATUS_REPORT';\n\nreturn [{ json: {\n  ...parsed,\n  chatId,\n  originalText: text,\n  isCallback: false,\n  callbackData: null,\n  isConfirmation: false\n} }];"
+      }
+    },
+    {
+      "id": "tg-callback-prep",
+      "name": "Prep Callback Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 240],
+      "parameters": {
+        "jsCode": "const guardData = $('Extract & Guard').first().json;\n\n// Route callback confirmations to WORKFLOW_CONTROL\nconst callbackData = guardData.callbackData ?? '';\n\nlet intent = 'WORKFLOW_CONTROL_CONFIRM';\nif (callbackData === 'cancel') {\n  intent = 'WORKFLOW_CONTROL_CONFIRM';\n}\n\nreturn [{ json: {\n  intent: 'LIST_WORKFLOWS',  // placeholder — will be overridden by isConfirmation flag\n  chatId: guardData.chatId,\n  callbackData: guardData.callbackData,\n  isConfirmation: true,\n  isCallback: true,\n  workflow_name: null,\n  workflow_id: null,\n  cron_expression: null,\n  cron_human: null,\n  confidence: 1.0,\n  originalText: guardData.text\n} }];"
+      }
+    },
+    {
+      "id": "tg-router",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [2000, 340],
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "WORKFLOW_CONTROL",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ['LIST_WORKFLOWS','ACTIVATE_WORKFLOW','DEACTIVATE_WORKFLOW','TRIGGER_WORKFLOW','UPDATE_SCHEDULE'].includes($json.intent) || $json.isConfirmation === true }}",
+                    "rightValue": true,
+                    "operator": { "type": "boolean", "operation": "equal" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "STATUS",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "STATUS_REPORT",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "STATUS",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "ALERTS",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "RESEARCH",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ['NOCODB_TRENDS','NOCODB_SENTIMENT','NOCODB_CONTENT'].includes($json.intent) }}",
+                    "rightValue": true,
+                    "operator": { "type": "boolean", "operation": "equal" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "HELP",
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "HELP",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      }
+    },
+    {
+      "id": "tg-exec-workflow-control",
+      "name": "Run 70a Workflow Control",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [2240, 220],
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "REPLACE_WITH_70a_WORKFLOW_ID", "mode": "id" },
+        "waitForSubWorkflow": true,
+        "inputData": "={{ $json }}"
+      }
+    },
+    {
+      "id": "tg-exec-status",
+      "name": "Run 70b Status Report",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [2240, 340],
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "REPLACE_WITH_70b_WORKFLOW_ID", "mode": "id" },
+        "waitForSubWorkflow": true,
+        "inputData": "={{ $json }}"
+      }
+    },
+    {
+      "id": "tg-exec-research",
+      "name": "Run 70c Research Data",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [2240, 460],
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "REPLACE_WITH_70c_WORKFLOW_ID", "mode": "id" },
+        "waitForSubWorkflow": true,
+        "inputData": "={{ $json }}"
+      }
+    },
+    {
+      "id": "tg-help",
+      "name": "Help Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2240, 580],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "h1", "name": "chatId", "value": "={{ $json.chatId }}", "type": "string" },
+            {
+              "id": "h2",
+              "name": "response",
+              "value": "*AIOS Control Bot*\n\n*Workflow-Steuerung:*\n• `workflows` — alle Workflows anzeigen\n• `aktiviere [Name]` — Workflow aktivieren\n• `deaktiviere [Name]` — Workflow stoppen\n• `starte [Name]` — Workflow jetzt ausführen\n• `lass [Name] täglich um 8 laufen` — Zeitplan ändern\n\n*Status & Reports:*\n• `status` — Systemüberblick\n• `alerts` — Grafana/Prometheus Alerts\n\n*Research-Daten:*\n• `trends` — aktuelle Trend-Daten (NocoDB)\n• `sentiment` — Sentiment-Analyse\n• `content` — Content Opportunities\n\n_Fragen auf Deutsch oder Englisch möglich._",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "tg-unknown",
+      "name": "Unknown Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2240, 700],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "u1", "name": "chatId", "value": "={{ $json.chatId }}", "type": "string" },
+            { "id": "u2", "name": "response", "value": "❓ Das habe ich nicht verstanden.\n\nTippe *hilfe* oder `/hilfe` für verfügbare Befehle.", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "tg-merge-response",
+      "name": "Merge Responses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2480, 420],
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1"
+      }
+    },
+    {
+      "id": "tg-format",
+      "name": "Format for Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2700, 420],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst chatId = item.chatId;\nlet response = item.response ?? '';\n\n// Empty response means pending confirmation (inline keyboard already sent)\nif (!response || response.trim() === '') {\n  return [{ json: { chatId, response: null, skipSend: true } }];\n}\n\n// Truncate to Telegram max\nconst MAX_LEN = 4000;\nif (response.length > MAX_LEN) {\n  response = response.substring(0, MAX_LEN) + '\\n\\n_[Ausgabe gekürzt]_';\n}\n\n// Escape unescaped asterisks that aren't part of bold pairs\n// Keep Markdown v1 formatting (simpler than MarkdownV2)\n\nreturn [{ json: { chatId, response, skipSend: false } }];"
+      }
+    },
+    {
+      "id": "tg-send-check",
+      "name": "Skip Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2920, 420],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "skip-send",
+              "leftValue": "={{ $json.skipSend }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "tg-send-message",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3160, 480],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ chat_id: $json.chatId, text: $json.response, parse_mode: 'Markdown' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Telegram Webhook": {
+      "main": [
+        [{ "node": "Extract & Guard", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract & Guard": {
+      "main": [
+        [{ "node": "Blocked?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Blocked?": {
+      "main": [
+        [{ "node": "Respond 200 Silent", "type": "main", "index": 0 }],
+        [{ "node": "Respond 200 OK",     "type": "main", "index": 0 }]
+      ]
+    },
+    "Respond 200 OK": {
+      "main": [
+        [{ "node": "ACK Callback Query", "type": "main", "index": 0 }]
+      ]
+    },
+    "ACK Callback Query": {
+      "main": [
+        [{ "node": "Is Callback?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Callback?": {
+      "main": [
+        [{ "node": "Prep Callback Intent",   "type": "main", "index": 0 }],
+        [{ "node": "AI Intent Classifier",   "type": "main", "index": 0 }]
+      ]
+    },
+    "Prep Callback Intent": {
+      "main": [
+        [{ "node": "Intent Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Intent Classifier": {
+      "main": [
+        [{ "node": "Parse Intent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Intent": {
+      "main": [
+        [{ "node": "Intent Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [{ "node": "Run 70a Workflow Control", "type": "main", "index": 0 }],
+        [{ "node": "Run 70b Status Report",    "type": "main", "index": 0 }],
+        [{ "node": "Run 70c Research Data",    "type": "main", "index": 0 }],
+        [{ "node": "Help Response",            "type": "main", "index": 0 }],
+        [{ "node": "Unknown Response",         "type": "main", "index": 0 }]
+      ]
+    },
+    "Run 70a Workflow Control": { "main": [[{ "node": "Merge Responses", "type": "main", "index": 0 }]] },
+    "Run 70b Status Report":    { "main": [[{ "node": "Merge Responses", "type": "main", "index": 1 }]] },
+    "Run 70c Research Data":    { "main": [[{ "node": "Merge Responses", "type": "main", "index": 2 }]] },
+    "Help Response":            { "main": [[{ "node": "Merge Responses", "type": "main", "index": 3 }]] },
+    "Unknown Response":         { "main": [[{ "node": "Merge Responses", "type": "main", "index": 4 }]] },
+    "Merge Responses": {
+      "main": [
+        [{ "node": "Format for Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format for Telegram": {
+      "main": [
+        [{ "node": "Skip Send?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Skip Send?": {
+      "main": [
+        [],
+        [{ "node": "Send Telegram Message", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  },
+  "staticData": null,
+  "tags": ["telegram"],
+  "meta": {
+    "description": "Telegram AI Chatbot Dispatcher — empfängt Telegram-Nachrichten, klassifiziert Intent via Gemini Flash und routet zu Sub-Workflows"
+  }
+}

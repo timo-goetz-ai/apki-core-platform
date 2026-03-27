@@ -27,8 +27,8 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 
 | System | Erreichbarkeit |
 |--------|----------------|
-| **n8n** | Instanz im internen Netz: `http://10.0.1.29:5678` (Workflows triggern/API je nach Setup) |
-| **NocoDB** | `https://nocodb.automation-plus-ki.de` — zentrale Tabellen/Research-Outputs |
+| **n8n** | `http://10.0.1.12:5678` intern / `https://n8n.automation-plus-ki.de` öffentlich |
+| **NocoDB** | `http://10.0.1.20:8080` intern / `https://nocodb.automation-plus-ki.de` öffentlich |
 
 ## Umgebungsvariablen (Coolify)
 
@@ -39,14 +39,17 @@ Secrets und env-spezifische Werte werden **in Coolify** pro Anwendung/Stack gese
 
 Für lokale Entwicklung: `.env.example`-Dateien im Repo beachten (falls vorhanden) und nur **nicht-sensible** Defaults dokumentieren.
 
-## n8n-Workflow-Konvention (Präfixe)
+## n8n-Workflow-Konvention (Layer-Struktur)
 
-Workflows nach Zweck gruppieren, z. B.:
+Workflows nach Layer gruppiert:
 
-- `11_` — Trend
-- `12_` — Sentiment
-- `13_` — Content  
-(Nachfolgende Nummern/Kategorien analog fortsetzen.)
+| Layer | Präfix | Zweck |
+|-------|--------|-------|
+| INGEST | `100–199` | Daten-Eingang (Webhook, Mobile, Obsidian) |
+| BRAIN | `200–299` | KI-Kern, Routing, Logging, Discovery |
+| RESEARCH | `300–399` | Trend, Sentiment, Content-Chancen (Gemini direct) |
+| CONTENT | `400–499` | Pipeline, TTS, Templates, Digest |
+| HUMAN | `500–599` | Telegram, Approvals, Trigger, Reports |
 
 So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
@@ -70,36 +73,43 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
 | Service | URL | Auth |
 |---------|-----|------|
-| n8n | `http://10.0.1.29:5678` | `X-N8N-API-KEY: op://03_INFRA_AUTO/Homestack - Service Credentials/N8N_API_KEY_AGENT_PLATFORM` |
-| NocoDB | `https://nocodb.automation-plus-ki.de` | `xc-token: op://03_INFRA_AUTO/Homestack - Service Credentials/NOCODB_API_TOKEN_MAIN` |
+| n8n | `http://10.0.1.12:5678` (intern) | `X-N8N-API-KEY: n8n_api_191d56c7f262a4c859c0f77e6a5ee1115480fbd31d687b07` |
+| NocoDB | `http://10.0.1.20:8080` (intern) / `https://nocodb.automation-plus-ki.de` | `xc-token: WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK` |
 | Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token in Coolify |
-| Prometheus | `http://10.0.1.29:9090` | kein Auth intern |
+| Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
 | Coolify | `https://coolify.automation-plus-ki.de` | Bearer in Coolify |
 | Admin-Dashboard | `https://admin.automation-plus-ki.de` | Authentik OIDC |
 
-**NocoDB Projekt-ID:** `pfx0ca6docorj8n`
+**NocoDB Base-ID (neu):** `pmox01979j55xbd`
+**NocoDB Login:** `ai_studio@timo-goetz-ai.de` / `NocoDB2026Admin`
+**n8n Login:** `admin@timo-goetz-ai.de` / `Aios2026!`
 
 ## NocoDB Table-IDs (Research-Outputs)
 
 | Tabelle | ID | Beschreibung |
 |---------|-----|--------------|
-| workflows | `mnwlsxsm0q1k2d2` | n8n-Workflow-Register |
-| trends | `m91y1ifz2aop1ef` | Output: `11_TREND_MONITOR` |
-| sentiment | `moigzpvd4yw1d0a` | Output: `12_SENTIMENT_TRACKER` |
-| content_opportunities | `m7ehbmbi5t2w0dw` | Output: `13_CONTENT_OPPORTUNITY` |
-| content_pipeline | `m48nvpornrxuba9` | Content-Produktion |
-| prompts | `mijlvsujsgqa92m` | Prompt-Bibliothek |
+| workflows | `mfz43ghxesvn1yy` | n8n-Workflow-Register (32 Workflows) |
+| trends | `mrdi13quucpnps4` | Output: `310_TREND_MONITOR` |
+| sentiment | `mvb46y3ncw21m1g` | Output: `320_SENTIMENT_TRACKER` |
+| content_opportunities | `m5abfrtfyr2j912` | Output: `330_CONTENT_OPPORTUNITY` |
+| content_pipeline | `mgjsuwl4jwlyhdc` | Content-Produktion |
+| prompts | `mlw20rrihtkbmew` | Prompt-Bibliothek |
+| media_assets | `msxl4hvogh62u4u` | Medien-Assets (Bilder, Audio, Video) |
+| publish_log | `mcwxjf0na0ixkah` | Publishing-Protokoll (Social/Blog) |
+| mobile_ingest | `m3sn5vn7x9iye25` | Mobile Eingabe / Handy-Uploads |
 
 ## n8n Workflow-IDs (wichtigste)
 
 | Workflow | ID | Zeitplan |
 |----------|-----|---------|
-| `11_TREND_MONITOR` | `fEYWN4pWhRcG2tLg` | tägl. 07:00 |
-| `12_SENTIMENT_TRACKER` | `Vx1Aea5glbogJxg6` | alle 4h |
-| `13_CONTENT_OPPORTUNITY` | `I6LcxlyMM8TU7A7V` | tägl. |
+| `310_TREND_MONITOR` | `QXMKnvar7vGceevY` | tägl. 08:00 — **AKTIV** |
+| `320_SENTIMENT_TRACKER` | `bycPphxXy3Crhx4h` | Mo. 08:00 — **AKTIV** |
+| `330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
+| `540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand |
+| `450_CONTENT_MASTER_FLOW` | `WWXFGPrz0tqPSow1` | on_demand |
 
-**OpenRouter-Modell in Research-Workflows:** `google/gemini-2.0-flash:free`
-(NICHT `gemini-2.0-flash-exp:free` — wurde von OpenRouter entfernt)
+**AI-Modell in Research-Workflows:** `gemini-2.0-flash` (direkt via Gemini API, KEIN OpenRouter)
+**Gemini API Key:** in n8n Container-Env als `GEMINI_API_KEY`
 
 ## Admin-Dashboard Code-Konventionen
 

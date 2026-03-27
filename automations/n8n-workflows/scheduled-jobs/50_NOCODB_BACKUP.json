@@ -1,0 +1,116 @@
+{
+  "name": "50_NOCODB_BACKUP",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 3 * * *" }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule (tägl. 03:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Backup-Konfiguration\nconst tables = [\n  { id: 'mnwlsxsm0q1k2d2', name: 'workflows' },\n  { id: 'm91y1ifz2aop1ef', name: 'trends' },\n  { id: 'moigzpvd4yw1d0a', name: 'sentiment' },\n  { id: 'm7ehbmbi5t2w0dw', name: 'content_opportunities' },\n  { id: 'm48nvpornrxuba9', name: 'content_pipeline' },\n  { id: 'mijlvsujsgqa92m', name: 'prompts' },\n  { id: 'm2u6y7ibyxt9tzp', name: 'media_assets' },\n  { id: 'mpe25xaikbpr0wj', name: 'publish_log' }\n];\nconst dateStr = new Date().toISOString().split('T')[0];\nreturn tables.map(t => ({ json: { ...t, dateStr } }));"
+      },
+      "id": "define-tables",
+      "name": "Tabellen definieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $vars.NOCODB_URL }}/api/v2/tables/{{ $json.id }}/records?limit=5000",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-records",
+      "name": "Records abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const records = $input.first().json;\nconst meta = $('Tabellen definieren').first().json;\nconst key = `backups/${meta.dateStr}/${meta.name}.json`;\nconst body = JSON.stringify(records, null, 2);\nreturn [{ json: { key, body, tableName: meta.name, dateStr: meta.dateStr } }];"
+      },
+      "id": "prepare-upload",
+      "name": "Upload vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://{{ $vars.S3_BUCKET }}.fsn1.your-objectstorage.com/{{ $json.key }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type",    "value": "application/json" },
+            { "name": "x-amz-acl",       "value": "private" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "s3-upload",
+      "name": "S3 Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = items.map(item => ({\n  table: item.json.tableName ?? '?',\n  status: item.json.statusCode === 200 || item.json.statusCode === 204 ? 'ok' : 'error'\n}));\nconst ok    = results.filter(r => r.status === 'ok').length;\nconst error = results.filter(r => r.status === 'error').length;\nreturn [{ json: { date: new Date().toISOString(), tables_ok: ok, tables_error: error, results } }];"
+      },
+      "id": "summarize",
+      "name": "Zusammenfassen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.0.1.29:5678/webhook/telegram-send",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "6495183720" },
+            { "name": "text",    "value": "=💾 *NocoDB Backup*\nDatum: {{ $json.date.split('T')[0] }}\n✅ OK: {{ $json.tables_ok }} | ❌ Fehler: {{ $json.tables_error }}" }
+          ]
+        }
+      },
+      "id": "telegram-notify",
+      "name": "Telegram Benachrichtigung",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Schedule (tägl. 03:00)": { "main": [[{ "node": "Tabellen definieren", "type": "main", "index": 0 }]] },
+    "Tabellen definieren":    { "main": [[{ "node": "Records abrufen",     "type": "main", "index": 0 }]] },
+    "Records abrufen":        { "main": [[{ "node": "Upload vorbereiten",  "type": "main", "index": 0 }]] },
+    "Upload vorbereiten":     { "main": [[{ "node": "S3 Upload",           "type": "main", "index": 0 }]] },
+    "S3 Upload":              { "main": [[{ "node": "Zusammenfassen",      "type": "main", "index": 0 }]] },
+    "Zusammenfassen":         { "main": [[{ "node": "Telegram Benachrichtigung", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "backup" }, { "name": "50_ops" }]
+}

@@ -1,0 +1,56 @@
+###############################################################################
+# Postiz — Social Media Publishing Platform
+# Deploy via Coolify als Docker Compose Stack
+#
+# Benötigte Coolify Env-Vars:
+#   POSTIZ_DB_PASS        → sicheres Passwort für PostgreSQL
+#   POSTIZ_JWT_SECRET     → langer zufälliger String (z.B. openssl rand -hex 32)
+#   NC_S3_ACCESS_KEY      → Hetzner S3 Access Key
+#   NC_S3_ACCESS_SECRET   → Hetzner S3 Secret Key
+#
+# Domain: postiz.automation-plus-ki.de
+# Port:   5000 → Coolify Traefik-Proxy
+###############################################################################
+
+version: "3.8"
+
+services:
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: postiz
+    restart: unless-stopped
+    environment:
+      # URLs
+      MAIN_URL:                  "https://postiz.automation-plus-ki.de"
+      FRONTEND_URL:              "https://postiz.automation-plus-ki.de"
+      NEXT_PUBLIC_BACKEND_URL:   "https://postiz.automation-plus-ki.de/api"
+      # Datenbank (shared homestack postgres)
+      DATABASE_URL:              "postgresql://postiz:${POSTIZ_DB_PASS}@homestack-postgres:5432/postiz"
+      # Redis (shared homestack redis, DB 3 reserviert für Postiz)
+      REDIS_URL:                 "redis://homestack-redis:6379/3"
+      # Auth
+      JWT_SECRET:                "${POSTIZ_JWT_SECRET}"
+      # S3 Storage (Hetzner Object Storage — fsn1, Bucket noco-aios)
+      STORAGE_PROVIDER:          "s3"
+      STORAGE_BUCKET:            "noco-aios"
+      STORAGE_REGION:            "fsn1"
+      STORAGE_ENDPOINT:          "https://fsn1.your-objectstorage.com"
+      STORAGE_ACCESS_KEY:        "${NC_S3_ACCESS_KEY}"
+      STORAGE_SECRET_KEY:        "${NC_S3_ACCESS_SECRET}"
+      STORAGE_CDN_URL:           "https://noco-aios.fsn1.your-objectstorage.com"
+      # Upload-Pfad für Social Media Assets
+      STORAGE_PREFIX:            "postiz/"
+      # Allgemein
+      NODE_ENV:                  "production"
+      NEXT_TELEMETRY_DISABLED:   "1"
+    ports:
+      - "5000:5000"
+    networks:
+      - coolify
+    labels:
+      # Traefik via Coolify automatisch gesetzt
+      - "coolify.managed=true"
+
+networks:
+  coolify:
+    external: true

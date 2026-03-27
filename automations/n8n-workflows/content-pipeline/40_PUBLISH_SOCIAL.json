@@ -1,0 +1,153 @@
+{
+  "name": "40_PUBLISH_SOCIAL",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "publish-social",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: { pipeline_job_id, content_text, image_url?, platforms? }\nconst body = $input.first().json.body ?? $input.first().json;\n\nif (!body.pipeline_job_id) throw new Error('pipeline_job_id fehlt');\nif (!body.content_text)    throw new Error('content_text fehlt');\n\nconst platforms = body.platforms ?? ['instagram', 'linkedin', 'twitter'];\n\nreturn [{ json: {\n  pipeline_job_id: body.pipeline_job_id,\n  content_text:   body.content_text,\n  image_url:      body.image_url ?? null,\n  platforms,\n  platformsStr:   platforms.join(',')\n} }];"
+      },
+      "id": "prepare-post",
+      "name": "Post vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://postiz.automation-plus-ki.de/api/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization",  "value": "=Bearer {{ $vars.POSTIZ_API_TOKEN }}" },
+            { "name": "Content-Type",   "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "content",    "value": "={{ $json.content_text }}" },
+            { "name": "platforms",  "value": "={{ $json.platforms }}" },
+            { "name": "mediaUrls",  "value": "={{ $json.image_url ? [$json.image_url] : [] }}" },
+            { "name": "publishNow", "value": true }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "postiz-publish",
+      "name": "Postiz: Post veröffentlichen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const postizResp   = $input.first().json;\nconst prepareData  = $('Post vorbereiten').item.json;\n\n// Postiz gibt Einzel-Post oder Array zurück\nconst posts = Array.isArray(postizResp) ? postizResp : [postizResp];\n\nreturn posts.map(p => ({ json: {\n  pipeline_job_id:  prepareData.pipeline_job_id,\n  platform:         p.platform ?? 'social',\n  postiz_post_id:   p.id ?? p.postId ?? '',\n  post_url:         p.url ?? p.postUrl ?? '',\n  status:           p.status === 'published' ? 'published' : 'pending',\n  published_at:     new Date().toISOString()\n} }));"
+      },
+      "id": "map-results",
+      "name": "Ergebnisse mappen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mpe25xaikbpr0wj/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}" },
+            { "name": "platform",        "value": "={{ $json.platform }}" },
+            { "name": "post_url",        "value": "={{ $json.post_url }}" },
+            { "name": "postiz_post_id",  "value": "={{ $json.postiz_post_id }}" },
+            { "name": "status",          "value": "={{ $json.status }}" },
+            { "name": "published_at",    "value": "={{ $json.published_at }}" },
+            { "name": "created_at",      "value": "={{ $now.toISO() }}" }
+          ]
+        }
+      },
+      "id": "nocodb-log",
+      "name": "NocoDB: publish_log schreiben",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/m48nvpornrxuba9/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "Id",         "value": "={{ $('Post vorbereiten').item.json.pipeline_job_id }}" },
+            { "name": "stage",      "value": "done" },
+            { "name": "status",     "value": "done" },
+            { "name": "updated_at", "value": "={{ $now.toISO() }}" }
+          ]
+        }
+      },
+      "id": "update-pipeline",
+      "name": "Pipeline: done setzen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"pipeline_job_id\": \"{{ $('Post vorbereiten').item.json.pipeline_job_id }}\", \"platforms\": \"{{ $('Post vorbereiten').item.json.platformsStr }}\" }"
+      },
+      "id": "respond-ok",
+      "name": "Response OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger":               { "main": [[{ "node": "Post vorbereiten",               "type": "main", "index": 0 }]] },
+    "Post vorbereiten":              { "main": [[{ "node": "Postiz: Post veröffentlichen",    "type": "main", "index": 0 }]] },
+    "Postiz: Post veröffentlichen":  { "main": [[{ "node": "Ergebnisse mappen",              "type": "main", "index": 0 }]] },
+    "Ergebnisse mappen":             { "main": [[{ "node": "NocoDB: publish_log schreiben",  "type": "main", "index": 0 }]] },
+    "NocoDB: publish_log schreiben": { "main": [[{ "node": "Pipeline: done setzen",          "type": "main", "index": 0 }]] },
+    "Pipeline: done setzen":         { "main": [[{ "node": "Response OK",                    "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": true },
+  "pinData": {},
+  "versionId": "40_PUBLISH_SOCIAL_v1",
+  "tags": [{ "name": "publishing" }]
+}
