@@ -318,41 +318,44 @@ export async function createProject(data: Record<string, unknown>): Promise<Reco
 
 // ── Content Pipeline ─────────────────────────────────────────────────────────
 
-const TABLE_CONTENT_PIPELINE = process.env.NOCODB_CONTENT_PIPELINE_TABLE_ID ?? '';
+const TABLE_CONTENT_PIPELINE = process.env.NOCODB_CONTENT_PIPELINE_TABLE_ID ?? 'm48nvpornrxuba9';
 
 export interface PipelineJob {
   Id?: number;
+  job_id?: string;
   topic: string;
   category: string;
+  tone?: string;
+  target_platforms?: string;
   stage: 'text' | 'image' | 'voice' | 'publish' | 'done';
   status: 'idle' | 'running' | 'done' | 'error';
-  text_content?: string;
+  content_text?: string;
+  image_prompt?: string;
   image_url?: string;
-  audio_url?: string;
-  blog_url?: string;
-  picsart_inference_id?: string;
+  voice_script?: string;
+  voice_url?: string;
+  blog_id?: string;
+  source_opportunity_id?: string;
   error_message?: string;
-  retry_count: number;
   steps_requested?: string;
+  published_at?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
 export async function createPipelineJob(
-  data: Pick<PipelineJob, 'topic' | 'category' | 'steps_requested'>
+  data: Pick<PipelineJob, 'topic' | 'category'> & { tone?: string; target_platforms?: string; source_opportunity_id?: string }
 ): Promise<PipelineJob> {
-  if (!TOKEN || !TABLE_CONTENT_PIPELINE) {
-    throw new Error('NOCODB_CONTENT_PIPELINE_TABLE_ID nicht konfiguriert');
-  }
+  if (!TOKEN) throw new Error('NOCODB_API_TOKEN nicht konfiguriert');
   return nocoPost<PipelineJob>(TABLE_CONTENT_PIPELINE, {
-    topic:           data.topic,
-    category:        data.category,
-    stage:           'text',
-    status:          'idle',
-    retry_count:     0,
-    steps_requested: data.steps_requested ?? '["blog","image","voice"]',
-    created_at:      new Date().toISOString(),
-    updated_at:      new Date().toISOString(),
+    job_id:               crypto.randomUUID(),
+    topic:                data.topic,
+    category:             data.category,
+    tone:                 data.tone ?? 'professional',
+    target_platforms:     data.target_platforms ?? 'instagram,linkedin,blog',
+    stage:                'text',
+    status:               'idle',
+    source_opportunity_id: data.source_opportunity_id ?? '',
+    created_at:           new Date().toISOString(),
   });
 }
 
@@ -389,11 +392,11 @@ export async function updatePipelineJob(
   id: number,
   data: Partial<Omit<PipelineJob, 'Id'>>
 ): Promise<void> {
-  if (!TOKEN || !TABLE_CONTENT_PIPELINE) return;
+  if (!TOKEN) return;
   await fetch(`${BASE}/api/v2/tables/${TABLE_CONTENT_PIPELINE}/records`, {
     method: 'PATCH',
     headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ Id: id, ...data, updated_at: new Date().toISOString() }),
+    body: JSON.stringify({ Id: id, ...data }),
   });
 }
 
@@ -473,5 +476,104 @@ export async function resolveErrorLog(id: string | number): Promise<void> {
     method: 'PATCH',
     headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
     body: JSON.stringify({ Id: id, resolved: true }),
+  });
+}
+
+// ── Media Assets ──────────────────────────────────────────────────────────────
+
+const TABLE_MEDIA_ASSETS = process.env.NOCODB_MEDIA_ASSETS_TABLE_ID ?? 'm2u6y7ibyxt9tzp';
+
+export type AssetType     = 'image' | 'audio' | 'video' | 'text' | 'pdf';
+export type AssetStatus   = 'processing' | 'ready' | 'published' | 'archived';
+export type SourceService = 'picsart' | 'fishaudio' | 'gemini' | 'claude' | 'llama' | 'n8n';
+
+export interface MediaAsset {
+  Id?:              number;
+  asset_id?:        string;
+  source_service:   SourceService;
+  asset_type:       AssetType;
+  s3_url:           string;
+  cdn_url?:         string;
+  file_name:        string;
+  file_size_kb?:    number;
+  mime_type:        string;
+  pipeline_job_id?: string;
+  prompt_used?:     string;
+  generation_cost?: number;
+  status:           AssetStatus;
+  platforms_used?:  string;
+  created_at?:      string;
+}
+
+export async function createMediaAsset(data: Omit<MediaAsset, 'Id'>): Promise<MediaAsset> {
+  return nocoPost<MediaAsset>(TABLE_MEDIA_ASSETS, {
+    ...data,
+    created_at: data.created_at ?? new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function getMediaAssets(pipelineJobId?: string): Promise<MediaAsset[]> {
+  try {
+    const params: Record<string, string> = { sort: '-created_at' };
+    if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
+    return await nocoGet<MediaAsset>(TABLE_MEDIA_ASSETS, params);
+  } catch (e) {
+    console.warn('[NocoDB] getMediaAssets Fehler:', e);
+    return [];
+  }
+}
+
+export async function updateMediaAssetStatus(id: number, status: AssetStatus): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_MEDIA_ASSETS}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, status }),
+  });
+}
+
+// ── Publish Log ───────────────────────────────────────────────────────────────
+
+const TABLE_PUBLISH_LOG = process.env.NOCODB_PUBLISH_LOG_TABLE_ID ?? 'mpe25xaikbpr0wj';
+
+export type PublishStatus = 'pending' | 'published' | 'failed' | 'scheduled';
+
+export interface PublishLogEntry {
+  Id?:              number;
+  pipeline_job_id:  string;
+  platform:         string;
+  post_url?:        string;
+  postiz_post_id?:  string;
+  status:           PublishStatus;
+  error_message?:   string;
+  published_at?:    string;
+  created_at?:      string;
+}
+
+export async function createPublishLogEntry(data: Omit<PublishLogEntry, 'Id'>): Promise<PublishLogEntry> {
+  return nocoPost<PublishLogEntry>(TABLE_PUBLISH_LOG, {
+    ...data,
+    created_at: data.created_at ?? new Date().toISOString(),
+  } as Record<string, unknown>);
+}
+
+export async function getPublishLog(pipelineJobId?: string): Promise<PublishLogEntry[]> {
+  try {
+    const params: Record<string, string> = { sort: '-created_at' };
+    if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
+    return await nocoGet<PublishLogEntry>(TABLE_PUBLISH_LOG, params);
+  } catch (e) {
+    console.warn('[NocoDB] getPublishLog Fehler:', e);
+    return [];
+  }
+}
+
+export async function updatePublishLogEntry(
+  id: number,
+  data: Partial<Pick<PublishLogEntry, 'status' | 'post_url' | 'postiz_post_id' | 'error_message' | 'published_at'>>
+): Promise<void> {
+  await fetch(`${BASE}/api/v2/tables/${TABLE_PUBLISH_LOG}/records`, {
+    method: 'PATCH',
+    headers: { 'xc-token': TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Id: id, ...data }),
   });
 }

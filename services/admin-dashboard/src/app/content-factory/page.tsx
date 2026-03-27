@@ -108,14 +108,14 @@ function PipelineDetail({ job }: { job: PipelineJob }) {
         </div>
       )}
 
-      {job.text_content && (
+      {job.content_text && (
         <div>
           <p className="text-[10px] font-mono text-[--text-muted] mb-1 uppercase tracking-wider">Blog-Text</p>
           <div
             className="rounded p-3 text-[12px] text-[--text-secondary] max-h-48 overflow-y-auto leading-relaxed whitespace-pre-wrap"
             style={{ background: 'var(--layer-3)' }}
           >
-            {job.text_content.slice(0, 1200)}{job.text_content.length > 1200 ? '…' : ''}
+            {job.content_text.slice(0, 1200)}{job.content_text.length > 1200 ? '…' : ''}
           </div>
         </div>
       )}
@@ -132,22 +132,22 @@ function PipelineDetail({ job }: { job: PipelineJob }) {
         </div>
       )}
 
-      {job.audio_url && (
+      {job.voice_url && (
         <div>
           <p className="text-[10px] font-mono text-[--text-muted] mb-1 uppercase tracking-wider">Voice-Over</p>
-          <audio controls src={job.audio_url} className="w-full h-8" />
+          <audio controls src={job.voice_url} className="w-full h-8" />
         </div>
       )}
 
-      {job.blog_url && (
+      {job.blog_id && (
         <a
-          href={job.blog_url}
+          href={`https://blog.automation-plus-ki.de/posts/${job.blog_id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-[12px] text-blue-400 hover:underline"
         >
           <ExternalLink size={12} />
-          Auf Blogify ansehen
+          Auf Blog ansehen
         </a>
       )}
     </div>
