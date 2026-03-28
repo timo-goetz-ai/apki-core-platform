@@ -102,20 +102,25 @@ API-Token (akadmin): `25ePGtroeI1neB1n9OvKeKI1v6ojRg3InQFabXszrat9N6xnKzjw1lZMP2
 
 Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider aktiv)
 
-## NocoDB Table-IDs (Research-Outputs)
+## NocoDB Table-IDs
 
 | Tabelle | ID | Beschreibung |
 |---------|-----|--------------|
-| workflows | `mfz43ghxesvn1yy` | n8n-Workflow-Register (32 Workflows) |
+| workflows | `mfz43ghxesvn1yy` | n8n-Workflow-Register |
 | trends | `mrdi13quucpnps4` | Output: `310_TREND_MONITOR` |
 | sentiment | `mvb46y3ncw21m1g` | Output: `320_SENTIMENT_TRACKER` |
 | content_opportunities | `m5abfrtfyr2j912` | Output: `330_CONTENT_OPPORTUNITY` |
 | content_pipeline | `mgjsuwl4jwlyhdc` | Content-Produktion |
 | prompts | `mlw20rrihtkbmew` | Prompt-Bibliothek |
+| agents | `m8c0rpjwx5d4bu2` | KI-Agenten-Register |
+| tasks | `mjd39ltx4bq27qj` | Agent-Aufgaben |
+| batch_jobs | `mg4p0eux8onz3nq` | Batch-Produktions-Jobs |
+| content_versions | `mzzemannneaes9g` | Content-Versionierung |
 | media_assets | `msxl4hvogh62u4u` | Medien-Assets (Bilder, Audio, Video) |
 | publish_log | `mcwxjf0na0ixkah` | Publishing-Protokoll (Social/Blog) |
 | mobile_ingest | `m3sn5vn7x9iye25` | Mobile Eingabe / Handy-Uploads |
 | content_pieces | `mm1ssn0luruhzyx` | KI-generierte Content-Pieces (crew-api Output) |
+| fabrik_snapshots | `mx6wt60oh2050du` | Fabrik-Index / Qdrant-Metadaten (Extended-Spalten) |
 | audit_trail | `mgeh1epw96tgx3u` | Audit-Log aller Workflow-Aktionen |
 
 ## n8n Workflow-IDs (wichtigste)
