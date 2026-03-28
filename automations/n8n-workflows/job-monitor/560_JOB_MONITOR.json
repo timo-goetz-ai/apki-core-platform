@@ -1,0 +1,153 @@
+{
+  "id": "vkaSv6LyosTreiWL",
+  "name": "560_JOB_MONITOR",
+  "active": true,
+  "settings": {"executionOrder": "v1"},
+  "nodes": [
+    {
+      "id": "df0bfeb1-eb76-4833-bc96-7c3d98b4a364",
+      "name": "Trigger: täglich 07:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {"interval": [{"field": "cronExpression", "expression": "30 7 * * 1-5"}]}
+      }
+    },
+    {
+      "id": "1dcdcc9b-5d13-4379-b881-2ccf384868a9",
+      "name": "Adzuna KI-Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [
+          {"name": "app_id",          "value": "={{ $env.ADZUNA_APP_ID }}"},
+          {"name": "app_key",         "value": "={{ $env.ADZUNA_APP_KEY }}"},
+          {"name": "results_per_page","value": "20"},
+          {"name": "what",            "value": "KI Manager Automatisierung"},
+          {"name": "where",           "value": "Frankfurt"},
+          {"name": "distance",        "value": "80"},
+          {"name": "sort_by",         "value": "date"}
+        ]}
+      }
+    },
+    {
+      "id": "7f8a5d9a-9096-4582-9322-b5ed856f592f",
+      "name": "Adzuna AI-Automation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 200],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [
+          {"name": "app_id",          "value": "={{ $env.ADZUNA_APP_ID }}"},
+          {"name": "app_key",         "value": "={{ $env.ADZUNA_APP_KEY }}"},
+          {"name": "results_per_page","value": "20"},
+          {"name": "what",            "value": "Head of AI Automation"},
+          {"name": "where",           "value": "Hessen"},
+          {"name": "sort_by",         "value": "date"}
+        ]}
+      }
+    },
+    {
+      "id": "61fd276b-4250-4b80-84f3-1dcba9de2edf",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [480, 100],
+      "parameters": {"mode": "combine", "combineBy": "combineAll", "options": {}}
+    },
+    {
+      "id": "061ead8d-0d73-4c8c-ba36-10c8e0bbfe63",
+      "name": "Format & Deduplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 100],
+      "parameters": {
+        "jsCode": "const seen=new Set(),out=[];\nfor(const item of $input.all()){\n  for(const j of (item.json.results||[])){\n    if(!seen.has(j.id)){seen.add(j.id);out.push({json:{\n      job_id:j.id,title:j.title,\n      company:j.company?.display_name||'?',\n      location:j.location?.display_name||'',\n      salary_min:j.salary_min||0,salary_max:j.salary_max||0,\n      salary:j.salary_min?Math.round(j.salary_min/1000)+'k-'+Math.round(j.salary_max/1000)+'k €':'k.A.',\n      desc:(j.description||'').slice(0,200),\n      url:j.redirect_url,created:j.created\n    }});}\n  }\n}\nreturn out.slice(0,25);"
+      }
+    },
+    {
+      "id": "4e2a4983-a979-4d6b-8577-1905bafad29f",
+      "name": "Gemini: Relevanz",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [{"name": "key", "value": "={{ $env.GEMINI_API_KEY }}"}]},
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({contents:[{parts:[{text:'Bewerte Stellenangebot für KI/Automation-Manager, Bad Homburg (50km Radius), Zielgehalt 70-85k€. Job: '+$json.title+' bei '+$json.company+' in '+$json.location+', Gehalt: '+$json.salary+'. Nur JSON: {\"score\":1-10,\"match\":\"hoch|mittel|niedrig\",\"note\":\"max 15 Wörter\"}'}]}]}) }}"
+      }
+    },
+    {
+      "id": "eefd8e8b-f626-4e1c-b731-281d05983e7e",
+      "name": "Filter Score >= 6",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 100],
+      "parameters": {
+        "jsCode": "const out=[];\nfor(const item of $input.all()){\n  try{\n    const t=item.json.candidates?.[0]?.content?.parts?.[0]?.text||'{}';\n    const r=JSON.parse(t.replace(/```json|```/g,'').trim());\n    if((r.score||0)>=6) out.push({json:{...item.json,score:r.score,match:r.match,note:r.note}});\n  }catch(e){}\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "c451802a-629e-476f-b514-c8adb3fa1051",
+      "name": "Telegram Digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "chat_id": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}",
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true,
+          "text": "={{ '🎯 *Job-Monitor ' + new Date().toLocaleDateString('de-DE') + '* — ' + $input.all().length + ' Treffer\\n\\n' + $input.all().slice(0,6).map((j,i)=>`${i+1}\\. *${j.json.title}*\\n🏢 ${j.json.company} | 📍 ${j.json.location}\\n💰 ${j.json.salary} | ⭐ ${j.json.score}/10\\n💡 ${j.json.note}\\n🔗 ${j.json.url}`).join('\\n\\n') }}"
+        }
+      }
+    },
+    {
+      "id": "b65d7e2d-1f96-49c7-9366-e33cb93e0138",
+      "name": "NocoDB: Job speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 260],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mvozxyyz21oaz3z",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ {Title: $json.title, Company: $json.company, Location: $json.location, Salary: $json.salary, Score: $json.score, Match: $json.match, Note: $json.note, URL: $json.url, Source: $json.source || 'adzuna', Job_ID: $json.job_id, Created: $json.created} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Trigger: täglich 07:30": {"main": [[
+      {"node": "Adzuna KI-Manager",   "type": "main", "index": 0},
+      {"node": "Adzuna AI-Automation","type": "main", "index": 0}
+    ]]},
+    "Adzuna KI-Manager":   {"main": [[{"node": "Merge", "type": "main", "index": 0}]]},
+    "Adzuna AI-Automation":{"main": [[{"node": "Merge", "type": "main", "index": 1}]]},
+    "Merge":               {"main": [[{"node": "Format & Deduplicate", "type": "main", "index": 0}]]},
+    "Format & Deduplicate":{"main": [[{"node": "Gemini: Relevanz",     "type": "main", "index": 0}]]},
+    "Gemini: Relevanz":    {"main": [[{"node": "Filter Score >= 6",    "type": "main", "index": 0}]]},
+    "Filter Score >= 6":   {"main": [[
+      {"node": "Telegram Digest",      "type": "main", "index": 0},
+      {"node": "NocoDB: Job speichern","type": "main", "index": 0}
+    ]]}
+  }
+}
