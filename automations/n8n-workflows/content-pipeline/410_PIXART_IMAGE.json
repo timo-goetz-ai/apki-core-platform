@@ -1,22 +1,18 @@
 {
-  "id": "iehuGVgDqOGx5hmE",
   "name": "410_PIXART_IMAGE",
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
-  },
   "nodes": [
     {
       "id": "wh-410",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [0, 0],
+      "webhookId": "a1b2c3d4-0001-4000-8000-pixartimage00",
       "parameters": {
         "path": "pixart-image",
-        "httpMethod": "POST"
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
       }
     },
     {
@@ -26,7 +22,7 @@
       "typeVersion": 2,
       "position": [240, 0],
       "parameters": {
-        "jsCode": "const d=$input.first().json;\nconst topic=d.topic||'abstract AI technology';\nconst cat=d.category||'KI-Tools';\nconst prompt=`Professional digital artwork for blog post about ${topic}. Category: ${cat}. High quality, modern, tech aesthetic, 4K`;\nreturn [{json:{pipeline_job_id:d.pipeline_job_id||'test',prompt,topic,category:cat}}];"
+        "jsCode": "const raw = $input.first().json;\nconst d = raw.body ?? raw;  // typeVersion-2 webhook: body under .body\nconst topic = d.topic || 'abstract AI technology';\nconst cat   = d.category || 'KI-Tools';\nconst prompt = d.prompt ?? `Professional digital artwork for blog post about \"${topic}\". Category: ${cat}. Modern tech aesthetic, vibrant colors, 4K, no text.`;\nreturn [{json:{pipeline_job_id: d.pipeline_job_id||'test', prompt, topic, category:cat, width:1024, height:1024}}];"
       }
     },
     {
@@ -39,27 +35,28 @@
         "method": "POST",
         "url": "https://genai-api.picsart.io/v1/text2image",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"},
-            {"name": "Accept", "value": "application/json"}
-          ]
-        },
+        "headerParameters": {"parameters": [
+          {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"},
+          {"name": "Accept",            "value": "application/json"}
+        ]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({prompt: $json.prompt, width: 1024, height: 1024, count: 1}) }}"
+        "bodyParameters": {"parameters": [
+          {"name": "prompt", "value": "={{ $json.prompt }}"},
+          {"name": "width",  "value": "={{ $json.width || 1024 }}"},
+          {"name": "height", "value": "={{ $json.height || 1024 }}"},
+          {"name": "count",  "value": "1"}
+        ]},
+        "options": {"timeout": 30000}
       }
     },
     {
       "id": "poll-wait",
-      "name": "Warte 8s",
+      "name": "Warte 18s",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [720, 0],
-      "parameters": {
-        "unit": "seconds",
-        "amount": 8
-      }
+      "parameters": {"unit": "seconds", "amount": 18}
     },
     {
       "id": "poll-status",
@@ -69,13 +66,11 @@
       "position": [960, 0],
       "parameters": {
         "method": "GET",
-        "url": "={{ $('Picsart Text2Image').item.json.inference_id ? 'https://genai-api.picsart.io/v1/text2image/'+$('Picsart Text2Image').item.json.inference_id : 'https://genai-api.picsart.io/v1/text2image' }}",
+        "url": "=https://genai-api.picsart.io/v1/text2image/inferences/{{ $('Picsart Text2Image').item.json.inference_id }}",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"}
-          ]
-        }
+        "headerParameters": {"parameters": [
+          {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"}
+        ]}
       }
     },
     {
@@ -85,7 +80,7 @@
       "typeVersion": 2,
       "position": [1200, 0],
       "parameters": {
-        "jsCode": "const r=$input.first().json;\nconst pj=$('Prompt vorbereiten').item.json;\nconst url=r.data?.[0]?.url||r.url||'';\nreturn [{json:{image_url:url,pipeline_job_id:pj.pipeline_job_id,source:'picsart',gdrive_folder_id:$env.GDRIVE_IMAGES_FOLDER_ID||''}}];"
+        "jsCode": "const r=$input.first().json;\nconst pj=$('Prompt vorbereiten').item.json;\nconst url=r.data?.[0]?.url||r.url||'';\nreturn [{json:{image_url:url,pipeline_job_id:pj.pipeline_job_id,source:'picsart'}}];"
       }
     },
     {
@@ -98,72 +93,67 @@
         "method": "POST",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
-          ]
-        },
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({asset_id:$randomString(12),source_service:'picsart',asset_type:'image',s3_url:$json.image_url,file_name:'img-'+$json.pipeline_job_id+'.jpg',mime_type:'image/jpeg',pipeline_job_id:$json.pipeline_job_id,status:'ready',created_at:new Date().toISOString()}) }}"
+        "bodyParameters": {"parameters": [
+          {"name": "asset_id",        "value": "={{ $randomString(12) }}"},
+          {"name": "source_service",  "value": "picsart"},
+          {"name": "asset_type",      "value": "image"},
+          {"name": "s3_url",          "value": "={{ $json.image_url }}"},
+          {"name": "file_name",       "value": "={{ 'img-' + $json.pipeline_job_id + '.jpg' }}"},
+          {"name": "mime_type",       "value": "image/jpeg"},
+          {"name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}"},
+          {"name": "status",          "value": "ready"},
+          {"name": "created_at",      "value": "={{ $now.toISO() }}"}
+        ]},
+        "options": {}
       }
     },
     {
-      "id": "update-pipeline-410",
-      "name": "Pipeline-Job updaten",
+      "id": "find-pipeline-410",
+      "name": "Pipeline Job finden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1680, 0],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records?where=(job_id,eq,${$json.pipeline_job_id})&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
+        "options": {}
+      }
+    },
+    {
+      "id": "patch-pipeline-410",
+      "name": "Pipeline-Job updaten",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1900, 0],
+      "onError": "continueRegularOutput",
       "parameters": {
         "method": "PATCH",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
-          ]
-        },
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({job_id:$('Bild-URL extrahieren').item.json.pipeline_job_id,image_url:$('Bild-URL extrahieren').item.json.image_url,stage:'voice',status:'idle'}) }}"
-      }
-    },
-    {
-      "id": "resp-410",
-      "name": "Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1920, 0],
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ {ok:true,image_url:$('Bild-URL extrahieren').item.json.image_url} }}"
+        "body": "={{ JSON.stringify([{Id:$json.list?.[0]?.Id,image_url:$('Bild-URL extrahieren').item.json.image_url,stage:'voice',status:'running'}]) }}",
+        "options": {"response": {"response": {"neverError": true}}}
       }
     }
   ],
   "connections": {
-    "Webhook": {
-      "main": [[{"node": "Prompt vorbereiten", "type": "main", "index": 0}]]
-    },
-    "Prompt vorbereiten": {
-      "main": [[{"node": "Picsart Text2Image", "type": "main", "index": 0}]]
-    },
-    "Picsart Text2Image": {
-      "main": [[{"node": "Warte 8s", "type": "main", "index": 0}]]
-    },
-    "Warte 8s": {
-      "main": [[{"node": "Bild-Status prüfen", "type": "main", "index": 0}]]
-    },
-    "Bild-Status prüfen": {
-      "main": [[{"node": "Bild-URL extrahieren", "type": "main", "index": 0}]]
-    },
-    "Bild-URL extrahieren": {
-      "main": [[{"node": "NocoDB media_assets", "type": "main", "index": 0}]]
-    },
-    "NocoDB media_assets": {
-      "main": [[{"node": "Pipeline-Job updaten", "type": "main", "index": 0}]]
-    },
-    "Pipeline-Job updaten": {
-      "main": [[{"node": "Response", "type": "main", "index": 0}]]
-    }
-  }
+    "Webhook":             {"main": [[{"node": "Prompt vorbereiten",   "type": "main", "index": 0}]]},
+    "Prompt vorbereiten":  {"main": [[{"node": "Picsart Text2Image",   "type": "main", "index": 0}]]},
+    "Picsart Text2Image":  {"main": [[{"node": "Warte 18s",            "type": "main", "index": 0}]]},
+    "Warte 18s":           {"main": [[{"node": "Bild-Status prüfen",   "type": "main", "index": 0}]]},
+    "Bild-Status prüfen":  {"main": [[{"node": "Bild-URL extrahieren", "type": "main", "index": 0}]]},
+    "Bild-URL extrahieren":{"main": [[{"node": "NocoDB media_assets",  "type": "main", "index": 0}]]},
+    "NocoDB media_assets": {"main": [[{"node": "Pipeline Job finden",  "type": "main", "index": 0}]]},
+    "Pipeline Job finden": {"main": [[{"node": "Pipeline-Job updaten", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "staticData": null
 }
