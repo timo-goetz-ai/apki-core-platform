@@ -31,7 +31,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-picsart-api-key", "value": "={{ $vars.PICSART_API_KEY }}" }
+            { "name": "x-picsart-api-key", "value": "={{ $env.PICSART_API_KEY }}" }
           ]
         },
         "sendBody": true,
@@ -71,7 +71,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-picsart-api-key", "value": "={{ $vars.PICSART_API_KEY }}" }
+            { "name": "x-picsart-api-key", "value": "={{ $env.PICSART_API_KEY }}" }
           ]
         },
         "options": { "timeout": 15000 }
@@ -181,7 +181,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
           ]
         },
         "sendBody": true,
@@ -214,7 +214,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
           ]
         },
         "sendBody": true,

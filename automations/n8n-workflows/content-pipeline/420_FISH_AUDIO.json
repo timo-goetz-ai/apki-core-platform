@@ -31,7 +31,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $vars.FISH_AUDIO_API_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.FISH_AUDIO_API_KEY }}" },
             { "name": "Content-Type",  "value": "application/json" }
           ]
         },
@@ -126,7 +126,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
           ]
         },
         "sendBody": true,
@@ -158,7 +158,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
           ]
         },
         "sendBody": true,
