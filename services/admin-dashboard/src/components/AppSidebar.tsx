@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Workflow, Users,
   Database, Settings, ScrollText, Factory,
+  Layers, CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,37 +16,50 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  external?: boolean;
 }
 
 // ── Navigation Structure ─────────────────────────────────────────────────────
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Overview',        href: '/',                icon: LayoutDashboard },
-  { label: 'Workflows',       href: '/workflows',       icon: Workflow        },
-  { label: 'Agents',          href: '/agents',          icon: Users           },
-  { label: 'Content Factory', href: '/content-factory', icon: Factory         },
-  { label: 'Databases',       href: '/databases',       icon: Database        },
-  { label: 'Logs',            href: '/logs',            icon: ScrollText      },
+  { label: 'Overview',          href: '/',                  icon: LayoutDashboard },
+  { label: 'Workflows',         href: '/workflows',         icon: Workflow        },
+  { label: 'Agents',            href: '/agents',            icon: Users           },
+  { label: 'Content Factory',   href: '/content-factory',   icon: Factory         },
+  { label: 'Batch Production',  href: '/batch-production',  icon: Layers          },
+  { label: 'Content Planning',  href: 'https://postiz.automation-plus-ki.de', icon: CalendarDays, external: true },
+  { label: 'Databases',         href: '/databases',         icon: Database        },
+  { label: 'Logs',              href: '/logs',              icon: ScrollText      },
 ];
 
 // ── NavLink ──────────────────────────────────────────────────────────────────
 function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   const Icon = item.icon;
-  return (
-    <Link
-      href={item.href}
-      className={cn(
-        'group flex items-center gap-2.5 rounded-md px-3 py-[7px] text-sm transition-all duration-100',
-        isActive
-          ? 'text-[--text-primary] font-semibold'
-          : 'text-[--text-secondary] hover:bg-[--layer-3] hover:text-[--text-primary]'
-      )}
-    >
+  const className = cn(
+    'group flex items-center gap-2.5 rounded-md px-3 py-[7px] text-sm transition-all duration-100',
+    isActive
+      ? 'text-[--text-primary] font-semibold'
+      : 'text-[--text-secondary] hover:bg-[--layer-3] hover:text-[--text-primary]'
+  );
+  const content = (
+    <>
       <Icon
         size={13}
         className="shrink-0 transition-colors"
         style={{ color: isActive ? 'var(--accent-blue)' : undefined }}
       />
       <span className="truncate flex-1 text-[12.5px]">{item.label}</span>
+    </>
+  );
+  if (item.external) {
+    return (
+      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} className={className}>
+      {content}
     </Link>
   );
 }
