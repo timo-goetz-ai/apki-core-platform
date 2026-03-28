@@ -2,44 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import {
-  ExternalLink, Search, Download, Activity, Zap, Clock,
-  GitBranch, DollarSign, FileOutput, StickyNote, Link2, Hash,
+  ExternalLink, Search, Download, Activity, Clock,
+  GitBranch, StickyNote, Hash,
 } from 'lucide-react';
 import { exportCsv } from '@/lib/csv-export';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Workflow {
   Id: number;
-  n8n_id: string;
+  WorkflowID: string;
   Name: string;
   Status: string;
-  Kategorie: string;
-  Zweck: string;
-  Trigger: string;
-  Integrationen: string;
-  Kosten: string;
-  Laufzeit_Sek: number;
-  Intervall: string;
-  Output: string;
-  Verknuepfungen: string;
-  Prioritaet: string;
-  Notizen: string;
-  n8n_url: string;
+  Layer: string;
+  Beschreibung: string;
+  Schedule: string;
+  AI_Model: string;
+  LastRun: string | null;
+  Notes: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const WORKFLOWS_TABLE = 'mfz43ghxesvn1yy';
-const KATEGORIEN = ['Alle', 'System', 'KI-Chat', 'Job-Scout', 'Content', 'Voice', 'SaaS', 'DevOps', 'Daten'];
+const N8N_BASE = 'https://n8n.automation-plus-ki.de';
+const LAYERS = ['Alle', '100_INGEST', '200_BRAIN', '300_RESEARCH', '400_CONTENT', '500_HUMAN'];
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  active:         { color: '#34d399', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
+  inactive:       { color: '#6b7280', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
+  development:    { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
+  archived:       { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
+  // legacy values
   aktiv:          { color: '#34d399', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
   inaktiv:        { color: '#6b7280', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
   in_entwicklung: { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
   archiviert:     { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
-};
-
-const KOSTEN_COLORS: Record<string, string> = {
-  kostenlos: '#34d399', gering: '#fbbf24', mittel: '#fb923c', hoch: '#f87171',
 };
 
 // ─── Section label helper ─────────────────────────────────────────────────────
@@ -61,9 +57,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // ─── Detail view ──────────────────────────────────────────────────────────────
 function WorkflowDetail({ wf }: { wf: Workflow }) {
-  const cfg = STATUS_CONFIG[wf.Status] ?? STATUS_CONFIG.inaktiv;
-  const integrations = (wf.Integrationen ?? '').split(',').map(s => s.trim()).filter(Boolean);
-  const links = (wf.Verknuepfungen ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  const cfg = STATUS_CONFIG[wf.Status] ?? STATUS_CONFIG.inactive;
+  const n8nUrl = wf.WorkflowID ? `${N8N_BASE}/workflow/${wf.WorkflowID}` : null;
 
   return (
     <div style={{ padding: '32px 36px', overflowY: 'auto', flex: 1 }}>
@@ -78,7 +73,7 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
               padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
               background: cfg.bg, color: cfg.color,
             }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.color, boxShadow: wf.Status === 'aktiv' ? `0 0 5px ${cfg.color}` : 'none' }} />
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.color, boxShadow: wf.Status === 'active' ? `0 0 5px ${cfg.color}` : 'none' }} />
               {cfg.label}
             </span>
             <span style={{
@@ -86,15 +81,15 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
               background: 'var(--layer-2)', border: '1px solid var(--border)',
               color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)',
             }}>
-              {wf.Kategorie}
+              {wf.Layer}
             </span>
-            {wf.Prioritaet && (
+            {wf.AI_Model && (
               <span style={{
                 padding: '3px 10px', borderRadius: 20, fontSize: 11,
                 background: 'var(--layer-2)', border: '1px solid var(--border)',
                 color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
               }}>
-                Prio: {wf.Prioritaet}
+                {wf.AI_Model}
               </span>
             )}
           </div>
@@ -102,16 +97,16 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.25 }}>
             {wf.Name}
           </h2>
-          {wf.n8n_id && (
+          {wf.WorkflowID && (
             <p style={{ margin: '5px 0 0', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              <Hash size={10} style={{ display: 'inline', marginRight: 3 }} />{wf.n8n_id}
+              <Hash size={10} style={{ display: 'inline', marginRight: 3 }} />{wf.WorkflowID}
             </p>
           )}
         </div>
 
-        {wf.n8n_url && (
+        {n8nUrl && (
           <a
-            href={wf.n8n_url}
+            href={n8nUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -129,16 +124,16 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
         )}
       </div>
 
-      {/* ── Zweck & Anwendungsfall ── */}
-      {wf.Zweck && (
+      {/* ── Beschreibung ── */}
+      {wf.Beschreibung && (
         <div style={{ marginBottom: 24 }}>
-          <SectionLabel>Zweck &amp; Anwendungsfall</SectionLabel>
+          <SectionLabel>Beschreibung</SectionLabel>
           <div style={{
             background: 'var(--layer-2)', border: '1px solid var(--border)',
             borderRadius: 10, padding: '16px 20px',
           }}>
             <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.75 }}>
-              {wf.Zweck}
+              {wf.Beschreibung}
             </p>
           </div>
         </div>
@@ -147,9 +142,9 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
       {/* ── Stats grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Trigger',     value: wf.Trigger   || '—', Icon: Zap,         color: '#38bdf8' },
-          { label: 'Intervall',   value: wf.Intervall  || '—', Icon: Clock,        color: '#a78bfa' },
-          { label: 'Laufzeit',    value: wf.Laufzeit_Sek ? `${wf.Laufzeit_Sek}s` : '—', Icon: Activity, color: '#34d399' },
+          { label: 'Layer',      value: wf.Layer    || '—', Icon: GitBranch, color: '#38bdf8' },
+          { label: 'Schedule',   value: wf.Schedule || '—', Icon: Clock,     color: '#a78bfa' },
+          { label: 'Letzter Run', value: wf.LastRun ? new Date(wf.LastRun).toLocaleDateString('de-DE') : '—', Icon: Activity, color: '#34d399' },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} style={{
             background: 'var(--layer-2)', border: '1px solid var(--border)',
@@ -168,71 +163,8 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
         ))}
       </div>
 
-      {/* ── Kosten ── */}
-      {wf.Kosten && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionLabel><DollarSign size={9} style={{ display: 'inline', marginRight: 3 }} />Betriebskosten</SectionLabel>
-          <span style={{
-            display: 'inline-block',
-            padding: '4px 12px', borderRadius: 6, fontSize: 12,
-            fontFamily: 'var(--font-mono)', fontWeight: 700,
-            background: 'var(--layer-2)', border: '1px solid var(--border)',
-            color: KOSTEN_COLORS[wf.Kosten] ?? 'var(--text-muted)',
-          }}>
-            {wf.Kosten}
-          </span>
-        </div>
-      )}
-
-      {/* ── Output ── */}
-      {wf.Output && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionLabel><FileOutput size={9} style={{ display: 'inline', marginRight: 3 }} />Output</SectionLabel>
-          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px' }}>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{wf.Output}</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Integrationen ── */}
-      {integrations.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionLabel><GitBranch size={9} style={{ display: 'inline', marginRight: 3 }} />Integrationen</SectionLabel>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {integrations.map(i => (
-              <span key={i} style={{
-                padding: '4px 10px', borderRadius: 6, fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                background: 'var(--layer-2)', border: '1px solid var(--border)',
-                color: 'var(--text-secondary)',
-              }}>
-                {i}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Verknüpfte Workflows ── */}
-      {links.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionLabel><Link2 size={9} style={{ display: 'inline', marginRight: 3 }} />Verknüpfte Workflows</SectionLabel>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {links.map(l => (
-              <span key={l} style={{
-                padding: '4px 10px', borderRadius: 6, fontSize: 11,
-                background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)',
-                color: 'var(--text-muted)',
-              }}>
-                {l}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Notizen ── */}
-      {wf.Notizen && (
+      {wf.Notes && (
         <div style={{ marginBottom: 20 }}>
           <SectionLabel><StickyNote size={9} style={{ display: 'inline', marginRight: 3 }} />Notizen</SectionLabel>
           <div style={{
@@ -240,7 +172,7 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
             borderRadius: 10, padding: '12px 16px',
           }}>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.65, fontFamily: 'var(--font-mono)' }}>
-              {wf.Notizen}
+              {wf.Notes}
             </p>
           </div>
         </div>
@@ -289,14 +221,14 @@ export default function WorkflowsPage() {
   }, []);
 
   const filtered = workflows.filter(wf => {
-    const matchKat    = kategorie === 'Alle' || wf.Kategorie === kategorie;
+    const matchKat    = kategorie === 'Alle' || wf.Layer === kategorie;
     const q           = search.toLowerCase();
-    const matchSearch = !q || (wf.Name ?? '').toLowerCase().includes(q) || (wf.Zweck ?? '').toLowerCase().includes(q);
+    const matchSearch = !q || (wf.Name ?? '').toLowerCase().includes(q) || (wf.Beschreibung ?? '').toLowerCase().includes(q);
     return matchKat && matchSearch;
   });
 
-  const aktiv         = workflows.filter(w => w.Status === 'aktiv').length;
-  const inEntwicklung = workflows.filter(w => w.Status === 'in_entwicklung').length;
+  const aktiv         = workflows.filter(w => w.Status === 'active' || w.Status === 'aktiv').length;
+  const inEntwicklung = workflows.filter(w => w.Status === 'development' || w.Status === 'in_entwicklung').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -362,7 +294,7 @@ export default function WorkflowsPage() {
             />
           </div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {KATEGORIEN.map(k => {
+            {LAYERS.map(k => {
               const isActive = kategorie === k;
               return (
                 <button
@@ -441,11 +373,11 @@ export default function WorkflowsPage() {
                   </div>
                   <div style={{ marginTop: 4, marginLeft: 15, display: 'flex', gap: 8 }}>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      {wf.Kategorie}
+                      {wf.Layer}
                     </span>
-                    {wf.Intervall && (
+                    {wf.Schedule && wf.Schedule !== 'on_demand' && (
                       <span style={{ fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)' }}>
-                        {wf.Intervall}
+                        {wf.Schedule}
                       </span>
                     )}
                   </div>
