@@ -104,7 +104,7 @@ async function executeAction(intent: string, params: Record<string, unknown>): P
       const NOCO_TOKEN = process.env.NOCODB_API_TOKEN ?? '';
       const NOCO_BASE  = process.env.NOCODB_AI_SYSTEM_BASE_ID ?? '';
       const NOCO_URL   = process.env.NOCODB_URL ?? 'https://nocodb.automation-plus-ki.de';
-      const TABLE      = process.env.NOCODB_WORKFLOWS_TABLE_ID ?? 'mnwlsxsm0q1k2d2';
+      const TABLE      = process.env.NOCODB_WORKFLOWS_TABLE_ID ?? 'mfz43ghxesvn1yy';
       try {
         const res = await fetch(
           `${NOCO_URL}/api/v1/db/data/noco/${NOCO_BASE}/${TABLE}?limit=50`,
