@@ -1,22 +1,18 @@
 {
-  "id": "u2pAiP8GaMaJQfRu",
   "name": "420_FISH_AUDIO",
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
-  },
   "nodes": [
     {
       "id": "wh-420",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [0, 0],
+      "webhookId": "a1b2c3d4-0002-4000-8000-fishaudiowh00",
       "parameters": {
         "path": "fish-audio",
-        "httpMethod": "POST"
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
       }
     },
     {
@@ -24,9 +20,9 @@
       "name": "TTS vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0],
+      "position": [220, 0],
       "parameters": {
-        "jsCode": "const d=$input.first().json;\nconst text=(d.text_content||d.text||'').slice(0,4000);\nconst voiceId=d.voice_id||$env.FISH_AUDIO_DEFAULT_VOICE||'default';\nconst jobId=d.pipeline_job_id||'test-'+Date.now();\nreturn [{json:{text,voiceId,pipeline_job_id:jobId,fileName:'voice-'+jobId+'.mp3'}}];"
+        "jsCode": "const raw = $input.first().json;\nconst d = raw.body ?? raw;  // typeVersion-2 webhook: body under .body\nconst text    = String(d.text_content || d.topic || 'Test').slice(0,4000);\nconst jobId   = d.pipeline_job_id || 'test';\nconst voiceId = d.voice_id || '';\nreturn [{json:{pipeline_job_id:jobId, text, voice_id:voiceId, speed:1.0, format:'mp3'}}];"
       }
     },
     {
@@ -34,26 +30,29 @@
       "name": "Fish Audio TTS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 0],
+      "position": [440, 0],
+      "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
         "url": "https://api.fish.audio/v1/tts",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "Authorization", "value": "Bearer {{ $env.FISH_AUDIO_API_KEY }}"},
-            {"name": "Content-Type", "value": "application/msgpack"}
-          ]
-        },
+        "headerParameters": {"parameters": [
+          {"name": "Authorization", "value": "=Bearer {{ $vars.FISH_AUDIO_API_KEY }}"},
+          {"name": "Content-Type",  "value": "application/json"}
+        ]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({text:$json.text,reference_id:$json.voiceId,format:'mp3',mp3_bitrate:128}) }}",
+        "bodyParameters": {"parameters": [
+          {"name": "text",         "value": "={{ $json.text }}"},
+          {"name": "reference_id", "value": "={{ $json.voice_id }}"},
+          {"name": "format",       "value": "mp3"},
+          {"name": "mp3_bitrate",  "value": "128"},
+          {"name": "normalize",    "value": "true"},
+          {"name": "streaming",    "value": "false"}
+        ]},
         "options": {
-          "response": {
-            "response": {
-              "responseFormat": "file"
-            }
-          }
+          "response": {"response": {"responseFormat": "file"}},
+          "timeout": 120000
         }
       }
     },
@@ -62,9 +61,9 @@
       "name": "Dateiname",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 0],
+      "position": [660, 0],
       "parameters": {
-        "jsCode": "const prep=$('TTS vorbereiten').item.json;\nreturn [{json:{fileName:prep.fileName,pipeline_job_id:prep.pipeline_job_id,binary:$input.first().binary}}];"
+        "jsCode": "const jobId = $('TTS vorbereiten').item.json.pipeline_job_id;\nconst ts = new Date().toISOString().replace(/[:.]/g,'-');\nconst fileName = `voice-${jobId}-${ts}.mp3`;\n// No persistent storage configured yet — audio_url placeholder\nreturn [{json:{pipeline_job_id:jobId, fileName, audio_url:'', mime_type:'audio/mpeg'}}];"
       }
     },
     {
@@ -72,71 +71,70 @@
       "name": "NocoDB media_assets",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [960, 0],
+      "position": [880, 0],
       "parameters": {
         "method": "POST",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
-          ]
-        },
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({asset_id:$randomString(12),source_service:'fishaudio',asset_type:'audio',s3_url:'pending',file_name:$json.fileName,mime_type:'audio/mpeg',pipeline_job_id:$json.pipeline_job_id,status:'ready',created_at:new Date().toISOString()}) }}"
+        "bodyParameters": {"parameters": [
+          {"name": "asset_id",        "value": "={{ $randomString(12) }}"},
+          {"name": "source_service",  "value": "fish_audio"},
+          {"name": "asset_type",      "value": "audio"},
+          {"name": "s3_url",          "value": "={{ $json.audio_url || '' }}"},
+          {"name": "file_name",       "value": "={{ $json.fileName }}"},
+          {"name": "mime_type",       "value": "audio/mpeg"},
+          {"name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}"},
+          {"name": "status",          "value": "ready"},
+          {"name": "created_at",      "value": "={{ $now.toISO() }}"}
+        ]},
+        "options": {}
       }
     },
     {
-      "id": "update-pipeline-420",
+      "id": "find-pipeline-420",
+      "name": "Pipeline Job finden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 0],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records?where=(job_id,eq,${$('Dateiname').item.json.pipeline_job_id})&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
+        "options": {}
+      }
+    },
+    {
+      "id": "patch-pipeline-420",
       "name": "Pipeline-Job updaten",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 0],
+      "position": [1320, 0],
+      "onError": "continueRegularOutput",
       "parameters": {
         "method": "PATCH",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
-          ]
-        },
+        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({job_id:$('Dateiname').item.json.pipeline_job_id,stage:'publish',status:'idle'}) }}"
-      }
-    },
-    {
-      "id": "resp-420",
-      "name": "Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1440, 0],
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ {ok:true,file:$('Dateiname').item.json.fileName} }}"
+        "body": "={{ JSON.stringify([{Id:$json.list?.[0]?.Id,audio_url:$('Dateiname').item.json.audio_url||'',stage:'publish',status:'running'}]) }}",
+        "options": {"response": {"response": {"neverError": true}}}
       }
     }
   ],
   "connections": {
-    "Webhook": {
-      "main": [[{"node": "TTS vorbereiten", "type": "main", "index": 0}]]
-    },
-    "TTS vorbereiten": {
-      "main": [[{"node": "Fish Audio TTS", "type": "main", "index": 0}]]
-    },
-    "Fish Audio TTS": {
-      "main": [[{"node": "Dateiname", "type": "main", "index": 0}]]
-    },
-    "Dateiname": {
-      "main": [[{"node": "NocoDB media_assets", "type": "main", "index": 0}]]
-    },
-    "NocoDB media_assets": {
-      "main": [[{"node": "Pipeline-Job updaten", "type": "main", "index": 0}]]
-    },
-    "Pipeline-Job updaten": {
-      "main": [[{"node": "Response", "type": "main", "index": 0}]]
-    }
-  }
+    "Webhook":             {"main": [[{"node": "TTS vorbereiten",     "type": "main", "index": 0}]]},
+    "TTS vorbereiten":     {"main": [[{"node": "Fish Audio TTS",      "type": "main", "index": 0}]]},
+    "Fish Audio TTS":      {"main": [[{"node": "Dateiname",           "type": "main", "index": 0}]]},
+    "Dateiname":           {"main": [[{"node": "NocoDB media_assets", "type": "main", "index": 0}]]},
+    "NocoDB media_assets": {"main": [[{"node": "Pipeline Job finden", "type": "main", "index": 0}]]},
+    "Pipeline Job finden": {"main": [[{"node": "Pipeline-Job updaten","type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "staticData": null
 }
