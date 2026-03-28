@@ -25,13 +25,13 @@
         "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
         "sendQuery": true,
         "queryParameters": {"parameters": [
-          {"name": "app_id",          "value": "={{ $env.ADZUNA_APP_ID }}"},
-          {"name": "app_key",         "value": "={{ $env.ADZUNA_APP_KEY }}"},
-          {"name": "results_per_page","value": "20"},
-          {"name": "what",            "value": "KI Manager Automatisierung"},
-          {"name": "where",           "value": "Frankfurt"},
-          {"name": "distance",        "value": "80"},
-          {"name": "sort_by",         "value": "date"}
+          {"name": "app_id",           "value": "={{ $env.ADZUNA_APP_ID }}"},
+          {"name": "app_key",          "value": "={{ $env.ADZUNA_APP_KEY }}"},
+          {"name": "results_per_page", "value": "20"},
+          {"name": "what",             "value": "KI Manager Automatisierung"},
+          {"name": "where",            "value": "Frankfurt"},
+          {"name": "distance",         "value": "80"},
+          {"name": "sort_by",          "value": "date"}
         ]}
       }
     },
@@ -46,12 +46,12 @@
         "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
         "sendQuery": true,
         "queryParameters": {"parameters": [
-          {"name": "app_id",          "value": "={{ $env.ADZUNA_APP_ID }}"},
-          {"name": "app_key",         "value": "={{ $env.ADZUNA_APP_KEY }}"},
-          {"name": "results_per_page","value": "20"},
-          {"name": "what",            "value": "Head of AI Automation"},
-          {"name": "where",           "value": "Hessen"},
-          {"name": "sort_by",         "value": "date"}
+          {"name": "app_id",           "value": "={{ $env.ADZUNA_APP_ID }}"},
+          {"name": "app_key",          "value": "={{ $env.ADZUNA_APP_KEY }}"},
+          {"name": "results_per_page", "value": "20"},
+          {"name": "what",             "value": "Head of AI Automation"},
+          {"name": "where",            "value": "Hessen"},
+          {"name": "sort_by",          "value": "date"}
         ]}
       }
     },
@@ -60,22 +60,32 @@
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [480, 100],
+      "position": [240, 100],
       "parameters": {"mode": "combine", "combineBy": "combineAll", "options": {}}
     },
     {
-      "id": "061ead8d-0d73-4c8c-ba36-10c8e0bbfe63",
+      "id": "6b333daf-be87-4d0c-a068-2a96ef2a2f3f",
       "name": "Format & Deduplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 100],
+      "parameters": {
+        "jsCode": "const seen=new Set(), out=[];\nfor(const item of $input.all()){\n  for(const j of (item.json.results||[])){\n    if(!seen.has(j.id)){\n      seen.add(j.id);\n      out.push({json:{\n        job_id: j.id,\n        title:  j.title,\n        company: j.company?.display_name || '?',\n        location: j.location?.display_name || '',\n        salary_min: j.salary_min || 0,\n        salary_max: j.salary_max || 0,\n        salary: j.salary_min\n          ? Math.round(j.salary_min/1000)+'k-'+Math.round(j.salary_max/1000)+'k €'\n          : 'k.A.',\n        desc: (j.description||'').slice(0,150),\n        url:  j.redirect_url,\n        created: j.created\n      }});\n    }\n  }\n}\nreturn out.slice(0, 25);"
+      }
+    },
+    {
+      "id": "ce65155b-045c-4973-8581-22d6fac1c868",
+      "name": "Batch für Gemini",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [720, 100],
       "parameters": {
-        "jsCode": "const seen=new Set(),out=[];\nfor(const item of $input.all()){\n  for(const j of (item.json.results||[])){\n    if(!seen.has(j.id)){seen.add(j.id);out.push({json:{\n      job_id:j.id,title:j.title,\n      company:j.company?.display_name||'?',\n      location:j.location?.display_name||'',\n      salary_min:j.salary_min||0,salary_max:j.salary_max||0,\n      salary:j.salary_min?Math.round(j.salary_min/1000)+'k-'+Math.round(j.salary_max/1000)+'k €':'k.A.',\n      desc:(j.description||'').slice(0,200),\n      url:j.redirect_url,created:j.created\n    }});}\n  }\n}\nreturn out.slice(0,25);"
+        "jsCode": "// Alle Items einsammeln und als EINEN Batch-Prompt aufbauen\nconst jobs = $input.all().map((item, i) => ({\n  i,\n  id: item.json.job_id,\n  title: item.json.title,\n  company: item.json.company,\n  location: item.json.location,\n  salary: item.json.salary,\n  desc: item.json.desc\n}));\n\nconst prompt = `Du bist ein Job-Matching-Assistent für Timo Götz.\nProfil: KI/Automation-Manager, Standort Bad Homburg (PLZ 61279), Zielgehalt 70-85k€, Umkreis max 80km.\n\nBewerte jeden der folgenden ${jobs.length} Jobs. Antworte AUSSCHLIESSLICH mit validem JSON-Array:\n[{\"i\":0,\"score\":8,\"match\":\"hoch\",\"note\":\"...max 12 Wörter...\"},...]\n\nJobs:\n${jobs.map(j => `[${j.i}] ${j.title} | ${j.company} | ${j.location} | ${j.salary}`).join('\\n')}`;\n\n// Alle Job-Daten als Kontext weitergeben + Prompt\nreturn [{json: {\n  prompt,\n  jobs,  // für späteres Merging\n}}];"
       }
     },
     {
-      "id": "4e2a4983-a979-4d6b-8577-1905bafad29f",
-      "name": "Gemini: Relevanz",
+      "id": "1ac5a27b-f0a9-467d-9f04-2c2128c5bb08",
+      "name": "Gemini: Batch-Bewertung",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [960, 100],
@@ -86,17 +96,17 @@
         "queryParameters": {"parameters": [{"name": "key", "value": "={{ $env.GEMINI_API_KEY }}"}]},
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({contents:[{parts:[{text:'Bewerte Stellenangebot für KI/Automation-Manager, Bad Homburg (50km Radius), Zielgehalt 70-85k€. Job: '+$json.title+' bei '+$json.company+' in '+$json.location+', Gehalt: '+$json.salary+'. Nur JSON: {\"score\":1-10,\"match\":\"hoch|mittel|niedrig\",\"note\":\"max 15 Wörter\"}'}]}]}) }}"
+        "body": "={{ JSON.stringify({contents:[{parts:[{text: $json.prompt}]}], generationConfig:{responseMimeType:'application/json'}}) }}"
       }
     },
     {
-      "id": "eefd8e8b-f626-4e1c-b731-281d05983e7e",
-      "name": "Filter Score >= 6",
+      "id": "5d826cf1-23db-4145-af4a-5eb5d8e1a3e5",
+      "name": "Parse & Filter Score>=6",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1200, 100],
       "parameters": {
-        "jsCode": "const out=[];\nfor(const item of $input.all()){\n  try{\n    const t=item.json.candidates?.[0]?.content?.parts?.[0]?.text||'{}';\n    const r=JSON.parse(t.replace(/```json|```/g,'').trim());\n    if((r.score||0)>=6) out.push({json:{...item.json,score:r.score,match:r.match,note:r.note}});\n  }catch(e){}\n}\nreturn out;"
+        "jsCode": "// Gemini-Antwort parsen\nconst raw = $input.first().json;\nconst text = raw.candidates?.[0]?.content?.parts?.[0]?.text || '[]';\nconst jobs = $input.first().json.jobs || [];  // jobs aus vorherigem Schritt\n\nlet ratings = [];\ntry {\n  const clean = text.replace(/```json|```/g, '').trim();\n  ratings = JSON.parse(clean);\n} catch(e) {\n  // Fallback: versuche Array aus Text zu extrahieren\n  const match = text.match(/\\[.*\\]/s);\n  if (match) {\n    try { ratings = JSON.parse(match[0]); } catch(e2) {}\n  }\n}\n\n// Jobs mit Scores mergen und filtern\nconst out = [];\nfor (const r of ratings) {\n  if ((r.score || 0) >= 6) {\n    const job = jobs.find(j => j.i === r.i);\n    if (job) {\n      out.push({ json: {\n        ...job,\n        score: r.score,\n        match: r.match,\n        note: r.note,\n        url: `https://www.adzuna.de/jobs/details/${job.id}`,\n        source: 'adzuna'\n      }});\n    }\n  }\n}\n\nreturn out.length > 0 ? out : [];"
       }
     },
     {
@@ -137,17 +147,18 @@
   ],
   "connections": {
     "Trigger: täglich 07:30": {"main": [[
-      {"node": "Adzuna KI-Manager",   "type": "main", "index": 0},
-      {"node": "Adzuna AI-Automation","type": "main", "index": 0}
+      {"node": "Adzuna KI-Manager",    "type": "main", "index": 0},
+      {"node": "Adzuna AI-Automation", "type": "main", "index": 0}
     ]]},
-    "Adzuna KI-Manager":   {"main": [[{"node": "Merge", "type": "main", "index": 0}]]},
-    "Adzuna AI-Automation":{"main": [[{"node": "Merge", "type": "main", "index": 1}]]},
-    "Merge":               {"main": [[{"node": "Format & Deduplicate", "type": "main", "index": 0}]]},
-    "Format & Deduplicate":{"main": [[{"node": "Gemini: Relevanz",     "type": "main", "index": 0}]]},
-    "Gemini: Relevanz":    {"main": [[{"node": "Filter Score >= 6",    "type": "main", "index": 0}]]},
-    "Filter Score >= 6":   {"main": [[
-      {"node": "Telegram Digest",      "type": "main", "index": 0},
-      {"node": "NocoDB: Job speichern","type": "main", "index": 0}
+    "Adzuna KI-Manager":    {"main": [[{"node": "Merge",                  "type": "main", "index": 0}]]},
+    "Adzuna AI-Automation": {"main": [[{"node": "Merge",                  "type": "main", "index": 1}]]},
+    "Merge":                {"main": [[{"node": "Format & Deduplicate",   "type": "main", "index": 0}]]},
+    "Format & Deduplicate": {"main": [[{"node": "Batch für Gemini",       "type": "main", "index": 0}]]},
+    "Batch für Gemini":     {"main": [[{"node": "Gemini: Batch-Bewertung","type": "main", "index": 0}]]},
+    "Gemini: Batch-Bewertung": {"main": [[{"node": "Parse & Filter Score>=6", "type": "main", "index": 0}]]},
+    "Parse & Filter Score>=6": {"main": [[
+      {"node": "Telegram Digest",       "type": "main", "index": 0},
+      {"node": "NocoDB: Job speichern", "type": "main", "index": 0}
     ]]}
   }
 }
