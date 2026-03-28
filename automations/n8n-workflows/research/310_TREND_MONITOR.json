@@ -1,0 +1,114 @@
+{
+  "name": "310_TREND_MONITOR",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "manual-webhook",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 500],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-trend-monitor",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    },
+    {
+      "id": "fetch_hn",
+      "name": "Fetch HackerNews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200],
+      "parameters": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/topstories.json"
+      }
+    },
+    {
+      "id": "gemini_analyze",
+      "name": "Gemini Trend Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\"contents\":[{\"parts\":[{\"text\":\"Analysiere die Top-HackerNews Stories von heute und identifiziere 5 wichtige Tech-Trends. Antworte auf Deutsch als JSON-Array mit Feldern: trend_title, beschreibung, relevanz_score (1-10), kategorie. HN IDs: {{$json}}\"}]}]}"
+      }
+    },
+    {
+      "id": "nocodb_save",
+      "name": "Save to NocoDB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mrdi13quucpnps4",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\"Title\":\"Trends {{ $now.format('YYYY-MM-DD') }}\",\"Quelle\":\"HackerNews\",\"Inhalt\":\"{{ JSON.stringify($json) }}\"}"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Fetch HackerNews", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Fetch HackerNews", "type": "main", "index": 0 }]]
+    },
+    "Fetch HackerNews": {
+      "main": [[{ "node": "Gemini Trend Analysis", "type": "main", "index": 0 }]]
+    },
+    "Gemini Trend Analysis": {
+      "main": [[{ "node": "Save to NocoDB", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "tags": ["research"]
+}

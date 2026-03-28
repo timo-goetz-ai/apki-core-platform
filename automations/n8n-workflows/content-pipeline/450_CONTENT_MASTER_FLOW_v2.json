@@ -5,25 +5,15 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "content-master",
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "webhook-trigger",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={ \"ok\": true, \"message\": \"Content-Generierung gestartet\" }"
-      },
-      "id": "respond-early",
-      "name": "Sofort antworten",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [460, 200]
+      "position": [240, 300],
+      "webhookId": "9a2e23bf-6f00-4e3b-88db-08be57836dd5"
     },
     {
       "parameters": {
@@ -38,7 +28,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records/{{ $json.pipeline_job_id }}",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -47,7 +37,14 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"stage\": \"text\", \"status\": \"running\" }"
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "Id",     "value": "={{ $json.pipeline_job_id }}" },
+            { "name": "stage",  "value": "text" },
+            { "name": "status", "value": "running" }
+          ]
+        }
       },
       "id": "update-running",
       "name": "Pipeline auf Running setzen",
@@ -58,7 +55,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $vars.CREW_API_URL }}/crews/content_generation_crew/run",
+        "url": "http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io/crews/content_generation_crew/run",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -67,10 +64,9 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"inputs\": { \"topic\": \"{{ $('Input parsen').item.json.topic }}\", \"category\": \"{{ $('Input parsen').item.json.category }}\", \"target_platforms\": \"{{ $('Input parsen').item.json.target_platforms }}\", \"pipeline_job_id\": \"{{ $('Input parsen').item.json.pipeline_job_id }}\" } }",
-        "options": {
-          "timeout": 180000
-        }
+        "specifyBody": "json",
+        "jsonBody": "{ \"inputs\": { \"topic\": \"{{ $('Input parsen').item.json.topic }}\", \"category\": \"{{ $('Input parsen').item.json.category }}\", \"target_platforms\": \"{{ $('Input parsen').item.json.target_platforms }}\", \"pipeline_job_id\": \"{{ $('Input parsen').item.json.pipeline_job_id }}\" } }",
+        "options": { "timeout": 180000 }
       },
       "id": "call-crew-api",
       "name": "Crew API: Text generieren",
@@ -80,7 +76,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Crew-API Ergebnis parsen — Writer-Agent soll JSON liefern\nconst res = $input.first().json;\nconst rawResult = res.result ?? '';\n\nlet title = '';\nlet excerpt = '';\nlet seoKeywords = '';\nlet contentText = rawResult;\n\n// Versuche JSON zu parsen (Writer-Agent liefert idealerweise valides JSON)\ntry {\n  const match = rawResult.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    const parsed = JSON.parse(match[0]);\n    title       = parsed.title       ?? '';\n    excerpt     = parsed.excerpt     ?? '';\n    seoKeywords = parsed.seo_keywords ?? '';\n    contentText = parsed.content     ?? rawResult;\n  }\n} catch (_) {\n  // Fallback: rohen Text als Content verwenden\n}\n\n// Titel aus erstem H1 extrahieren falls leer\nif (!title) {\n  const h1Match = contentText.match(/^#\\s+(.+)$/m);\n  title = h1Match ? h1Match[1].trim() : 'Generierter Artikel';\n}\n\nreturn [{ json: {\n  execution_id:   res.execution_id,\n  pipeline_job_id: $('Input parsen').item.json.pipeline_job_id,\n  topic:          $('Input parsen').item.json.topic,\n  category:       $('Input parsen').item.json.category,\n  target_platforms: $('Input parsen').item.json.target_platforms,\n  title,\n  excerpt,\n  seo_keywords:   seoKeywords,\n  content_text:   contentText,\n} }];"
+        "jsCode": "// Crew-API Ergebnis parsen — Writer-Agent soll JSON liefern\nconst res = $input.first().json;\nconst rawResult = res.result ?? '';\n\nlet title = '';\nlet excerpt = '';\nlet seoKeywords = '';\nlet contentText = rawResult;\n\n// Versuche JSON zu parsen (Writer-Agent liefert idealerweise valides JSON)\ntry {\n  const match = rawResult.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    const parsed = JSON.parse(match[0]);\n    title       = parsed.title       ?? '';\n    excerpt     = parsed.excerpt     ?? '';\n    seoKeywords = parsed.seo_keywords ?? '';\n    contentText = parsed.content     ?? rawResult;\n  }\n} catch (_) {\n  // Fallback: rohen Text als Content verwenden\n}\n\n// Titel aus erstem H1 extrahieren falls leer\nif (!title) {\n  const h1Match = contentText.match(/^#\\s+(.+)$/m);\n  title = h1Match ? h1Match[1].trim() : 'Generierter Artikel';\n}\n\nreturn [{ json: {\n  execution_id:    res.execution_id,\n  pipeline_job_id: $('Input parsen').item.json.pipeline_job_id,\n  topic:           $('Input parsen').item.json.topic,\n  category:        $('Input parsen').item.json.category,\n  target_platforms: $('Input parsen').item.json.target_platforms,\n  title,\n  excerpt,\n  seo_keywords:    seoKeywords,\n  content_text:    contentText,\n} }];"
       },
       "id": "parse-result",
       "name": "Ergebnis parsen",
@@ -91,7 +87,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records/{{ $json.pipeline_job_id }}",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -100,7 +96,16 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"stage\": \"image\", \"title\": \"{{ $json.title }}\", \"excerpt\": \"{{ $json.excerpt }}\", \"seo_keywords\": \"{{ $json.seo_keywords }}\", \"text_content\": \"{{ $json.content_text.substring(0, 2000) }}\" }"
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "Id",          "value": "={{ $(\"Input parsen\").item.json.pipeline_job_id }}" },
+            { "name": "stage",       "value": "image" },
+            { "name": "title",       "value": "={{ $json.title }}" },
+            { "name": "excerpt",     "value": "={{ $json.excerpt }}" },
+            { "name": "seo_keywords","value": "={{ $json.seo_keywords }}" }
+          ]
+        }
       },
       "id": "update-text-done",
       "name": "Pipeline: Text fertig",
@@ -111,7 +116,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://n8n.automation-plus-ki.de/webhook/pixart-image",
+        "url": "https://n8n.automation-plus-ki.de/webhook/pixart-image",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -120,19 +125,21 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"pipeline_job_id\": \"{{ $json.pipeline_job_id }}\", \"topic\": \"{{ $json.topic }}\", \"category\": \"{{ $json.category }}\" }",
+        "specifyBody": "json",
+        "jsonBody": "{ \"pipeline_job_id\": \"{{ $json.pipeline_job_id }}\", \"topic\": \"{{ $json.topic }}\", \"category\": \"{{ $json.category }}\" }",
         "options": { "timeout": 5000 }
       },
       "id": "trigger-image",
       "name": "Bild generieren (async)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 260]
+      "position": [1560, 260],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://n8n.automation-plus-ki.de/webhook/fish-audio",
+        "url": "https://n8n.automation-plus-ki.de/webhook/fish-audio",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -141,57 +148,46 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"pipeline_job_id\": \"{{ $json.pipeline_job_id }}\", \"text_content\": \"{{ $json.excerpt || $json.content_text.substring(0, 800) }}\" }",
+        "specifyBody": "json",
+        "jsonBody": "{ \"pipeline_job_id\": \"{{ $json.pipeline_job_id }}\", \"text_content\": \"{{ $json.excerpt || $json.content_text.substring(0, 800) }}\" }",
         "options": { "timeout": 5000 }
       },
       "id": "trigger-audio",
       "name": "Audio generieren (async)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 500]
+      "position": [1560, 500],
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
     "Webhook Trigger": {
-      "main": [
-        [
-          { "node": "Sofort antworten", "type": "main", "index": 0 },
-          { "node": "Input parsen", "type": "main", "index": 0 }
-        ]
-      ]
+      "main": [[{ "node": "Input parsen", "type": "main", "index": 0 }]]
     },
     "Input parsen": {
-      "main": [
-        [{ "node": "Pipeline auf Running setzen", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Pipeline auf Running setzen", "type": "main", "index": 0 }]]
     },
     "Pipeline auf Running setzen": {
-      "main": [
-        [{ "node": "Crew API: Text generieren", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Crew API: Text generieren", "type": "main", "index": 0 }]]
     },
     "Crew API: Text generieren": {
-      "main": [
-        [{ "node": "Ergebnis parsen", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Ergebnis parsen", "type": "main", "index": 0 }]]
     },
     "Ergebnis parsen": {
-      "main": [
-        [{ "node": "Pipeline: Text fertig", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Pipeline: Text fertig", "type": "main", "index": 0 }]]
     },
     "Pipeline: Text fertig": {
-      "main": [
-        [
-          { "node": "Bild generieren (async)", "type": "main", "index": 0 },
-          { "node": "Audio generieren (async)", "type": "main", "index": 0 }
-        ]
-      ]
+      "main": [[
+        { "node": "Bild generieren (async)", "type": "main", "index": 0 },
+        { "node": "Audio generieren (async)", "type": "main", "index": 0 }
+      ]]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
-  "tags": ["content", "crew-api", "pipeline"]
+  "tags": ["content-pipeline"]
 }
