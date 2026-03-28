@@ -28,7 +28,7 @@ interface Workflow {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const WORKFLOWS_TABLE = 'mnwlsxsm0q1k2d2';
+const WORKFLOWS_TABLE = 'mfz43ghxesvn1yy';
 const KATEGORIEN = ['Alle', 'System', 'KI-Chat', 'Job-Scout', 'Content', 'Voice', 'SaaS', 'DevOps', 'Daten'];
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
@@ -328,7 +328,7 @@ export default function WorkflowsPage() {
               <Download size={12} /> CSV
             </button>
             <a
-              href="http://10.0.1.29:5678"
+              href="https://n8n.automation-plus-ki.de"
               target="_blank"
               rel="noopener noreferrer"
               style={{

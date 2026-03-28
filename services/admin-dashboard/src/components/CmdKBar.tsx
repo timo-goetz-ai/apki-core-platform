@@ -24,7 +24,7 @@ const NAV_ITEMS: SearchResult[] = [
   { id: 'nav-analytics',   label: 'Analytics',         href: '/analytics',                 icon: <BarChart2       size={12} />,  badge: 'nav' },
   { id: 'nav-templates',   label: 'Templates',         href: '/templates',                 icon: <FileText        size={12} />,  badge: 'nav' },
   { id: 'nav-content',     label: 'Content Factory',   href: '/content-factory',           icon: <Factory         size={12} />,  badge: 'nav' },
-  { id: 'ext-n8n',         label: 'n8n öffnen',        href: 'http://10.0.1.29:5678',      icon: <Zap             size={12} />,  badge: 'ext', badgeColor: '#38bdf8', external: true },
+  { id: 'ext-n8n',         label: 'n8n öffnen',        href: 'https://n8n.automation-plus-ki.de',      icon: <Zap             size={12} />,  badge: 'ext', badgeColor: '#38bdf8', external: true },
   { id: 'ext-nocodb',      label: 'NocoDB öffnen',     href: 'https://nocodb.automation-plus-ki.de',  icon: <Settings size={12} />, badge: 'ext', badgeColor: '#fb923c', external: true },
   { id: 'ext-grafana',     label: 'Grafana öffnen',    href: 'https://grafana.automation-plus-ki.de', icon: <BarChart2 size={12} />, badge: 'ext', badgeColor: '#fbbf24', external: true },
 ];
