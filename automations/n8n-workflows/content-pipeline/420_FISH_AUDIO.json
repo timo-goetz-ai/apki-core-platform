@@ -37,7 +37,7 @@
         "url": "https://api.fish.audio/v1/tts",
         "sendHeaders": true,
         "headerParameters": {"parameters": [
-          {"name": "Authorization", "value": "=Bearer {{ $vars.FISH_AUDIO_API_KEY }}"},
+          {"name": "Authorization", "value": "=Bearer {{ $env.FISH_AUDIO_API_KEY }}"},
           {"name": "Content-Type",  "value": "application/json"}
         ]},
         "sendBody": true,
