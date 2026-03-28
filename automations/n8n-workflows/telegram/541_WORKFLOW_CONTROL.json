@@ -1,12 +1,15 @@
 {
-  "name": "70a_WORKFLOW_CONTROL",
+  "name": "541_WORKFLOW_CONTROL",
   "nodes": [
     {
       "id": "70a-trigger",
       "name": "When Called by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {}
     },
     {
@@ -14,19 +17,28 @@
       "name": "Route Action",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "rules": {
           "rules": [
             {
               "outputKey": "LIST",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.intent }}",
                     "rightValue": "LIST_WORKFLOWS",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ]
               }
@@ -34,12 +46,18 @@
             {
               "outputKey": "ACTIVATE",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.intent }}",
                     "rightValue": "ACTIVATE_WORKFLOW",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ]
               }
@@ -47,12 +65,18 @@
             {
               "outputKey": "DEACTIVATE",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.intent }}",
                     "rightValue": "DEACTIVATE_WORKFLOW",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ]
               }
@@ -60,12 +84,18 @@
             {
               "outputKey": "TRIGGER",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.intent }}",
                     "rightValue": "TRIGGER_WORKFLOW",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ]
               }
@@ -73,12 +103,18 @@
             {
               "outputKey": "SCHEDULE",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.intent }}",
                     "rightValue": "UPDATE_SCHEDULE",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ]
               }
@@ -86,28 +122,38 @@
             {
               "outputKey": "CONFIRM",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.isConfirmation }}",
                     "rightValue": true,
-                    "operator": { "type": "boolean", "operation": "equal" }
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equal"
+                    }
                   }
                 ]
               }
             }
           ]
         },
-        "options": { "fallbackOutput": "extra" }
+        "options": {
+          "fallbackOutput": "extra"
+        }
       }
     },
-
     {
       "id": "70a-list-fetch",
       "name": "Fetch All Workflows",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 80],
+      "position": [
+        720,
+        80
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.29:5678/api/v1/workflows",
@@ -115,16 +161,24 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" }
+            {
+              "name": "limit",
+              "value": "100"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -133,18 +187,23 @@
       "name": "Format Workflow List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, 80],
+      "position": [
+        960,
+        80
+      ],
       "parameters": {
         "jsCode": "const chatId = $('When Called by Another Workflow').first().json.chatId;\nconst data = $input.first().json;\nconst workflows = data?.data ?? data?.workflows ?? [];\n\nif (workflows.length === 0) {\n  return [{ json: { chatId, response: '❌ Keine Workflows gefunden.' } }];\n}\n\nconst active = workflows.filter(w => w.active);\nconst inactive = workflows.filter(w => !w.active);\n\nconst formatLine = w => {\n  const status = w.active ? '✅' : '⏸';\n  return `${status} \\`${w.name}\\``;\n};\n\nlet response = `*n8n Workflows (${workflows.length})*\\n\\n`;\nresponse += `*Aktiv (${active.length}):*\\n`;\nresponse += active.map(formatLine).join('\\n') || '_keine_';\nresponse += `\\n\\n*Pausiert (${inactive.length}):*\\n`;\nresponse += inactive.map(formatLine).join('\\n') || '_keine_';\nresponse += `\\n\\n_Befehle: \"aktiviere [Name]\" | \"deaktiviere [Name]\" | \"starte [Name]\"_`;\n\n// Truncate if too long\nif (response.length > 4000) {\n  response = response.substring(0, 3900) + '\\n\\n_[Liste gekürzt]_';\n}\n\nreturn [{ json: { chatId, response } }];"
       }
     },
-
     {
       "id": "70a-find-for-activate",
       "name": "Find Workflow (Activate)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 200],
+      "position": [
+        720,
+        200
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.29:5678/api/v1/workflows",
@@ -152,16 +211,24 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" }
+            {
+              "name": "limit",
+              "value": "100"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -170,7 +237,10 @@
       "name": "Activate Workflow",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, 200],
+      "position": [
+        960,
+        200
+      ],
       "parameters": {
         "jsCode": "const input = $('When Called by Another Workflow').first().json;\nconst chatId = input.chatId;\nconst searchName = (input.workflow_name ?? input.workflowName ?? '').toLowerCase();\nconst searchId = input.workflow_id ?? input.workflowId ?? null;\n\nconst data = $input.first().json;\nconst workflows = data?.data ?? data?.workflows ?? [];\n\n// Find by ID or fuzzy name match\nlet target = null;\nif (searchId) {\n  target = workflows.find(w => w.id === searchId || String(w.id) === String(searchId));\n}\nif (!target && searchName) {\n  target = workflows.find(w => w.name.toLowerCase().includes(searchName));\n}\n\nif (!target) {\n  return [{ json: { chatId, response: `❌ Workflow \\`${input.workflow_name ?? searchId}\\` nicht gefunden.\\n\\nTippe *workflows* um alle anzuzeigen.`, skipActivate: true } }];\n}\n\nreturn [{ json: { chatId, workflowId: target.id, workflowName: target.name, alreadyActive: target.active, skipActivate: false } }];"
       }
@@ -180,16 +250,26 @@
       "name": "Already Active?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1200, 200],
+      "position": [
+        1200,
+        200
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "check-skip",
               "leftValue": "={{ $json.skipActivate }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equal" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
             }
           ],
           "combinator": "and"
@@ -201,7 +281,10 @@
       "name": "Call Activate API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 240],
+      "position": [
+        1440,
+        240
+      ],
       "parameters": {
         "method": "POST",
         "url": "=http://10.0.1.29:5678/api/v1/workflows/{{ $json.workflowId }}/activate",
@@ -209,10 +292,15 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -221,18 +309,23 @@
       "name": "Activate Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1680, 240],
+      "position": [
+        1680,
+        240
+      ],
       "parameters": {
         "jsCode": "const prev = $('Activate Workflow').first().json;\nconst chatId = prev.chatId;\nconst result = $input.first().json;\nconst name = prev.workflowName;\n\nif (result.error || result.message?.includes('error')) {\n  return [{ json: { chatId, response: `❌ Fehler beim Aktivieren von \\`${name}\\`: ${result.message ?? 'Unbekannter Fehler'}` } }];\n}\n\nreturn [{ json: { chatId, response: `✅ Workflow \\`${name}\\` wurde *aktiviert*.` } }];"
       }
     },
-
     {
       "id": "70a-deactivate-confirm",
       "name": "Send Deactivate Confirmation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 340],
+      "position": [
+        720,
+        340
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
@@ -240,7 +333,9 @@
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ chat_id: $json.chatId, text: '⚠️ *Bestätigung erforderlich*\\n\\nSoll ich Workflow `' + ($json.workflow_name ?? $json.workflowName ?? '?') + '` wirklich *deaktivieren*?', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '✅ Ja, deaktivieren', callback_data: 'confirm_deactivate:' + ($json.workflow_name ?? '') }, { text: '❌ Abbrechen', callback_data: 'cancel' }]] } }) }}",
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -249,23 +344,38 @@
       "name": "Deactivate Pending Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [960, 340],
+      "position": [
+        960,
+        340
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "a1", "name": "chatId", "value": "={{ $('When Called by Another Workflow').first().json.chatId }}", "type": "string" },
-            { "id": "a2", "name": "response", "value": "", "type": "string" }
+            {
+              "id": "a1",
+              "name": "chatId",
+              "value": "={{ $('When Called by Another Workflow').first().json.chatId }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "response",
+              "value": "",
+              "type": "string"
+            }
           ]
         }
       }
     },
-
     {
       "id": "70a-find-for-trigger",
       "name": "Find Workflow (Trigger)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 460],
+      "position": [
+        720,
+        460
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.29:5678/api/v1/workflows",
@@ -273,16 +383,24 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" }
+            {
+              "name": "limit",
+              "value": "100"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -291,7 +409,10 @@
       "name": "Execute Workflow Now",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, 460],
+      "position": [
+        960,
+        460
+      ],
       "parameters": {
         "jsCode": "// This code node finds the workflow and prepares the trigger\nconst input = $('When Called by Another Workflow').first().json;\nconst chatId = input.chatId;\nconst searchName = (input.workflow_name ?? '').toLowerCase();\nconst searchId = input.workflow_id ?? null;\n\nconst data = $input.first().json;\nconst workflows = data?.data ?? data?.workflows ?? [];\n\nlet target = null;\nif (searchId) {\n  target = workflows.find(w => String(w.id) === String(searchId));\n}\nif (!target && searchName) {\n  target = workflows.find(w => w.name.toLowerCase().includes(searchName));\n}\n\nif (!target) {\n  return [{ json: { chatId, response: `❌ Workflow \\`${input.workflow_name ?? searchId}\\` nicht gefunden.`, skipTrigger: true } }];\n}\n\nif (!target.active) {\n  return [{ json: { chatId, response: `⚠️ Workflow \\`${target.name}\\` ist *deaktiviert* und kann nicht ausgeführt werden.\\n\\nTippe *aktiviere ${target.name}* um ihn zu aktivieren.`, skipTrigger: true } }];\n}\n\nreturn [{ json: { chatId, workflowId: target.id, workflowName: target.name, skipTrigger: false } }];"
       }
@@ -301,16 +422,26 @@
       "name": "Skip Trigger?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1200, 460],
+      "position": [
+        1200,
+        460
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "t-skip",
               "leftValue": "={{ $json.skipTrigger }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equal" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
             }
           ],
           "combinator": "and"
@@ -322,7 +453,10 @@
       "name": "Call Run API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 500],
+      "position": [
+        1440,
+        500
+      ],
       "parameters": {
         "method": "POST",
         "url": "=http://10.0.1.29:5678/api/v1/workflows/{{ $json.workflowId }}/run",
@@ -330,13 +464,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "{}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -345,18 +484,23 @@
       "name": "Trigger Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1680, 500],
+      "position": [
+        1680,
+        500
+      ],
       "parameters": {
         "jsCode": "const prev = $('Execute Workflow Now').first().json;\nconst chatId = prev.chatId;\nconst result = $input.first().json;\nconst name = prev.workflowName;\n\nif (result.error) {\n  return [{ json: { chatId, response: `❌ Fehler beim Starten von \\`${name}\\`: ${result.message ?? 'Unbekannter Fehler'}` } }];\n}\n\nconst execId = result.executionId ?? result.id ?? '';\nreturn [{ json: { chatId, response: `🚀 Workflow \\`${name}\\` wurde *gestartet*.${execId ? '\\nExecution ID: ' + execId : ''}` } }];"
       }
     },
-
     {
       "id": "70a-schedule-confirm",
       "name": "Send Schedule Confirmation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 580],
+      "position": [
+        720,
+        580
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
@@ -364,7 +508,9 @@
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ chat_id: $json.chatId, text: '⏰ *Schedule-Änderung bestätigen*\\n\\nWorkflow: `' + ($json.workflow_name ?? '?') + '`\\nNeuer Zeitplan: ' + ($json.cron_human ?? $json.cron_expression ?? '?') + '\\n\\nFortfahren?', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '✅ Ja, Zeitplan ändern', callback_data: 'confirm_schedule:' + ($json.workflow_name ?? '') + ':' + ($json.cron_expression ?? '') }, { text: '❌ Abbrechen', callback_data: 'cancel' }]] } }) }}",
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -373,23 +519,38 @@
       "name": "Schedule Pending Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [960, 580],
+      "position": [
+        960,
+        580
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "b1", "name": "chatId", "value": "={{ $('When Called by Another Workflow').first().json.chatId }}", "type": "string" },
-            { "id": "b2", "name": "response", "value": "", "type": "string" }
+            {
+              "id": "b1",
+              "name": "chatId",
+              "value": "={{ $('When Called by Another Workflow').first().json.chatId }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "response",
+              "value": "",
+              "type": "string"
+            }
           ]
         }
       }
     },
-
     {
       "id": "70a-confirm-handler",
       "name": "Handle Confirmation",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 700],
+      "position": [
+        720,
+        700
+      ],
       "parameters": {
         "jsCode": "const input = $('When Called by Another Workflow').first().json;\nconst chatId = input.chatId;\nconst callbackData = input.callbackData ?? '';\n\nif (callbackData === 'cancel') {\n  return [{ json: { chatId, response: '❌ Abgebrochen.', confirmAction: null } }];\n}\n\nif (callbackData.startsWith('confirm_deactivate:')) {\n  const workflowName = callbackData.replace('confirm_deactivate:', '');\n  return [{ json: { chatId, response: null, confirmAction: 'deactivate', workflowName } }];\n}\n\nif (callbackData.startsWith('confirm_schedule:')) {\n  const parts = callbackData.replace('confirm_schedule:', '').split(':');\n  const workflowName = parts[0];\n  const cronExpression = parts.slice(1).join(':');\n  return [{ json: { chatId, response: null, confirmAction: 'schedule', workflowName, cronExpression } }];\n}\n\nreturn [{ json: { chatId, response: '❓ Unbekannte Aktion.', confirmAction: null } }];"
       }
@@ -399,31 +560,56 @@
       "name": "Route Confirmed Action",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [960, 700],
+      "position": [
+        960,
+        700
+      ],
       "parameters": {
         "rules": {
           "rules": [
             {
               "outputKey": "DEACTIVATE",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
-                  { "leftValue": "={{ $json.confirmAction }}", "rightValue": "deactivate", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "leftValue": "={{ $json.confirmAction }}",
+                    "rightValue": "deactivate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ]
               }
             },
             {
               "outputKey": "SCHEDULE",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": ""
+                },
                 "conditions": [
-                  { "leftValue": "={{ $json.confirmAction }}", "rightValue": "schedule", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "leftValue": "={{ $json.confirmAction }}",
+                    "rightValue": "schedule",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ]
               }
             }
           ]
         },
-        "options": { "fallbackOutput": "extra" }
+        "options": {
+          "fallbackOutput": "extra"
+        }
       }
     },
     {
@@ -431,7 +617,10 @@
       "name": "Find & Deactivate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 660],
+      "position": [
+        1200,
+        660
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.29:5678/api/v1/workflows",
@@ -439,16 +628,24 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" }
+            {
+              "name": "limit",
+              "value": "100"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -457,7 +654,10 @@
       "name": "Execute Deactivate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1440, 660],
+      "position": [
+        1440,
+        660
+      ],
       "parameters": {
         "jsCode": "const confirmed = $('Handle Confirmation').first().json;\nconst chatId = confirmed.chatId;\nconst searchName = confirmed.workflowName.toLowerCase();\n\nconst data = $input.first().json;\nconst workflows = data?.data ?? data?.workflows ?? [];\nconst target = workflows.find(w => w.name.toLowerCase().includes(searchName));\n\nif (!target) {\n  return [{ json: { chatId, response: `❌ Workflow \\`${confirmed.workflowName}\\` nicht gefunden.`, workflowId: null } }];\n}\n\nreturn [{ json: { chatId, workflowId: target.id, workflowName: target.name } }];"
       }
@@ -467,7 +667,10 @@
       "name": "Call Deactivate API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1680, 660],
+      "position": [
+        1680,
+        660
+      ],
       "parameters": {
         "method": "POST",
         "url": "=http://10.0.1.29:5678/api/v1/workflows/{{ $json.workflowId }}/deactivate",
@@ -475,10 +678,15 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -487,34 +695,51 @@
       "name": "Deactivate Final Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1920, 660],
+      "position": [
+        1920,
+        660
+      ],
       "parameters": {
         "jsCode": "const prev = $('Execute Deactivate').first().json;\nconst chatId = prev.chatId;\nconst name = prev.workflowName;\nconst result = $input.first().json;\n\nif (result.error) {\n  return [{ json: { chatId, response: `❌ Fehler: ${result.message ?? 'Deaktivierung fehlgeschlagen'}` } }];\n}\n\nreturn [{ json: { chatId, response: `⏸ Workflow \\`${name}\\` wurde *deaktiviert*.` } }];"
       }
     },
-
     {
       "id": "70a-cancel-resp",
       "name": "Cancel Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1200, 780],
+      "position": [
+        1200,
+        780
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "c1", "name": "chatId", "value": "={{ $json.chatId }}", "type": "string" },
-            { "id": "c2", "name": "response", "value": "={{ $json.response }}", "type": "string" }
+            {
+              "id": "c1",
+              "name": "chatId",
+              "value": "={{ $json.chatId }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            }
           ]
         }
       }
     },
-
     {
       "id": "70a-merge-all",
       "name": "Merge All Responses",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [2160, 420],
+      "position": [
+        2160,
+        420
+      ],
       "parameters": {
         "mode": "passThrough",
         "output": "input1"
@@ -524,58 +749,342 @@
   "connections": {
     "When Called by Another Workflow": {
       "main": [
-        [{ "node": "Route Action", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Route Action": {
       "main": [
-        [{ "node": "Fetch All Workflows",         "type": "main", "index": 0 }],
-        [{ "node": "Find Workflow (Activate)",     "type": "main", "index": 0 }],
-        [{ "node": "Send Deactivate Confirmation", "type": "main", "index": 0 }],
-        [{ "node": "Find Workflow (Trigger)",      "type": "main", "index": 0 }],
-        [{ "node": "Send Schedule Confirmation",   "type": "main", "index": 0 }],
-        [{ "node": "Handle Confirmation",          "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch All Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Workflow (Activate)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Deactivate Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Workflow (Trigger)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Schedule Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Fetch All Workflows":           { "main": [[{ "node": "Format Workflow List",    "type": "main", "index": 0 }]] },
-    "Format Workflow List":          { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 0 }]] },
-    "Find Workflow (Activate)":      { "main": [[{ "node": "Activate Workflow",       "type": "main", "index": 0 }]] },
-    "Activate Workflow":             { "main": [[{ "node": "Already Active?",         "type": "main", "index": 0 }]] },
+    "Fetch All Workflows": {
+      "main": [
+        [
+          {
+            "node": "Format Workflow List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Workflow List": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Workflow (Activate)": {
+      "main": [
+        [
+          {
+            "node": "Activate Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activate Workflow": {
+      "main": [
+        [
+          {
+            "node": "Already Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Already Active?": {
       "main": [
-        [{ "node": "Merge All Responses", "type": "main", "index": 1 }],
-        [{ "node": "Call Activate API",   "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Call Activate API",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Call Activate API":             { "main": [[{ "node": "Activate Response",       "type": "main", "index": 0 }]] },
-    "Activate Response":             { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 2 }]] },
-    "Send Deactivate Confirmation":  { "main": [[{ "node": "Deactivate Pending Response", "type": "main", "index": 0 }]] },
-    "Deactivate Pending Response":   { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 3 }]] },
-    "Find Workflow (Trigger)":       { "main": [[{ "node": "Execute Workflow Now",    "type": "main", "index": 0 }]] },
-    "Execute Workflow Now":          { "main": [[{ "node": "Skip Trigger?",           "type": "main", "index": 0 }]] },
+    "Call Activate API": {
+      "main": [
+        [
+          {
+            "node": "Activate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activate Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Send Deactivate Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Deactivate Pending Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deactivate Pending Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Find Workflow (Trigger)": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow Now",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Now": {
+      "main": [
+        [
+          {
+            "node": "Skip Trigger?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Skip Trigger?": {
       "main": [
-        [{ "node": "Merge All Responses", "type": "main", "index": 4 }],
-        [{ "node": "Call Run API",        "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 4
+          }
+        ],
+        [
+          {
+            "node": "Call Run API",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Call Run API":                  { "main": [[{ "node": "Trigger Response",        "type": "main", "index": 0 }]] },
-    "Trigger Response":              { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 5 }]] },
-    "Send Schedule Confirmation":    { "main": [[{ "node": "Schedule Pending Response", "type": "main", "index": 0 }]] },
-    "Schedule Pending Response":     { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 6 }]] },
-    "Handle Confirmation":           { "main": [[{ "node": "Route Confirmed Action",  "type": "main", "index": 0 }]] },
+    "Call Run API": {
+      "main": [
+        [
+          {
+            "node": "Trigger Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Send Schedule Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Schedule Pending Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Pending Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Handle Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Route Confirmed Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Route Confirmed Action": {
       "main": [
-        [{ "node": "Find & Deactivate", "type": "main", "index": 0 }],
-        [{ "node": "Merge All Responses", "type": "main", "index": 7 }],
-        [{ "node": "Cancel Response",     "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Find & Deactivate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 7
+          }
+        ],
+        [
+          {
+            "node": "Cancel Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Find & Deactivate":             { "main": [[{ "node": "Execute Deactivate",      "type": "main", "index": 0 }]] },
-    "Execute Deactivate":            { "main": [[{ "node": "Call Deactivate API",     "type": "main", "index": 0 }]] },
-    "Call Deactivate API":           { "main": [[{ "node": "Deactivate Final Response", "type": "main", "index": 0 }]] },
-    "Deactivate Final Response":     { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 8 }]] },
-    "Cancel Response":               { "main": [[{ "node": "Merge All Responses",     "type": "main", "index": 9 }]] }
+    "Find & Deactivate": {
+      "main": [
+        [
+          {
+            "node": "Execute Deactivate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Deactivate": {
+      "main": [
+        [
+          {
+            "node": "Call Deactivate API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Deactivate API": {
+      "main": [
+        [
+          {
+            "node": "Deactivate Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deactivate Final Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
+    },
+    "Cancel Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 9
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -583,8 +1092,11 @@
     "saveDataSuccessExecution": "none"
   },
   "staticData": null,
-  "tags": ["telegram", "workflow-control"],
+  "tags": [
+    "telegram",
+    "workflow-control"
+  ],
   "meta": {
-    "description": "Sub-workflow: n8n Workflow-Steuerung via Telegram (list/activate/deactivate/trigger/schedule)"
+    "description": "541 — Sub-Workflow: n8n Workflow-Steuerung (Activate, Deactivate, Trigger, Schedule) via Telegram"
   }
 }
