@@ -1,27 +1,15 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-// Public URL (lokal/dev) oder interner Docker-Hostname (Production)
+// Grafana läuft hinter Authentik-Proxy → Auth über X-authentik-email Header (intern)
 const GRAFANA_BASE = process.env.GRAFANA_BASE_URL ?? 'http://homestack-grafana:3000';
-const GRAFANA_USER = process.env.GRAFANA_ADMIN_USER ?? 'admin';
-const GRAFANA_PASS = process.env.GRAFANA_ADMIN_PASSWORD ?? '';
-const GRAFANA_TOKEN = process.env.GRAFANA_SERVICE_ACCOUNT_TOKEN ?? '';
+const GRAFANA_PROXY_EMAIL = process.env.GRAFANA_PROXY_EMAIL ?? 'admin@timo-goetz-ai.de';
 
 function authHeaders(): Record<string, string> {
-  if (GRAFANA_TOKEN) {
-    return { Authorization: `Bearer ${GRAFANA_TOKEN}` };
-  }
-  const creds = Buffer.from(`${GRAFANA_USER}:${GRAFANA_PASS}`).toString('base64');
-  return { Authorization: `Basic ${creds}` };
-}
-
-async function gFetch(path: string) {
-  const res = await fetch(`${GRAFANA_BASE}${path}`, {
-    headers: { ...authHeaders(), Accept: 'application/json' },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) throw new Error(`Grafana ${res.status} ${path}`);
-  return res.json();
+  return {
+    'X-authentik-email': GRAFANA_PROXY_EMAIL,
+    'X-authentik-username': 'akadmin',
+  };
 }
 
 export async function GET() {

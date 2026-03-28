@@ -7,10 +7,10 @@ const PROMETHEUS = 'https://prometheus.automation-plus-ki.de';
 const GRAFANA = 'https://grafana.automation-plus-ki.de';
 
 const GRAFANA_DASHBOARDS = [
-  { title: 'Infrastructure', url: `${GRAFANA}/d/infrastructure`, icon: Server },
-  { title: 'Docker',         url: `${GRAFANA}/d/docker`,         icon: Activity },
-  { title: 'Node Exporter',  url: `${GRAFANA}/d/node-exporter`,  icon: Cpu },
-  { title: 'PostgreSQL',     url: `${GRAFANA}/d/postgresql`,     icon: HardDrive },
+  { title: 'Operations',       url: `${GRAFANA}/d/aios-operations`, icon: Activity  },
+  { title: 'Research/Content', url: `${GRAFANA}/d/aios-research`,   icon: HardDrive },
+  { title: 'Logs',             url: `${GRAFANA}/d/aios-logs`,       icon: Server    },
+  { title: 'Containers',       url: `${GRAFANA}/d/aios-containers`, icon: Cpu       },
 ];
 
 // ── Prometheus helper ──────────────────────────────────────────────────────
