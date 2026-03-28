@@ -39,6 +39,10 @@ const ROBOTS: Record<string, RobotChar> = {
   'Briefing Creator':    { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '📋' },
   // Director
   'Director Agent':      { name: 'AIOS Director',      trait: 'Orchestrierung',   color: '#fbbf24', bgColor: 'rgba(251,191,36,0.1)',   avatar: '🎬' },
+  // xAI Social Crew (Grok-3)
+  'Viral Trend Analyst': { name: 'Grok-X',             trait: 'Viralität',        color: '#e2e8f0', bgColor: 'rgba(226,232,240,0.1)',  avatar: '𝕏' },
+  'Twitter/X Copywriter':{ name: 'Tweet-Master',       trait: 'Engagement',       color: '#1d9bf0', bgColor: 'rgba(29,155,240,0.1)',   avatar: '🐦' },
+  'Multi-Platform Content Adapter': { name: 'Plattform-Ninja', trait: 'Anpassung', color: '#a855f7', bgColor: 'rgba(168,85,247,0.1)',  avatar: '🔄' },
 };
 
 function getRobot(role: string): RobotChar {
@@ -113,6 +117,11 @@ const CREW_AGENTS: Record<string, { role: string; color: string }[]> = {
   director_crew: [
     { role: 'Director Agent', color: '#fbbf24' },
   ],
+  xai_social_crew: [
+    { role: 'Viral Trend Analyst',              color: '#e2e8f0' },
+    { role: 'Twitter/X Copywriter',             color: '#1d9bf0' },
+    { role: 'Multi-Platform Content Adapter',   color: '#a855f7' },
+  ],
 };
 
 const CREW_ACCENT: Record<string, string> = {
@@ -125,6 +134,7 @@ const CREW_ACCENT: Record<string, string> = {
   red_team_crew:            '#f87171',
   market_intelligence_crew: '#22d3ee',
   director_crew:            '#fbbf24',
+  xai_social_crew:          '#1d9bf0',
 };
 
 const DEFAULT_INPUTS: Record<string, Record<string, string>> = {
@@ -137,6 +147,7 @@ const DEFAULT_INPUTS: Record<string, Record<string, string>> = {
   red_team_crew:            { topic: 'Content Review', category: 'Quality', target_platforms: 'internal' },
   market_intelligence_crew: { topic: 'KI-Markt Trends', category: 'Research', target_platforms: 'internal' },
   director_crew:            { user_prompt: 'Analysiere aktuelle KI-Trends und erstelle Content', target_platforms: 'blog' },
+  xai_social_crew:          { topic: 'KI-Agenten verändern das Internet 2026', category: 'KI-Tools', target_platforms: 'twitter,linkedin,threads' },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

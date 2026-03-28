@@ -6,6 +6,7 @@ class AgentConfig(BaseModel):
     role: str
     goal: str
     backstory: str = ""
+    model: str | None = None   # überschreibt crew-level model wenn gesetzt
     mcp_servers: list[str] = []
 
 

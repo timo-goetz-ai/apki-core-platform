@@ -481,6 +481,7 @@ crews:
     agents:
       - id: fact_checker
         role: "Fact Checker & Research Validator"
+        model: "openrouter/deepseek/deepseek-r1"  # Reasoning-Stärke für Faktenprüfung
         goal: >
           Prüfe jeden Fakt, jede Statistik und jede Behauptung im Content.
           Identifiziere ungeprüfte Aussagen, veraltete Informationen und
@@ -814,6 +815,99 @@ crews:
           Liefere: 3 Kernpunkte, 3 relevante Keywords, eine Handlungsempfehlung.
         expected_output: >
           Strukturierte Analyse mit Kernpunkten, Keywords und Empfehlung.
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── xAI Social Crew ──────────────────────────────────────────────────────────
+  # Grok-3 via OpenRouter — nativ für X/Twitter-Kultur trainiert
+  # Inputs: topic, category, target_platforms (twitter,linkedin,threads)
+  xai_social_crew:
+    name: "xAI Social Crew"
+    model: "openrouter/x-ai/grok-3"
+    agents:
+      - id: trend_hook
+        role: "Viral Trend Analyst"
+        goal: >
+          Analysiere das Thema auf virales Potenzial für X/Twitter.
+          Identifiziere den perfekten Hook, aktuelle Diskussionen und
+          relevante Hashtags. Denke in Memes, Threads und Engagement.
+        backstory: >
+          Du bist tief in der X/Twitter-Community verwurzelt. Du verstehst
+          die Plattform-Kultur, weißt was Threads viral gehen lässt und
+          erkennst sofort ob ein Hook zündet oder floppt. Du hast
+          Hunderttausende Follower-Wachstum analysiert.
+        mcp_servers: []
+
+      - id: tweet_writer
+        role: "Twitter/X Copywriter"
+        goal: >
+          Erstelle einen vollständigen X-Thread mit 5-8 Tweets plus
+          einen LinkedIn-Post und 3 Hook-Varianten für A/B-Tests.
+          Maximale Reichweite, echte Mehrwert-Vermittlung.
+        backstory: >
+          Du schreibst X-Threads die performen. Dein Stil ist direkt,
+          pointiert und immer nah an dem was die Community gerade bewegt.
+          Du kennst den Unterschied zwischen informativem Thread und
+          purem Engagement-Bait — und findest den Sweet Spot dazwischen.
+        mcp_servers: []
+
+      - id: platform_adapter
+        role: "Multi-Platform Content Adapter"
+        goal: >
+          Adaptiere den X-Thread für LinkedIn (professioneller Ton),
+          Instagram (visuell, Carousel-Text) und Threads (lockererer Stil).
+          Jede Plattform bekommt ihren eigenen Charakter — kein Copy-Paste.
+        backstory: >
+          Du bist Plattform-Spezialist und kennst die Erwartungen der
+          Nutzer auf jeder Plattform genau. Was auf X zündet kann auf
+          LinkedIn peinlich wirken. Du übersetzt Content-Substanz in
+          plattformgerechte Sprache.
+        mcp_servers: []
+
+    tasks:
+      - id: trend_analysis
+        agent_id: trend_hook
+        description: >
+          Analysiere "{topic}" für X/Twitter und soziale Plattformen.
+          Kategorie: {category}.
+          Liefere: virales Potenzial (1-10), 3 Hook-Optionen, 5 relevante
+          Hashtags, aktuelle Diskussionswinkel und was die Community
+          gerade dazu sagt oder sagen würde.
+        expected_output: >
+          Trend-Analyse mit Viral-Score, 3 Hook-Varianten, Hashtag-Liste
+          und Community-Kontext.
+
+      - id: twitter_thread
+        agent_id: tweet_writer
+        context_task_ids: [trend_analysis]
+        description: >
+          Erstelle basierend auf der Trend-Analyse einen X-Thread zu "{topic}".
+          Format:
+          - Tweet 1: Hook (max 280 Zeichen, stoppt den Scroll)
+          - Tweets 2-7: Kerninhalt, jeder Tweet standalone wertvoll
+          - Tweet 8: CTA + Zusammenfassung
+          - 3 Hook-Varianten zum A/B-Testen
+          Sprache: Deutsch, authentisch, kein Corporate-Speak.
+        expected_output: >
+          Vollständiger X-Thread (8 Tweets) + 3 Hook-Varianten als JSON:
+          {"thread": ["tweet1", ...], "hooks": ["v1", "v2", "v3"]}
+
+      - id: platform_versions
+        agent_id: platform_adapter
+        context_task_ids: [trend_analysis, twitter_thread]
+        description: >
+          Adaptiere den Thread für:
+          1. LinkedIn: professioneller Ton, 1200-1500 Zeichen, Insights betonen
+          2. Instagram Carousel: 6-8 Slides als Text-Snippets, visuell denkend
+          3. Threads: lockererer Stil, 3-5 kurze Posts
+          Plattformen laut Ziel: {target_platforms}
+        expected_output: >
+          JSON mit allen Plattform-Versionen:
+          {"linkedin": "...", "instagram_carousel": ["slide1", ...],
+           "threads": ["post1", ...], "x_thread": ["tweet1", ...]}
 
     process: sequential
     webhooks:

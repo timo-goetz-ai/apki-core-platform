@@ -55,8 +55,21 @@ class CrewManager:
         return self._crews.get(crew_id)
 
     def _build_llm(self, model: str) -> LLM:
+        # OpenRouter-Modelle explizit routen (z.B. openrouter/x-ai/grok-3)
+        # Prefix "openrouter/" ohne "openrouter/google/" → OpenRouter API
+        is_openrouter = (
+            model.startswith("openrouter/")
+            and not model.startswith("openrouter/google/")
+        )
+        if is_openrouter and self.settings.openrouter_api_key:
+            return LLM(
+                model=model,
+                base_url="https://openrouter.ai/api/v1",
+                api_key=self.settings.openrouter_api_key,
+            )
+
+        # Gemini-Modelle: openrouter/google/*, gemini/*, oder alles andere ohne OR-Key
         if self.settings.gemini_api_key:
-            # Use Google's OpenAI-compatible endpoint with crewai's native openai provider
             bare_model = (
                 model.replace("openrouter/google/", "")
                 .replace("openrouter/", "")
@@ -67,12 +80,15 @@ class CrewManager:
                 base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
                 api_key=self.settings.gemini_api_key,
             )
+
+        # Fallback: OpenRouter für alles (wenn kein Gemini-Key)
         if self.settings.openrouter_api_key:
             return LLM(
                 model=model,
                 base_url="https://openrouter.ai/api/v1",
                 api_key=self.settings.openrouter_api_key,
             )
+
         raise RuntimeError("Kein LLM API Key konfiguriert (GEMINI_API_KEY oder OPENROUTER_API_KEY)")
 
     async def start_crew(
@@ -101,16 +117,17 @@ class CrewManager:
         yield ev_start.model_dump()
 
         try:
-            llm = self._build_llm(crew_cfg.model)
+            default_llm = self._build_llm(crew_cfg.model)
 
-            # Build agent map
+            # Build agent map — jeder Agent kann ein eigenes Modell haben
             agent_map: dict[str, Agent] = {}
             for a in crew_cfg.agents:
+                agent_llm = self._build_llm(a.model) if a.model else default_llm
                 agent_map[a.id] = Agent(
                     role=a.role,
                     goal=a.goal,
                     backstory=a.backstory or f"Experte für {a.role}",
-                    llm=llm,
+                    llm=agent_llm,
                     verbose=False,
                     allow_delegation=False,
                 )
