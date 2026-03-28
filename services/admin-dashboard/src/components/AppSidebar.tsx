@@ -4,11 +4,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Workflow, BookOpen,
-  BarChart2, Factory, Users, Activity,
-  Database, Wrench, Globe, Settings,
-  Monitor, ScrollText, FolderOpen, Rocket, LayoutTemplate, Kanban,
-  Layers, CalendarDays,
+  LayoutDashboard, Workflow, Users,
+  Database, Settings, ScrollText, Factory,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,34 +17,14 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-// ── Navigation Structure — groups separated by dividers, no labels ───────────
-const NAV_GROUPS: NavItem[][] = [
-  [
-    { label: 'Overview',      href: '/',                 icon: LayoutDashboard },
-    { label: 'Workflows',     href: '/workflows',        icon: Workflow        },
-    { label: 'Agents',        href: '/agents',           icon: Users           },
-    { label: 'Knowledge',     href: '/knowledge',        icon: BookOpen        },
-  ],
-  [
-    { label: 'Monitoring',    href: '/monitoring/grafana', icon: Monitor       },
-    { label: 'Activity',      href: '/activity',         icon: Activity        },
-    { label: 'Logs',          href: '/logs',             icon: ScrollText      },
-    { label: 'Deployments',   href: '/deployments',      icon: Rocket         },
-    { label: 'Analytics',     href: '/analytics',        icon: BarChart2       },
-  ],
-  [
-    { label: 'Content Factory',  href: '/content-factory',   icon: Factory       },
-    { label: 'Batch Production', href: '/batch-production',  icon: Layers        },
-    { label: 'Content Planning', href: '/content-planning',  icon: CalendarDays  },
-    { label: 'Kanban',           href: '/kanban',            icon: Kanban        },
-    { label: 'Templates',        href: '/templates',         icon: LayoutTemplate },
-    { label: 'Files',            href: '/files',             icon: FolderOpen    },
-    { label: 'Databases',        href: '/databases',         icon: Database      },
-  ],
-  [
-    { label: 'MCP Services',  href: '/mcp-plattform',   icon: Globe           },
-    { label: 'Tools & API',   href: '/tools',            icon: Wrench          },
-  ],
+// ── Navigation Structure ─────────────────────────────────────────────────────
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Overview',        href: '/',                icon: LayoutDashboard },
+  { label: 'Workflows',       href: '/workflows',       icon: Workflow        },
+  { label: 'Agents',          href: '/agents',          icon: Users           },
+  { label: 'Content Factory', href: '/content-factory', icon: Factory         },
+  { label: 'Databases',       href: '/databases',       icon: Database        },
+  { label: 'Logs',            href: '/logs',            icon: ScrollText      },
 ];
 
 // ── NavLink ──────────────────────────────────────────────────────────────────
@@ -59,18 +36,14 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
       className={cn(
         'group flex items-center gap-2.5 rounded-md px-3 py-[7px] text-sm transition-all duration-100',
         isActive
-          ? 'bg-[--layer-3] text-[--text-primary] font-semibold'
+          ? 'text-[--text-primary] font-semibold'
           : 'text-[--text-secondary] hover:bg-[--layer-3] hover:text-[--text-primary]'
       )}
     >
       <Icon
         size={13}
-        className={cn(
-          'shrink-0 transition-colors',
-          isActive
-            ? 'text-[--text-primary]'
-            : 'text-[--text-muted] group-hover:text-[--text-secondary]'
-        )}
+        className="shrink-0 transition-colors"
+        style={{ color: isActive ? 'var(--accent-blue)' : undefined }}
       />
       <span className="truncate flex-1 text-[12.5px]">{item.label}</span>
     </Link>
@@ -115,18 +88,9 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-3">
-        <nav className="px-2">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi}>
-              {gi > 0 && (
-                <div style={{ height: 1, background: 'var(--border)', margin: '6px 8px' }} />
-              )}
-              <div className="space-y-0.5">
-                {group.map((item) => (
-                  <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
-                ))}
-              </div>
-            </div>
+        <nav className="px-2 space-y-0.5">
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
           ))}
         </nav>
       </ScrollArea>
