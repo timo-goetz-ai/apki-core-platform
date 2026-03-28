@@ -344,6 +344,455 @@ crews:
       on_start: ""
       on_complete: ""
 
+  # ── Multichannel-Fabrik Crew ─────────────────────────────────────────────────
+  # Nimmt ein Thema und bricht es in ALLE Formate auf
+  # Inputs: topic, category, source_article (optional – vorhandener Blogartikel)
+  multichannel_fabrik_crew:
+    name: "Multichannel-Fabrik Crew"
+    model: "gemini-2.5-flash"
+    agents:
+      - id: strategist
+        role: "Content Strategist"
+        goal: >
+          Analysiere das Thema und entwickle eine plattformspezifische
+          Content-Strategie. Entscheide welche Kernbotschaft für jeden
+          Kanal am wirkungsvollsten ist und welche Hooks funktionieren.
+        backstory: >
+          Du bist ein Content-Stratege der multi-channel Kampagnen plant.
+          Du weißt genau was auf Twitter viral geht, was LinkedIn-Profis
+          überzeugt und welche Video-Hooks auf TikTok/YouTube Shorts
+          funktionieren. Du denkst in Content-Systemen, nicht in Einzelstücken.
+        mcp_servers: []
+
+      - id: writer
+        role: "Content Writer & SEO Specialist"
+        goal: >
+          Schreibe den Kernartikel in Blogpost-Qualität und leite daraus
+          alle weiteren Content-Formate ab. Maximale Wiederverwendung
+          des Research-Materials bei optimaler Plattform-Anpassung.
+        backstory: >
+          Du bist ein Profi-Texter der mühelos zwischen Formaten wechselt.
+          Du schreibst fesselnde Blogartikel genauso gut wie knackige
+          Tweets oder LinkedIn-Posts. Dein Output ist immer direkt
+          verwendbar, ohne Nachbearbeitung.
+        mcp_servers: []
+
+      - id: viral_scout
+        role: "Viral Content Scout"
+        goal: >
+          Mache aus jedem Stück Content das Viralpotenzial sichtbar.
+          Schreibe 5 Tweets-Variationen mit Hooks, erstelle Video-Skripte
+          mit Cliffhanger-Einstiegen und identifiziere die eine überraschende
+          Perspektive die Menschen teilen müssen.
+        backstory: >
+          Du bist ein Social-Media-Native der auf ein starkes
+          Viralpotenzial-Gespür hat. Du weißt welche Sätze als Tweets
+          explodierten, welche Thumbnails geklickt werden und wie man
+          aus einem Blogpost 10x mehr Reichweite herausholt.
+          Du lebst für Engagement-Metriken.
+        mcp_servers: []
+
+    tasks:
+      - id: strategy
+        agent_id: strategist
+        description: >
+          Entwickle die Multi-Channel-Strategie für "{topic}" (Kategorie: {category}).
+
+          Plane für folgende Kanäle:
+          - Blog (Hauptartikel ~800 Wörter)
+          - Twitter/X (5 Tweets für Thread + 1 Standalone-Tweet)
+          - LinkedIn (1 langer Post ~300 Wörter)
+          - Short-Video (3 Skripte á 60 Sek für TikTok/Reels/Shorts)
+
+          Liefere für jeden Kanal:
+          1. Kernbotschaft (1 Satz)
+          2. Primären Hook (Einstieg)
+          3. Call-to-Action
+          4. Optimaler Veröffentlichungszeitpunkt (Wochentag + Uhrzeit)
+        expected_output: >
+          Multi-Channel-Strategie mit Kernbotschaft, Hook und CTA pro Kanal,
+          plus Veröffentlichungsplan.
+
+      - id: main_content
+        agent_id: writer
+        description: >
+          Erstelle den vollständigen Multi-Channel-Content-Mix für "{topic}".
+
+          Basierend auf der Content-Strategie, liefere als JSON:
+          {{
+            "blog_article": {{
+              "title": "...", "excerpt": "...", "content": "...(Markdown, 700-900 Wörter)",
+              "seo_keywords": "...", "publish_at": "Wochentag HH:MM"
+            }},
+            "linkedin_post": {{
+              "text": "...(max 3000 Zeichen, mit Emojis, Absätzen)", "hashtags": ["...", "..."],
+              "publish_at": "..."
+            }},
+            "tweet_thread": {{
+              "tweets": ["Tweet 1/5...", "Tweet 2/5...", "Tweet 3/5...", "Tweet 4/5...", "Tweet 5/5..."],
+              "standalone": "Ein einzelner hochperformanter Tweet ohne Thread-Kontext",
+              "publish_at": "..."
+            }}
+          }}
+        expected_output: >
+          JSON mit blog_article, linkedin_post und tweet_thread.
+        context_task_ids:
+          - strategy
+
+      - id: video_scripts
+        agent_id: viral_scout
+        description: >
+          Schreibe 3 kurze Video-Skripte (je ~60 Sekunden, ~150 Wörter) für "{topic}".
+
+          Jedes Skript braucht:
+          - Hook (erste 3 Sek, macht neugierig)
+          - Cliffhanger nach 15 Sek ("Aber dann kam das Überraschende...")
+          - Kernaussage (30-45 Sek)
+          - Call-to-Action (letzte 10 Sek)
+
+          Format:
+          [
+            {{
+              "title": "Video-Titel (max 50Z)",
+              "hook": "...",
+              "body": "...",
+              "cta": "...",
+              "thumbnail_idea": "Beschreibung eines klickbaren Thumbnails",
+              "platform": "TikTok|Reels|Shorts"
+            }}
+          ]
+        expected_output: >
+          JSON-Array mit 3 Video-Skripten für verschiedene Plattformen.
+        context_task_ids:
+          - strategy
+          - main_content
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Red Team Crew (Qualitätssicherung) ───────────────────────────────────────
+  # Erhält fertigen Content und prüft ihn schonungslos
+  # Inputs: content (zu prüfender Text), topic, category
+  red_team_crew:
+    name: "Red Team Crew"
+    model: "gemini-2.5-flash"
+    agents:
+      - id: fact_checker
+        role: "Fact Checker & Research Validator"
+        goal: >
+          Prüfe jeden Fakt, jede Statistik und jede Behauptung im Content.
+          Identifiziere ungeprüfte Aussagen, veraltete Informationen und
+          potenzielle Fehler. Sei rigoros und kompromisslos.
+        backstory: >
+          Du bist ein journalistischer Faktenprüfer mit wissenschaftlichem
+          Anspruch. Du kennst die häufigsten KI-Mythen und verbreiteten
+          Fehlinformationen im Tech-Raum. Du prüfst alles und lässt
+          nichts durchgehen – das ist dein Stolz.
+        mcp_servers: []
+
+      - id: resonance_checker
+        role: "Audience Resonance Analyst"
+        goal: >
+          Bewerte den Content aus der Perspektive der Zielgruppe.
+          Prüfe ob die Sprache passt, ob der Mehrwert klar ist und
+          ob der Text wirklich begeistert oder nur informiert.
+          Antizipiere die Reaktionen der Leser.
+        backstory: >
+          Du bist ein erfahrener UX-Writer und Conversion-Optimierer.
+          Du liest Content aus den Augen des Nutzers und weißt sofort
+          ob er am Punkt vorbeigeht. Du hast hunderte Texte A/B-getestet
+          und erkennst sofort was gut und was schwach ist.
+        mcp_servers: []
+
+      - id: speed_reviewer
+        role: "Speed Review Specialist"
+        goal: >
+          Fasse alle Kritikpunkte zusammen und erstelle einen
+          priorisierten Verbesserungsplan. Unterscheide zwischen
+          Must-Fix (blockiert Veröffentlichung) und Nice-to-Have.
+          Liefere konkrete Reformulierungsvorschläge.
+        backstory: >
+          Du bist Llama-H, der schnellste Reviewer im Team.
+          Du fasst komplexe Feedback-Ströme blitzschnell zusammen
+          und destillierst sie in umsetzbare Action-Items.
+          Kein langes Drumherumreden – nur was zählt.
+        mcp_servers: []
+
+    tasks:
+      - id: fact_check
+        agent_id: fact_checker
+        description: >
+          Führe ein vollständiges Fact-Check des folgenden Contents durch.
+          Thema: "{topic}" | Kategorie: "{category}"
+
+          ZU PRÜFENDER CONTENT:
+          {content}
+
+          Prüfe:
+          1. Alle konkreten Zahlen und Statistiken (Quelle? Aktuell?)
+          2. Alle Behauptungen über KI-Modelle/Unternehmen (korrekt?)
+          3. Alle Vergleiche und Rankings (stimmt die Reihenfolge?)
+          4. Veraltete Informationen (post-2024 relevant?)
+          5. Übertreibungen oder Clickbait-Behauptungen
+
+          Format: Liste aller gefundenen Probleme mit Schweregrad (KRITISCH/MITTEL/GERING)
+          und Korrekturvorschlag.
+        expected_output: >
+          Fact-Check-Report: Liste aller Befunde nach Schweregrad,
+          mit Korrekturvorschlägen. Falls alles korrekt: "FACT-CHECK BESTANDEN".
+
+      - id: resonance_check
+        agent_id: resonance_checker
+        description: >
+          Analysiere den Content auf Zielgruppen-Resonanz.
+          Thema: "{topic}"
+
+          CONTENT:
+          {content}
+
+          Bewerte (Skala 1-10):
+          - Klarheit der Kernaussage
+          - Mehrwert für die Zielgruppe (DACH-KI-Community)
+          - Emotionale Ansprache / Engagement-Potential
+          - Lesbarkeit und Flow
+          - Stärke des Hooks / Einstiegs
+          - Überzeugungskraft des CTAs
+
+          Identifiziere die 3 schwächsten Stellen und schlage
+          konkrete Alternativen vor.
+        expected_output: >
+          Resonanz-Score (Gesamtwert 1-10), Scores pro Dimension,
+          Top 3 Schwachstellen mit konkreten Verbesserungsvorschlägen.
+
+      - id: quality_verdict
+        agent_id: speed_reviewer
+        description: >
+          Erstelle das finale Qualitäts-Urteil für "{topic}"-Content.
+
+          Konsolidiere Fact-Check und Resonanz-Analyse:
+
+          Liefere JSON:
+          {{
+            "overall_score": 7.5,
+            "publish_decision": "PUBLISH|REVISE|REJECT",
+            "must_fix": [
+              {{"issue": "...", "fix": "...", "priority": "KRITISCH"}}
+            ],
+            "nice_to_have": [
+              {{"issue": "...", "fix": "..."}}
+            ],
+            "strengths": ["Was ist richtig gut", "..."],
+            "estimated_revision_time": "5 Minuten|30 Minuten|2 Stunden",
+            "final_verdict": "Kurze Zusammenfassung in 2-3 Sätzen"
+          }}
+        expected_output: >
+          JSON Qualitäts-Urteil mit Score, Publish-Entscheidung,
+          Must-Fix-Liste, Stärken und Zeitschätzung für Überarbeitung.
+        context_task_ids:
+          - fact_check
+          - resonance_check
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Market Intelligence Crew ──────────────────────────────────────────────────
+  # Scoutet proaktiv Chancen und erstellt tägliche Themen-Vorschläge
+  # Inputs: news_summary, date_today, niche (default: "KI/Automation DACH")
+  market_intelligence_crew:
+    name: "Market Intelligence Crew"
+    model: "gemini-2.5-flash"
+    agents:
+      - id: trend_scout
+        role: "Trend Intelligence Analyst"
+        goal: >
+          Scanne News und Entwicklungen im KI-Bereich und identifiziere
+          Signale für aufkommende Themen. Erkenne was heute relevant ist
+          und was morgen explodiert. Bewerte Nachrichten nach Content-Potenzial.
+        backstory: >
+          Du bist Tiefsee-Suche, ein KI-Analyst der täglich Hunderte
+          von Quellen auswertet. Du erkennst Trends bevor sie Mainstream
+          werden und weißt welche News die DACH-KI-Community bewegen wird.
+          Dein Radar für viral-würdige Themen ist unübertroffen.
+        mcp_servers: []
+
+      - id: opportunity_evaluator
+        role: "Content Opportunity Evaluator"
+        goal: >
+          Filtere und priorisiere die identifizierten Themen nach
+          Content-Potential, Timing und strategischem Fit.
+          Entscheide welche Chancen sofort genutzt werden müssen.
+        backstory: >
+          Du bist X-Agent Alpha, der schnellste Bewerter im System.
+          Du analysierst blitzschnell ob ein Thema es wert ist,
+          Content-Ressourcen zu investieren. Deine Empfehlungen sind
+          klar, datenbasiert und umsetzbar. Kein Thema geht unbewertet durch.
+        mcp_servers: []
+
+      - id: briefing_creator
+        role: "Morning Briefing Creator"
+        goal: >
+          Synthetisiere alle Intelligence zu einem handlungsorientierten
+          Morning Briefing. Erstelle sofort nutzbare Content-Vorschläge
+          die das Team direkt in Produktion geben kann.
+        backstory: >
+          Du bist Gemini-U, der Innovator im Team. Du verwandelst rohe
+          Marktdaten in elegante, umsetzbare Briefings. Dein Output
+          ist der erste Schritt jedes erfolgreichen Content-Tages –
+          kompakt, klar und sofort handlungsfähig.
+        mcp_servers: []
+
+    tasks:
+      - id: news_scan
+        agent_id: trend_scout
+        description: >
+          Analysiere die folgenden News und Entwicklungen vom {date_today}
+          auf Content-Potential für die Nische: {niche}
+
+          NEWS-ZUSAMMENFASSUNG:
+          {news_summary}
+
+          Identifiziere:
+          1. Top 5 Themen mit hohem Content-Potential (Warum gerade jetzt?)
+          2. Themen die in 24-48h ihren Peak haben werden (JETZT handeln!)
+          3. Kontroverses oder Überraschendes das Diskussionen auslöst
+          4. Evergreen-Winkel auf aktuelle News (langfristige Relevanz)
+          5. Competitor-Moves die eine Reaktion erfordern
+
+          Bewerte jedes Thema: Viralpotenzial (1-10) + Timing-Fenster.
+        expected_output: >
+          Intelligence-Report: Top 5 Themen mit Begründung, Viralpotenzial-Score
+          und Timing-Empfehlung.
+
+      - id: opportunity_scoring
+        agent_id: opportunity_evaluator
+        description: >
+          Bewerte und priorisiere die identifizierten Themen für {niche}.
+
+          Erstelle eine Prioritätsliste:
+          - SOFORT produzieren (Timing-Window schließt sich)
+          - Diese Woche produzieren (gutes Potenzial, nicht zeitkritisch)
+          - Beobachten (könnte noch größer werden)
+          - Skip (nicht relevant für unsere Nische)
+
+          Für jedes SOFORT-Thema: Welches Format empfiehlst du?
+          (Blog / Twitter-Thread / LinkedIn / Video-Skript)
+        expected_output: >
+          Priorisierte Themenliste mit Status (Sofort/Woche/Beobachten/Skip)
+          und Format-Empfehlung für alle SOFORT-Themen.
+        context_task_ids:
+          - news_scan
+
+      - id: morning_briefing
+        agent_id: briefing_creator
+        description: >
+          Erstelle das Morning Briefing für {date_today}.
+
+          JSON-Output:
+          {{
+            "briefing_date": "{date_today}",
+            "niche": "{niche}",
+            "executive_summary": "2-3 Sätze: Was ist heute los in unserer Nische?",
+            "top_opportunities": [
+              {{
+                "rank": 1,
+                "topic": "Konkretes Thema",
+                "why_now": "Timing-Begründung (1 Satz)",
+                "recommended_format": "Blog|Twitter|LinkedIn|Video",
+                "hook_idea": "Einstieg-Idee für den Content",
+                "estimated_effort": "30min|2h|Halbtag",
+                "viralpotential_score": 8
+              }}
+            ],
+            "watch_list": ["Thema das noch größer werden könnte", "..."],
+            "skip_today": ["Was wir heute ignorieren"],
+            "ready_to_produce": "Bestes SOFORT-Thema mit Begründung"
+          }}
+
+          Maximal 5 Top-Opportunities, fokussiert und umsetzbar.
+        expected_output: >
+          JSON Morning Briefing mit Executive Summary, Top 5 Opportunities,
+          Watch-List und Ready-to-Produce-Empfehlung.
+        context_task_ids:
+          - news_scan
+          - opportunity_scoring
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
+  # ── Director Agent (Crew-Router) ──────────────────────────────────────────────
+  # Analysiert einen User-Prompt und entscheidet welche Crew zuständig ist
+  # Inputs: user_prompt, available_crews (optional)
+  director_crew:
+    name: "Director Agent"
+    model: "gemini-2.5-flash"
+    agents:
+      - id: director
+        role: "Director Agent & Crew Router"
+        goal: >
+          Analysiere User-Anfragen und entscheide welche Crew und welche Inputs
+          am besten geeignet sind. Spare Token indem du nur den relevanten
+          Workflow aktivierst. Du bist der Dirigent des gesamten Systems.
+        backstory: >
+          Du bist der Director – der übergeordnete Agent der keine eigenen
+          Tasks erledigt, sondern das gesamte AIOS-System orchestriert.
+          Du kennst jede Crew, ihre Stärken und wann man sie einsetzt.
+          Deine Entscheidungen sind blitzschnell und präzise.
+          Fehler beim Routing kosten Zeit und Token – das akzeptierst du nicht.
+        mcp_servers: []
+
+    tasks:
+      - id: route
+        agent_id: director
+        description: >
+          Analysiere folgenden User-Prompt und entscheide das optimale Routing.
+
+          USER PROMPT: "{user_prompt}"
+
+          VERFÜGBARE CREWS:
+          - content_generation_crew: Schreibt Blogartikel zu einem Thema
+          - niche_analysis_crew: Analysiert Zielgruppen und bewertet Content-Chancen
+          - content_forecast_crew: Erstellt Content-Kalender aus Trend-Daten
+          - deep_research_crew: Tiefe Recherche zu einem Thema
+          - quick_research_crew: Schnelle Analyse, ideal für Tests
+          - multichannel_fabrik_crew: Blog + Tweets + LinkedIn + Video aus einem Thema
+          - red_team_crew: Prüft vorhandenen Content auf Fakten und Qualität
+          - market_intelligence_crew: Scoutet News und erstellt Morning Briefing
+          - director_crew: Dieser Routing-Agent selbst (nicht recurse!)
+
+          Liefere JSON:
+          {{
+            "recommended_crew": "crew_id",
+            "confidence": 0.95,
+            "reasoning": "Warum diese Crew am besten passt (1-2 Sätze)",
+            "suggested_inputs": {{
+              "topic": "...",
+              "category": "...",
+              "target_platforms": "..."
+            }},
+            "alternatives": [
+              {{
+                "crew": "crew_id",
+                "reason": "Wäre auch möglich weil..."
+              }}
+            ],
+            "estimated_tokens": "niedrig|mittel|hoch",
+            "estimated_runtime": "30s|2min|5min"
+          }}
+        expected_output: >
+          JSON Routing-Entscheidung mit empfohlener Crew, Confidence-Score,
+          Begründung, vorbereiteten Inputs und Alternativen.
+
+    process: sequential
+    webhooks:
+      on_start: ""
+      on_complete: ""
+
   # ── Quick Research Crew (leichtgewichtig, für Tests) ─────────────────────────
   quick_research_crew:
     name: "Quick Research Crew"

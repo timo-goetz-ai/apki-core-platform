@@ -26,6 +26,19 @@ const ROBOTS: Record<string, RobotChar> = {
   'Senior Researcher':   { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '🔬' },
   'Synthesis Specialist':{ name: 'Gemini-C',           trait: 'Integration',      color: '#fb923c', bgColor: 'rgba(251,146,60,0.1)',   avatar: '🧬' },
   'Research Analyst':    { name: 'Llama-H',            trait: 'Skalierbarkeit',   color: '#86efac', bgColor: 'rgba(134,239,172,0.1)',  avatar: '📡' },
+  // Multichannel-Fabrik
+  'Content Writer & SEO': { name: 'Claude-Assistent',  trait: 'Genauigkeit',      color: '#c084fc', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
+  'Viral Content Scout': { name: 'Mistral-F',          trait: 'Viralität',        color: '#f472b6', bgColor: 'rgba(244,114,182,0.1)',  avatar: '🚀' },
+  // Red Team
+  'Fact Checker':        { name: 'Llama-B',            trait: 'Präzision',        color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '🔍' },
+  'Resonance Checker':   { name: 'Mistral-L',          trait: 'Resonanz',         color: '#a78bfa', bgColor: 'rgba(167,139,250,0.1)',  avatar: '🎯' },
+  'Speed Reviewer':      { name: 'Llama-H',            trait: 'Tempo',            color: '#86efac', bgColor: 'rgba(134,239,172,0.1)',  avatar: '⚡' },
+  // Market Intelligence
+  'Trend Scout':         { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: '#22d3ee', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
+  'Opportunity Evaluator':{ name: 'X-Agent Alpha',     trait: 'Geschwindigkeit',  color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
+  'Briefing Creator':    { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '📋' },
+  // Director
+  'Director Agent':      { name: 'AIOS Director',      trait: 'Orchestrierung',   color: '#fbbf24', bgColor: 'rgba(251,191,36,0.1)',   avatar: '🎬' },
 };
 
 function getRobot(role: string): RobotChar {
@@ -82,22 +95,48 @@ const CREW_AGENTS: Record<string, { role: string; color: string }[]> = {
     { role: 'Synthesis Specialist', color: '#fb923c' },
   ],
   quick_research_crew: [{ role: 'Research Analyst', color: '#86efac' }],
+  multichannel_fabrik_crew: [
+    { role: 'Content Strategist',   color: '#60a5fa' },
+    { role: 'Content Writer & SEO', color: '#c084fc' },
+    { role: 'Viral Content Scout',  color: '#f472b6' },
+  ],
+  red_team_crew: [
+    { role: 'Fact Checker',      color: '#f87171' },
+    { role: 'Resonance Checker', color: '#a78bfa' },
+    { role: 'Speed Reviewer',    color: '#86efac' },
+  ],
+  market_intelligence_crew: [
+    { role: 'Trend Scout',            color: '#22d3ee' },
+    { role: 'Opportunity Evaluator',  color: '#f87171' },
+    { role: 'Briefing Creator',       color: '#4ade80' },
+  ],
+  director_crew: [
+    { role: 'Director Agent', color: '#fbbf24' },
+  ],
 };
 
 const CREW_ACCENT: Record<string, string> = {
-  content_generation_crew: '#c084fc',
-  niche_analysis_crew:     '#fbbf24',
-  content_forecast_crew:   '#22d3ee',
-  deep_research_crew:      '#4ade80',
-  quick_research_crew:     '#86efac',
+  content_generation_crew:  '#c084fc',
+  niche_analysis_crew:      '#fbbf24',
+  content_forecast_crew:    '#22d3ee',
+  deep_research_crew:       '#4ade80',
+  quick_research_crew:      '#86efac',
+  multichannel_fabrik_crew: '#f472b6',
+  red_team_crew:            '#f87171',
+  market_intelligence_crew: '#22d3ee',
+  director_crew:            '#fbbf24',
 };
 
 const DEFAULT_INPUTS: Record<string, Record<string, string>> = {
-  content_generation_crew: { topic: 'KI-Agenten 2026', category: 'KI-Tools', target_platforms: 'blog' },
-  niche_analysis_crew:     { topic: 'Nischen-Analyse', category: 'Markt', target_platforms: 'internal' },
-  content_forecast_crew:   { topic: 'Content-Trends', category: 'Prognose', target_platforms: 'blog' },
-  deep_research_crew:      { topic: 'Deep Research', category: 'Research', target_platforms: 'blog' },
-  quick_research_crew:     { topic: 'Quick Scan', category: 'Research', target_platforms: 'blog' },
+  content_generation_crew:  { topic: 'KI-Agenten 2026', category: 'KI-Tools', target_platforms: 'blog' },
+  niche_analysis_crew:      { topic: 'Nischen-Analyse', category: 'Markt', target_platforms: 'internal' },
+  content_forecast_crew:    { topic: 'Content-Trends', category: 'Prognose', target_platforms: 'blog' },
+  deep_research_crew:       { topic: 'Deep Research', category: 'Research', target_platforms: 'blog' },
+  quick_research_crew:      { topic: 'Quick Scan', category: 'Research', target_platforms: 'blog' },
+  multichannel_fabrik_crew: { topic: 'KI-Automatisierung 2026', category: 'KI-Tools', target_platforms: 'blog,instagram,linkedin' },
+  red_team_crew:            { topic: 'Content Review', category: 'Quality', target_platforms: 'internal' },
+  market_intelligence_crew: { topic: 'KI-Markt Trends', category: 'Research', target_platforms: 'internal' },
+  director_crew:            { user_prompt: 'Analysiere aktuelle KI-Trends und erstelle Content', target_platforms: 'blog' },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
