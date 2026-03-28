@@ -1,215 +1,142 @@
 {
+  "id": "u2pAiP8GaMaJQfRu",
   "name": "420_FISH_AUDIO",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "fish-audio",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "webhook-trigger",
-      "name": "Webhook Trigger",
+      "id": "wh-420",
+      "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [240, 300]
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {
+        "path": "fish-audio",
+        "httpMethod": "POST"
+      }
     },
     {
-      "parameters": {
-        "jsCode": "// Input: { pipeline_job_id, text_content, voice_id?, speed? }\nconst body = $input.first().json.body ?? $input.first().json;\n\nif (!body.text_content) throw new Error('text_content fehlt im Request');\nif (!body.pipeline_job_id) throw new Error('pipeline_job_id fehlt im Request');\n\n// Text kürzen falls zu lang (Fish Audio limit: ~4000 chars)\nconst text = String(body.text_content).slice(0, 4000);\n\nreturn [{ json: {\n  pipeline_job_id: body.pipeline_job_id,\n  text,\n  voice_id: body.voice_id ?? '',\n  speed: body.speed ?? 1.0,\n  format: 'mp3'\n} }];"
-      },
-      "id": "prepare-tts",
+      "id": "prep-420",
       "name": "TTS vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nconst text=(d.text_content||d.text||'').slice(0,4000);\nconst voiceId=d.voice_id||$env.FISH_AUDIO_DEFAULT_VOICE||'default';\nconst jobId=d.pipeline_job_id||'test-'+Date.now();\nreturn [{json:{text,voiceId,pipeline_job_id:jobId,fileName:'voice-'+jobId+'.mp3'}}];"
+      }
     },
     {
+      "id": "fish-420",
+      "name": "Fish Audio TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
       "parameters": {
         "method": "POST",
         "url": "https://api.fish.audio/v1/tts",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.FISH_AUDIO_API_KEY }}" },
-            { "name": "Content-Type",  "value": "application/json" }
+            {"name": "Authorization", "value": "Bearer {{ $env.FISH_AUDIO_API_KEY }}"},
+            {"name": "Content-Type", "value": "application/msgpack"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "text",         "value": "={{ $json.text }}" },
-            { "name": "reference_id", "value": "={{ $json.voice_id }}" },
-            { "name": "format",       "value": "mp3" },
-            { "name": "mp3_bitrate",  "value": 128 },
-            { "name": "normalize",    "value": true },
-            { "name": "streaming",    "value": false },
-            { "name": "prosody",      "value": "={ \"speed\": {{ $json.speed }}, \"volume\": 0 }" }
-          ]
-        },
+        "body": "={{ JSON.stringify({text:$json.text,reference_id:$json.voiceId,format:'mp3',mp3_bitrate:128}) }}",
         "options": {
-          "responseFormat": "file",
-          "timeout": 120000
-        }
-      },
-      "id": "fish-audio-tts",
-      "name": "Fish Audio: TTS generieren",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Dateiname für Google Drive\nconst jobId    = $('TTS vorbereiten').item.json.pipeline_job_id;\nconst ts       = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);\nconst fileName = `voice-${jobId}-${ts}.mp3`;\n\nreturn [{ json: {\n  ...$input.first().json,\n  fileName,\n  pipeline_job_id: $('TTS vorbereiten').item.json.pipeline_job_id\n} }];"
-      },
-      "id": "build-filename",
-      "name": "Dateiname erstellen",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, 300]
-    },
-    {
-      "parameters": {
-        "operation": "upload",
-        "driveId": {
-          "__rl": true,
-          "value": "My Drive",
-          "mode": "list",
-          "cachedResultName": "My Drive"
-        },
-        "folderId": {
-          "__rl": true,
-          "value": "={{ $vars.GDRIVE_AUDIO_FOLDER_ID }}",
-          "mode": "id"
-        },
-        "fileName": "={{ $json.fileName }}",
-        "binaryData": true,
-        "binaryPropertyName": "data",
-        "options": {
-          "publicPermission": {
-            "permissionsUi": {
-              "permissionValues": {
-                "role": "reader",
-                "type": "anyone"
-              }
+          "response": {
+            "response": {
+              "responseFormat": "file"
             }
           }
         }
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "SETUP_REQUIRED",
-          "name": "Google Drive"
-        }
-      },
-      "id": "gdrive-upload",
-      "name": "Google Drive Upload",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [1120, 300]
+      }
     },
     {
-      "parameters": {
-        "jsCode": "// Google Drive Upload Response → webViewLink extrahieren\nconst driveFile   = $input.first().json;\nconst fileData    = $('Dateiname erstellen').item.json;\nconst gdriveUrl   = driveFile.webViewLink ?? `https://drive.google.com/file/d/${driveFile.id}/view`;\n\nreturn [{ json: {\n  ...fileData,\n  gdrive_file_id: driveFile.id,\n  gdrive_url: gdriveUrl\n} }];"
-      },
-      "id": "extract-gdrive",
-      "name": "GDrive-URL extrahieren",
+      "id": "fname-420",
+      "name": "Dateiname",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [720, 0],
+      "parameters": {
+        "jsCode": "const prep=$('TTS vorbereiten').item.json;\nreturn [{json:{fileName:prep.fileName,pipeline_job_id:prep.pipeline_job_id,binary:$input.first().binary}}];"
+      }
     },
     {
+      "id": "nocodb-420",
+      "name": "NocoDB media_assets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 0],
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
+            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "source_service",  "value": "fishaudio" },
-            { "name": "asset_type",      "value": "audio" },
-            { "name": "s3_url",          "value": "={{ $json.gdrive_url }}" },
-            { "name": "gdrive_url",      "value": "={{ $json.gdrive_url }}" },
-            { "name": "file_name",       "value": "={{ $json.fileName }}" },
-            { "name": "mime_type",       "value": "audio/mpeg" },
-            { "name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}" },
-            { "name": "status",          "value": "ready" },
-            { "name": "created_at",      "value": "={{ $now.toISO() }}" }
-          ]
-        }
-      },
-      "id": "nocodb-asset",
-      "name": "NocoDB: media_assets anlegen",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1560, 300]
+        "body": "={{ JSON.stringify({asset_id:$randomString(12),source_service:'fishaudio',asset_type:'audio',s3_url:'pending',file_name:$json.fileName,mime_type:'audio/mpeg',pipeline_job_id:$json.pipeline_job_id,status:'ready',created_at:new Date().toISOString()}) }}"
+      }
     },
     {
+      "id": "update-pipeline-420",
+      "name": "Pipeline-Job updaten",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 0],
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
+            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "Id",         "value": "={{ $('GDrive-URL extrahieren').item.json.pipeline_job_id }}" },
-            { "name": "audio_url",  "value": "={{ $('GDrive-URL extrahieren').item.json.gdrive_url }}" },
-            { "name": "stage",      "value": "publish" },
-            { "name": "status",     "value": "idle" },
-            { "name": "updated_at", "value": "={{ $now.toISO() }}" }
-          ]
-        }
-      },
-      "id": "update-pipeline",
-      "name": "Pipeline Job aktualisieren",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1780, 300]
+        "body": "={{ JSON.stringify({job_id:$('Dateiname').item.json.pipeline_job_id,stage:'publish',status:'idle'}) }}"
+      }
     },
     {
+      "id": "resp-420",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1440, 0],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ \"ok\": true, \"gdrive_url\": \"{{ $('GDrive-URL extrahieren').item.json.gdrive_url }}\", \"pipeline_job_id\": \"{{ $('GDrive-URL extrahieren').item.json.pipeline_job_id }}\" }"
-      },
-      "id": "respond-ok",
-      "name": "Response OK",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [2000, 300]
+        "responseBody": "={{ {ok:true,file:$('Dateiname').item.json.fileName} }}"
+      }
     }
   ],
   "connections": {
-    "Webhook Trigger":              { "main": [[{ "node": "TTS vorbereiten",              "type": "main", "index": 0 }]] },
-    "TTS vorbereiten":              { "main": [[{ "node": "Fish Audio: TTS generieren",    "type": "main", "index": 0 }]] },
-    "Fish Audio: TTS generieren":   { "main": [[{ "node": "Dateiname erstellen",           "type": "main", "index": 0 }]] },
-    "Dateiname erstellen":          { "main": [[{ "node": "Google Drive Upload",           "type": "main", "index": 0 }]] },
-    "Google Drive Upload":          { "main": [[{ "node": "GDrive-URL extrahieren",        "type": "main", "index": 0 }]] },
-    "GDrive-URL extrahieren":       { "main": [[{ "node": "NocoDB: media_assets anlegen", "type": "main", "index": 0 }]] },
-    "NocoDB: media_assets anlegen": { "main": [[{ "node": "Pipeline Job aktualisieren",   "type": "main", "index": 0 }]] },
-    "Pipeline Job aktualisieren":   { "main": [[{ "node": "Response OK",                  "type": "main", "index": 0 }]] }
-  },
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": ""
-  },
-  "staticData": null,
-  "meta": { "templateCredsSetupCompleted": false },
-  "pinData": {},
-  "versionId": "420_FISH_AUDIO_v1",
-  "tags": [{ "name": "content-pipeline" }, { "name": "gdrive" }]
+    "Webhook": {
+      "main": [[{"node": "TTS vorbereiten", "type": "main", "index": 0}]]
+    },
+    "TTS vorbereiten": {
+      "main": [[{"node": "Fish Audio TTS", "type": "main", "index": 0}]]
+    },
+    "Fish Audio TTS": {
+      "main": [[{"node": "Dateiname", "type": "main", "index": 0}]]
+    },
+    "Dateiname": {
+      "main": [[{"node": "NocoDB media_assets", "type": "main", "index": 0}]]
+    },
+    "NocoDB media_assets": {
+      "main": [[{"node": "Pipeline-Job updaten", "type": "main", "index": 0}]]
+    },
+    "Pipeline-Job updaten": {
+      "main": [[{"node": "Response", "type": "main", "index": 0}]]
+    }
+  }
 }

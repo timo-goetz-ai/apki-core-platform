@@ -8,7 +8,6 @@ const TABLE_CONTENT_PIECES = 'mm1ssn0luruhzyx';
 
 export async function GET() {
   try {
-    // Fetch crew list + recent content_pieces in parallel
     const [crewsRes, piecesRes] = await Promise.allSettled([
       fetch(`${CREW_API}/crews/`, { next: { revalidate: 0 } }),
       fetch(
@@ -17,9 +16,16 @@ export async function GET() {
       ),
     ]);
 
-    const crews: Array<{ id: string; name: string; agents: number; tasks: number }> =
-      crewsRes.status === 'fulfilled' && crewsRes.value.ok
-        ? await crewsRes.value.json()
+    let rawCrews: unknown = [];
+    if (crewsRes.status === 'fulfilled' && crewsRes.value.ok) {
+      rawCrews = await crewsRes.value.json();
+    }
+    const crewsRaw: Array<{ id: string; name: string; agents: number; tasks: number }> = Array.isArray(rawCrews)
+      ? rawCrews
+      : rawCrews &&
+          typeof rawCrews === 'object' &&
+          Array.isArray((rawCrews as { crews?: unknown }).crews)
+        ? ((rawCrews as { crews: typeof crewsRaw }).crews ?? [])
         : [];
 
     const pieces: Array<Record<string, unknown>> =
@@ -27,34 +33,38 @@ export async function GET() {
         ? ((await piecesRes.value.json()).list ?? [])
         : [];
 
-    // Map piece_id prefix (crew-{execution_id[:8]}) to crew for last-run annotation
     const crewLastRun: Record<string, string> = {};
     for (const piece of pieces) {
-      // piece_id format: crew-{8chars} — associate with content_generation_crew
       if (String(piece.piece_id ?? '').startsWith('crew-')) {
         crewLastRun['content_generation_crew'] = String(piece.created_at ?? piece.CreatedAt ?? '');
         break;
       }
     }
 
-    const enriched = crews.map(c => ({
+    const enriched = crewsRaw.map((c) => ({
       ...c,
       last_run: crewLastRun[c.id] ?? null,
       recent_pieces: pieces
-        .filter(p => String(p.piece_id ?? '').startsWith('crew-'))
+        .filter((p) => String(p.piece_id ?? '').startsWith('crew-'))
         .slice(0, 3)
-        .map(p => ({
-          piece_id: p.piece_id,
-          title: p.title,
-          status: p.status,
-          created_at: p.created_at ?? p.CreatedAt,
+        .map((p) => ({
+          piece_id: String(p.piece_id ?? ''),
+          title: String(p.title ?? ''),
+          status: String(p.status ?? ''),
+          created_at: String(p.created_at ?? p.CreatedAt ?? ''),
         })),
     }));
 
-    return NextResponse.json({ crews: enriched, total_pieces: pieces.length });
+    const crewApiReachable = crewsRes.status === 'fulfilled' && crewsRes.value.ok;
+
+    return NextResponse.json({
+      crews: enriched,
+      total_pieces: pieces.length,
+      crew_api_reachable: crewApiReachable,
+    });
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Fehler' },
+      { error: e instanceof Error ? e.message : 'Fehler', crews: [], total_pieces: 0, crew_api_reachable: false },
       { status: 500 }
     );
   }

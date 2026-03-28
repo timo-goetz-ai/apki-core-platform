@@ -1,287 +1,169 @@
 {
+  "id": "iehuGVgDqOGx5hmE",
   "name": "410_PIXART_IMAGE",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "pixart-image",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "webhook-trigger",
-      "name": "Webhook Trigger",
+      "id": "wh-410",
+      "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [240, 300]
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {
+        "path": "pixart-image",
+        "httpMethod": "POST"
+      }
     },
     {
-      "parameters": {
-        "jsCode": "// Input: { pipeline_job_id, topic, category, prompt? }\nconst body = $input.first().json.body ?? $input.first().json;\nconst prompt = body.prompt ?? `Professional hero image for blog titled \"${body.topic}\" in category \"${body.category}\". Style: professional, modern, cinematic. High quality, suitable for web header, no text overlays.`;\n\nreturn [{ json: { ...body, prompt, width: 1024, height: 1024 } }];"
-      },
-      "id": "prepare-prompt",
+      "id": "prep-410",
       "name": "Prompt vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nconst topic=d.topic||'abstract AI technology';\nconst cat=d.category||'KI-Tools';\nconst prompt=`Professional digital artwork for blog post about ${topic}. Category: ${cat}. High quality, modern, tech aesthetic, 4K`;\nreturn [{json:{pipeline_job_id:d.pipeline_job_id||'test',prompt,topic,category:cat}}];"
+      }
     },
     {
+      "id": "picsart-410",
+      "name": "Picsart Text2Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
       "parameters": {
         "method": "POST",
         "url": "https://genai-api.picsart.io/v1/text2image",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-picsart-api-key", "value": "={{ $env.PICSART_API_KEY }}" }
+            {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"},
+            {"name": "Accept", "value": "application/json"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "prompt", "value": "={{ $json.prompt }}" },
-            { "name": "width",  "value": "={{ $json.width }}" },
-            { "name": "height", "value": "={{ $json.height }}" },
-            { "name": "count",  "value": 1 }
-          ]
-        },
-        "options": { "timeout": 30000 }
-      },
-      "id": "picsart-start",
-      "name": "Picsart: Job starten",
+        "body": "={{ JSON.stringify({prompt: $json.prompt, width: 1024, height: 1024, count: 1}) }}"
+      }
+    },
+    {
+      "id": "poll-wait",
+      "name": "Warte 8s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [720, 0],
+      "parameters": {
+        "unit": "seconds",
+        "amount": 8
+      }
+    },
+    {
+      "id": "poll-status",
+      "name": "Bild-Status prüfen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "amount": 5,
-        "unit": "seconds"
-      },
-      "id": "wait-5s",
-      "name": "5s warten",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [900, 300],
-      "webhookId": "pixart-poll-wait"
-    },
-    {
+      "position": [960, 0],
       "parameters": {
         "method": "GET",
-        "url": "=https://genai-api.picsart.io/v1/text2image/inferences/{{ $('Picsart: Job starten').item.json.inference_id }}",
+        "url": "={{ $('Picsart Text2Image').item.json.inference_id ? 'https://genai-api.picsart.io/v1/text2image/'+$('Picsart Text2Image').item.json.inference_id : 'https://genai-api.picsart.io/v1/text2image' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-picsart-api-key", "value": "={{ $env.PICSART_API_KEY }}" }
-          ]
-        },
-        "options": { "timeout": 15000 }
-      },
-      "id": "picsart-poll",
-      "name": "Picsart: Status prüfen",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1120, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": true },
-          "conditions": [
-            {
-              "id": "done-check",
-              "leftValue": "={{ $json.status }}",
-              "rightValue": "success",
-              "operator": { "type": "string", "operation": "equals" }
-            }
+            {"name": "X-Picsart-API-Key", "value": "={{ $env.PICSART_API_KEY }}"}
           ]
         }
-      },
-      "id": "check-done",
-      "name": "Fertig?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1340, 300]
+      }
     },
     {
-      "parameters": {
-        "jsCode": "// Bild-URL aus Picsart-Response extrahieren\nconst pollData    = $('Picsart: Status prüfen').item.json;\nconst imageUrl    = pollData.data?.[0]?.url ?? '';\nconst inferenceId = $('Picsart: Job starten').item.json.inference_id;\nconst jobData     = $('Prompt vorbereiten').item.json;\n\nif (!imageUrl) throw new Error('Keine Bild-URL in Picsart-Response');\n\n// Dateiname ableiten\nconst urlParts = imageUrl.split('/');\nconst rawName  = urlParts[urlParts.length - 1].split('?')[0];\nconst fileName = `picsart-${inferenceId}-${rawName || 'image.jpg'}`;\n\nreturn [{ json: { ...jobData, imageUrl, inferenceId, fileName, mimeType: 'image/jpeg' } }];"
-      },
-      "id": "extract-url",
+      "id": "get-url",
       "name": "Bild-URL extrahieren",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 220]
+      "position": [1200, 0],
+      "parameters": {
+        "jsCode": "const r=$input.first().json;\nconst pj=$('Prompt vorbereiten').item.json;\nconst url=r.data?.[0]?.url||r.url||'';\nreturn [{json:{image_url:url,pipeline_job_id:pj.pipeline_job_id,source:'picsart',gdrive_folder_id:$env.GDRIVE_IMAGES_FOLDER_ID||''}}];"
+      }
     },
     {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $json.imageUrl }}",
-        "options": { "responseFormat": "file" }
-      },
-      "id": "download-image",
-      "name": "Bild herunterladen",
+      "id": "nocodb-410",
+      "name": "NocoDB media_assets",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 220]
-    },
-    {
-      "parameters": {
-        "operation": "upload",
-        "driveId": {
-          "__rl": true,
-          "value": "My Drive",
-          "mode": "list",
-          "cachedResultName": "My Drive"
-        },
-        "folderId": {
-          "__rl": true,
-          "value": "={{ $vars.GDRIVE_IMAGES_FOLDER_ID }}",
-          "mode": "id"
-        },
-        "fileName": "={{ $('Bild-URL extrahieren').item.json.fileName }}",
-        "binaryData": true,
-        "binaryPropertyName": "data",
-        "options": {
-          "publicPermission": {
-            "permissionsUi": {
-              "permissionValues": {
-                "role": "reader",
-                "type": "anyone"
-              }
-            }
-          }
-        }
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "SETUP_REQUIRED",
-          "name": "Google Drive"
-        }
-      },
-      "id": "gdrive-upload",
-      "name": "Google Drive Upload",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [2000, 220]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Google Drive Upload Response → webViewLink extrahieren\nconst driveFile = $input.first().json;\nconst jobData   = $('Bild-URL extrahieren').item.json;\n\nconst gdriveUrl = driveFile.webViewLink ?? `https://drive.google.com/file/d/${driveFile.id}/view`;\n\nreturn [{ json: {\n  ...jobData,\n  gdrive_file_id: driveFile.id,\n  gdrive_url: gdriveUrl\n} }];"
-      },
-      "id": "extract-gdrive",
-      "name": "GDrive-URL extrahieren",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2220, 220]
-    },
-    {
+      "position": [1440, 0],
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
+            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "source_service",  "value": "picsart" },
-            { "name": "asset_type",      "value": "image" },
-            { "name": "s3_url",          "value": "={{ $json.gdrive_url }}" },
-            { "name": "gdrive_url",      "value": "={{ $json.gdrive_url }}" },
-            { "name": "file_name",       "value": "={{ $json.fileName }}" },
-            { "name": "mime_type",       "value": "image/jpeg" },
-            { "name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}" },
-            { "name": "prompt_used",     "value": "={{ $json.prompt }}" },
-            { "name": "status",          "value": "ready" },
-            { "name": "created_at",      "value": "={{ $now.toISO() }}" }
-          ]
-        }
-      },
-      "id": "nocodb-asset",
-      "name": "NocoDB: media_assets anlegen",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [2440, 220]
+        "body": "={{ JSON.stringify({asset_id:$randomString(12),source_service:'picsart',asset_type:'image',s3_url:$json.image_url,file_name:'img-'+$json.pipeline_job_id+'.jpg',mime_type:'image/jpeg',pipeline_job_id:$json.pipeline_job_id,status:'ready',created_at:new Date().toISOString()}) }}"
+      }
     },
     {
+      "id": "update-pipeline-410",
+      "name": "Pipeline-Job updaten",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 0],
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK }}" }
+            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "Id",        "value": "={{ $('GDrive-URL extrahieren').item.json.pipeline_job_id }}" },
-            { "name": "image_url", "value": "={{ $('GDrive-URL extrahieren').item.json.gdrive_url }}" },
-            { "name": "stage",     "value": "voice" },
-            { "name": "status",    "value": "idle" },
-            { "name": "updated_at","value": "={{ $now.toISO() }}" }
-          ]
-        }
-      },
-      "id": "update-pipeline",
-      "name": "Pipeline Job aktualisieren",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [2660, 220]
+        "body": "={{ JSON.stringify({job_id:$('Bild-URL extrahieren').item.json.pipeline_job_id,image_url:$('Bild-URL extrahieren').item.json.image_url,stage:'voice',status:'idle'}) }}"
+      }
     },
     {
+      "id": "resp-410",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1920, 0],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ \"ok\": true, \"gdrive_url\": \"{{ $('GDrive-URL extrahieren').item.json.gdrive_url }}\", \"pipeline_job_id\": \"{{ $('GDrive-URL extrahieren').item.json.pipeline_job_id }}\" }"
-      },
-      "id": "respond-ok",
-      "name": "Response OK",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [2880, 220]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={ \"ok\": false, \"error\": \"Picsart noch nicht fertig — bitte retry\" }",
-        "options": { "responseCode": 202 }
-      },
-      "id": "respond-retry",
-      "name": "Response: Retry",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [1560, 400]
+        "responseBody": "={{ {ok:true,image_url:$('Bild-URL extrahieren').item.json.image_url} }}"
+      }
     }
   ],
   "connections": {
-    "Webhook Trigger":              { "main": [[{ "node": "Prompt vorbereiten",          "type": "main", "index": 0 }]] },
-    "Prompt vorbereiten":           { "main": [[{ "node": "Picsart: Job starten",         "type": "main", "index": 0 }]] },
-    "Picsart: Job starten":         { "main": [[{ "node": "5s warten",                    "type": "main", "index": 0 }]] },
-    "5s warten":                    { "main": [[{ "node": "Picsart: Status prüfen",       "type": "main", "index": 0 }]] },
-    "Picsart: Status prüfen":       { "main": [[{ "node": "Fertig?",                      "type": "main", "index": 0 }]] },
-    "Fertig?":                      { "main": [[{ "node": "Bild-URL extrahieren",          "type": "main", "index": 0 }], [{ "node": "Response: Retry", "type": "main", "index": 0 }]] },
-    "Bild-URL extrahieren":         { "main": [[{ "node": "Bild herunterladen",            "type": "main", "index": 0 }]] },
-    "Bild herunterladen":           { "main": [[{ "node": "Google Drive Upload",           "type": "main", "index": 0 }]] },
-    "Google Drive Upload":          { "main": [[{ "node": "GDrive-URL extrahieren",        "type": "main", "index": 0 }]] },
-    "GDrive-URL extrahieren":       { "main": [[{ "node": "NocoDB: media_assets anlegen", "type": "main", "index": 0 }]] },
-    "NocoDB: media_assets anlegen": { "main": [[{ "node": "Pipeline Job aktualisieren",   "type": "main", "index": 0 }]] },
-    "Pipeline Job aktualisieren":   { "main": [[{ "node": "Response OK",                  "type": "main", "index": 0 }]] }
-  },
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": ""
-  },
-  "staticData": null,
-  "meta": { "templateCredsSetupCompleted": false },
-  "pinData": {},
-  "versionId": "410_PIXART_IMAGE_v1",
-  "tags": [{ "name": "content-pipeline" }, { "name": "gdrive" }]
+    "Webhook": {
+      "main": [[{"node": "Prompt vorbereiten", "type": "main", "index": 0}]]
+    },
+    "Prompt vorbereiten": {
+      "main": [[{"node": "Picsart Text2Image", "type": "main", "index": 0}]]
+    },
+    "Picsart Text2Image": {
+      "main": [[{"node": "Warte 8s", "type": "main", "index": 0}]]
+    },
+    "Warte 8s": {
+      "main": [[{"node": "Bild-Status prüfen", "type": "main", "index": 0}]]
+    },
+    "Bild-Status prüfen": {
+      "main": [[{"node": "Bild-URL extrahieren", "type": "main", "index": 0}]]
+    },
+    "Bild-URL extrahieren": {
+      "main": [[{"node": "NocoDB media_assets", "type": "main", "index": 0}]]
+    },
+    "NocoDB media_assets": {
+      "main": [[{"node": "Pipeline-Job updaten", "type": "main", "index": 0}]]
+    },
+    "Pipeline-Job updaten": {
+      "main": [[{"node": "Response", "type": "main", "index": 0}]]
+    }
+  }
 }
