@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 
 from app.services.crew_manager import CrewManager
@@ -120,3 +120,32 @@ async def run_crew_sync(crew_id: str, request: Request):
 async def execution_status(execution_id: str):
     """Status einer Execution (Platzhalter – später Redis/NocoDB)."""
     return {"execution_id": execution_id, "status": "unknown"}
+
+
+@router.websocket("/ws/executions/{execution_id}")
+async def ws_execution(execution_id: str, websocket: WebSocket):
+    """WebSocket-Stream für Execution-Events — Alternative zu SSE.
+    Sendet dieselben JSON-Payloads wie der SSE-Endpoint.
+    Dashboard kann entweder WS oder SSE nutzen (WS bevorzugt).
+    """
+    broadcaster: EventBroadcaster = websocket.app.state.broadcaster
+    await websocket.accept()
+    try:
+        async for msg in broadcaster.subscribe(execution_id):
+            await websocket.send_text(msg)
+            # Execution fertig → Verbindung sauber schließen
+            import json
+            try:
+                data = json.loads(msg)
+                if data.get("type") in ("execution_completed", "execution_error"):
+                    await websocket.close()
+                    return
+            except Exception:
+                pass
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        try:
+            await websocket.close()
+        except Exception:
+            pass

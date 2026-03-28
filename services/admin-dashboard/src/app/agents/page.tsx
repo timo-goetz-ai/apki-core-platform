@@ -2,9 +2,35 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  Bot, RefreshCw, Play, Clock, FileText, Users, Zap, CheckCircle2,
-  Activity, AlertTriangle, XCircle, Radio,
+  RefreshCw, Play, Clock, FileText, Zap,
+  CheckCircle2, Activity, AlertTriangle, XCircle, Radio, Bot, Wifi,
 } from 'lucide-react';
+
+// ── Robot Character Definitions ───────────────────────────────────────────────
+
+interface RobotChar {
+  name: string;       // Charakter-Name
+  trait: string;      // Eigenschaft
+  color: string;      // Akzentfarbe
+  avatar: string;     // Emoji-Avatar
+  bgColor: string;    // Hintergrundton
+}
+
+const ROBOTS: Record<string, RobotChar> = {
+  'Content Researcher':  { name: 'Llama-Geist',        trait: 'Kapazität',        color: '#34d399', bgColor: 'rgba(52,211,153,0.1)',   avatar: '🦙' },
+  'Writer & SEO':        { name: 'Claude-Assistent',   trait: 'Genauigkeit',      color: '#c084fc', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
+  'Audience Analyst':    { name: 'Gemi-Schmied',       trait: 'Vielseitigkeit',   color: '#fbbf24', bgColor: 'rgba(251,191,36,0.1)',   avatar: '⚙️' },
+  'Opportunity Scorer':  { name: 'X-Agent Alpha',      trait: 'Geschwindigkeit',  color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
+  'Trend Analyst':       { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: '#22d3ee', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
+  'Content Strategist':  { name: "Mistral's Windzug",  trait: 'Effizienz',        color: '#60a5fa', bgColor: 'rgba(96,165,250,0.1)',   avatar: '💨' },
+  'Senior Researcher':   { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '🔬' },
+  'Synthesis Specialist':{ name: 'Gemini-C',           trait: 'Integration',      color: '#fb923c', bgColor: 'rgba(251,146,60,0.1)',   avatar: '🧬' },
+  'Research Analyst':    { name: 'Llama-H',            trait: 'Skalierbarkeit',   color: '#86efac', bgColor: 'rgba(134,239,172,0.1)',  avatar: '📡' },
+};
+
+function getRobot(role: string): RobotChar {
+  return ROBOTS[role] ?? { name: role, trait: '', color: '#94a3b8', bgColor: 'rgba(148,163,184,0.1)', avatar: '🤖' };
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,77 +56,66 @@ interface TimelineEntry {
   kind: 'info' | 'task' | 'ok' | 'err';
   title: string;
   detail?: string;
+  agentId?: string;
 }
 
-type AgentLive = { status: 'idle' | 'working' | 'done' | 'error'; taskId?: string; output?: string };
+type AgentStatus = 'idle' | 'working' | 'done' | 'error';
+type AgentLive = { status: AgentStatus; taskId?: string; output?: string };
 
-// ── Static agent roster (crews.yaml) ──────────────────────────────────────────
+// ── Static agent roster ────────────────────────────────────────────────────────
 
 const CREW_AGENTS: Record<string, { role: string; color: string }[]> = {
   content_generation_crew: [
-    { role: 'Content Researcher', color: '#60a5fa' },
-    { role: 'Writer & SEO', color: '#a78bfa' },
+    { role: 'Content Researcher', color: '#34d399' },
+    { role: 'Writer & SEO',       color: '#c084fc' },
   ],
   niche_analysis_crew: [
-    { role: 'Audience Analyst', color: '#34d399' },
-    { role: 'Opportunity Scorer', color: '#fb923c' },
+    { role: 'Audience Analyst',   color: '#fbbf24' },
+    { role: 'Opportunity Scorer', color: '#f87171' },
   ],
   content_forecast_crew: [
-    { role: 'Trend Analyst', color: '#f472b6' },
-    { role: 'Content Strategist', color: '#fbbf24' },
+    { role: 'Trend Analyst',      color: '#22d3ee' },
+    { role: 'Content Strategist', color: '#60a5fa' },
   ],
   deep_research_crew: [
-    { role: 'Senior Researcher', color: '#60a5fa' },
-    { role: 'Synthesis Specialist', color: '#a78bfa' },
+    { role: 'Senior Researcher',    color: '#4ade80' },
+    { role: 'Synthesis Specialist', color: '#fb923c' },
   ],
-  quick_research_crew: [{ role: 'Research Analyst', color: '#34d399' }],
+  quick_research_crew: [{ role: 'Research Analyst', color: '#86efac' }],
 };
 
-const CREW_ICON_COLOR: Record<string, string> = {
-  content_generation_crew: '#a78bfa',
-  niche_analysis_crew: '#34d399',
-  content_forecast_crew: '#fb923c',
-  deep_research_crew: '#60a5fa',
-  quick_research_crew: '#fbbf24',
+const CREW_ACCENT: Record<string, string> = {
+  content_generation_crew: '#c084fc',
+  niche_analysis_crew:     '#fbbf24',
+  content_forecast_crew:   '#22d3ee',
+  deep_research_crew:      '#4ade80',
+  quick_research_crew:     '#86efac',
 };
 
-/** Default Inputs pro Crew-ID → POST /crews/{id}/start */
-const DEFAULT_CREW_INPUTS: Record<string, Record<string, string>> = {
-  content_generation_crew: {
-    topic: 'KI-Agenten 2026',
-    category: 'KI-Tools',
-    target_platforms: 'blog',
-  },
-  niche_analysis_crew: { topic: 'Nischen-Analyse', category: 'Markt', target_platforms: 'internal' },
-  content_forecast_crew: { topic: 'Content-Trends', category: 'Prognose', target_platforms: 'blog' },
-  deep_research_crew: { topic: 'Deep Research', category: 'Research', target_platforms: 'blog' },
-  quick_research_crew: { topic: 'Quick Scan', category: 'Research', target_platforms: 'blog' },
+const DEFAULT_INPUTS: Record<string, Record<string, string>> = {
+  content_generation_crew: { topic: 'KI-Agenten 2026', category: 'KI-Tools', target_platforms: 'blog' },
+  niche_analysis_crew:     { topic: 'Nischen-Analyse', category: 'Markt', target_platforms: 'internal' },
+  content_forecast_crew:   { topic: 'Content-Trends', category: 'Prognose', target_platforms: 'blog' },
+  deep_research_crew:      { topic: 'Deep Research', category: 'Research', target_platforms: 'blog' },
+  quick_research_crew:     { topic: 'Quick Scan', category: 'Research', target_platforms: 'blog' },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function prettyCrewName(id: string): string {
-  return id
-    .split('_')
-    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
-    .join(' ');
+function prettyName(id: string) {
+  return id.split('_').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ');
 }
 
 function buildFallbackCrews(): Crew[] {
-  return Object.keys(CREW_AGENTS).map((id) => ({
-    id,
-    name: prettyCrewName(id),
-    agents: CREW_AGENTS[id].length,
-    tasks: CREW_AGENTS[id].length,
-    last_run: null,
-    recent_pieces: [],
+  return Object.keys(CREW_AGENTS).map(id => ({
+    id, name: prettyName(id), agents: CREW_AGENTS[id].length,
+    tasks: CREW_AGENTS[id].length, last_run: null, recent_pieces: [],
   }));
 }
 
-function relTime(iso: string | null): string {
+function relTime(iso: string | null) {
   if (!iso) return 'Noch nie';
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (m < 1) return 'Gerade eben';
   if (m < 60) return `vor ${m}m`;
   const h = Math.floor(m / 60);
@@ -108,379 +123,417 @@ function relTime(iso: string | null): string {
   return `vor ${Math.floor(h / 24)}d`;
 }
 
-function tlColor(k: TimelineEntry['kind']): string {
-  if (k === 'ok') return '#34d399';
-  if (k === 'err') return '#f87171';
-  if (k === 'task') return '#60a5fa';
-  return '#94a3b8';
-}
+// ── Robot Avatar ──────────────────────────────────────────────────────────────
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+function RobotAvatar({
+  role, status = 'idle', size = 52,
+}: { role: string; status?: AgentStatus; size?: number }) {
+  const r = getRobot(role);
+  const pulse = status === 'working';
+  const borderColor = status === 'working' ? r.color
+    : status === 'done'  ? '#34d399'
+    : status === 'error' ? '#f87171'
+    : 'rgba(148,163,184,0.2)';
 
-function AgentChip({ role, color }: { role: string; color: string }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: '3px 8px',
-        borderRadius: 6,
-        background: `${color}14`,
-        border: `1px solid ${color}30`,
-      }}
-    >
-      <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      <span style={{ fontSize: 11, color, fontWeight: 500 }}>{role}</span>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      {pulse && (
+        <div style={{
+          position: 'absolute', inset: -4, borderRadius: '50%',
+          border: `2px solid ${r.color}`,
+          animation: 'ping 1.2s cubic-bezier(0,0,0.2,1) infinite',
+          opacity: 0.6,
+        }} />
+      )}
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: r.bgColor,
+        border: `2px solid ${borderColor}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.42,
+        transition: 'border-color 0.3s',
+        position: 'relative', zIndex: 1,
+      }}>
+        {r.avatar}
+      </div>
     </div>
   );
 }
 
-function CrewApiRunButton({
-  crewId,
-  onStarted,
-  busy,
+// ── Agent Card (live) ─────────────────────────────────────────────────────────
+
+function AgentCard({ role, live }: { role: string; live?: AgentLive }) {
+  const r = getRobot(role);
+  const st = live?.status ?? 'idle';
+  const statusLabel = st === 'working' ? 'Arbeitet…' : st === 'done' ? 'Fertig' : st === 'error' ? 'Fehler' : 'Bereit';
+  const statusColor = st === 'working' ? '#fbbf24' : st === 'done' ? '#34d399' : st === 'error' ? '#f87171' : '#94a3b8';
+
+  return (
+    <div style={{
+      background: 'var(--layer-2)',
+      border: `1px solid ${st !== 'idle' ? r.color + '40' : 'var(--border)'}`,
+      borderRadius: 14,
+      padding: '14px 16px',
+      display: 'flex', flexDirection: 'column', gap: 10,
+      transition: 'border-color 0.3s, box-shadow 0.3s',
+      boxShadow: st === 'working' ? `0 0 16px ${r.color}20` : 'none',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <RobotAvatar role={role} status={st} size={44} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{r.name}</div>
+          <div style={{ fontSize: 10, color: r.color, fontWeight: 600, marginTop: 1 }}>{r.trait.toUpperCase()}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{role}</div>
+        </div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+          background: statusColor + '18', color: statusColor, border: `1px solid ${statusColor}40`,
+        }}>
+          {statusLabel}
+        </div>
+      </div>
+
+      {/* Task/Output */}
+      {live?.taskId && (
+        <div style={{
+          background: 'var(--layer-3)', borderRadius: 8, padding: '7px 10px',
+          borderLeft: `3px solid ${r.color}`,
+        }}>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
+            TASK · {live.taskId}
+          </div>
+          {live.output && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              {live.output.slice(0, 180)}{live.output.length > 180 ? '…' : ''}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Crew Flow Viz ─────────────────────────────────────────────────────────────
+
+function CrewFlowViz({ crewId, activeAgents }: { crewId: string; activeAgents: Record<string, AgentLive> }) {
+  const agents = CREW_AGENTS[crewId] ?? [];
+  if (!agents.length) return null;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap', padding: '6px 0' }}>
+      {agents.map((a, i) => {
+        const r = getRobot(a.role);
+        const live = activeAgents[a.role];
+        const st = live?.status ?? 'idle';
+        const active = st === 'working';
+        return (
+          <div key={a.role} style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              padding: '6px 10px', borderRadius: 10,
+              background: active ? r.bgColor : 'transparent',
+              border: `1px solid ${active ? r.color + '60' : 'transparent'}`,
+              transition: 'all 0.3s',
+            }}>
+              <RobotAvatar role={a.role} status={st} size={32} />
+              <span style={{ fontSize: 9, color: active ? r.color : 'var(--text-muted)', fontWeight: 600, maxWidth: 64, textAlign: 'center' }}>
+                {r.name.split("'")[0].split(' ')[0]}
+              </span>
+            </div>
+            {i < agents.length - 1 && (
+              <div style={{
+                width: 20, height: 1,
+                background: `linear-gradient(90deg, ${agents[i] ? getRobot(agents[i].role).color + '60' : '#333'}, ${getRobot(agents[i + 1]?.role ?? '').color + '60'})`,
+                flexShrink: 0, margin: '0 -2px',
+              }} />
+            )}
+          </div>
+        );
+      })}
+      <div style={{ marginLeft: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 20, height: 1, background: 'rgba(148,163,184,0.3)' }} />
+        <div style={{
+          padding: '4px 10px', borderRadius: 8, fontSize: 9, fontWeight: 700,
+          background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)',
+          color: 'var(--text-muted)',
+        }}>
+          OUTPUT
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Timeline ──────────────────────────────────────────────────────────────────
+
+function TimelinePanel({ entries }: { entries: TimelineEntry[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [entries.length]);
+
+  const color = (k: TimelineEntry['kind']) =>
+    k === 'ok' ? '#34d399' : k === 'err' ? '#f87171' : k === 'task' ? '#60a5fa' : '#94a3b8';
+
+  return (
+    <div ref={ref} style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5, paddingRight: 2 }}>
+      {entries.length === 0 && (
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', padding: '8px 0' }}>
+          Warte auf Events…
+        </div>
+      )}
+      {entries.map((e) => {
+        const r = e.agentId ? getRobot(e.agentId) : null;
+        return (
+          <div key={e.id} style={{
+            fontSize: 11, padding: '7px 10px', borderRadius: 8,
+            background: 'var(--layer-2)', borderLeft: `3px solid ${color(e.kind)}`,
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+          }}>
+            {r && <span style={{ fontSize: 14, flexShrink: 0, marginTop: -1 }}>{r.avatar}</span>}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{e.title}</span>
+                <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>
+                  {new Date(e.at).toLocaleTimeString('de-DE')}
+                </span>
+              </div>
+              {e.detail && (
+                <div style={{ marginTop: 3, fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.35, wordBreak: 'break-word' }}>
+                  {e.detail}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Live Execution Panel ──────────────────────────────────────────────────────
+
+function LivePanel({
+  execId, crewId, crewLabel, timeline, agents, wsConnected, streamFault, onClose,
 }: {
+  execId: string; crewId: string; crewLabel: string;
+  timeline: TimelineEntry[]; agents: Record<string, AgentLive>;
+  wsConnected: boolean; streamFault?: string | null; onClose: () => void;
+}) {
+  const crewAgents = CREW_AGENTS[crewId] ?? [];
+
+  return (
+    <div style={{
+      marginBottom: 20, padding: '16px 18px', borderRadius: 14,
+      border: '1px solid rgba(96,165,250,0.3)',
+      background: 'linear-gradient(135deg, rgba(96,165,250,0.06), rgba(15,23,42,0.5))',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <Radio size={14} style={{ color: '#34d399', animation: 'pulse 1.2s ease-in-out infinite' }} />
+        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Live · {crewLabel}</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4, fontSize: 10,
+          padding: '2px 8px', borderRadius: 10,
+          background: wsConnected ? 'rgba(52,211,153,0.12)' : 'rgba(251,191,36,0.12)',
+          border: `1px solid ${wsConnected ? '#34d39940' : '#fbbf2440'}`,
+          color: wsConnected ? '#34d399' : '#fbbf24',
+        }}>
+          <Wifi size={9} />
+          {wsConnected ? 'WebSocket' : 'SSE'}
+        </div>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', flex: 1, minWidth: 100 }}>
+          {execId.slice(0, 20)}…
+        </span>
+        <button type="button" onClick={onClose} style={{
+          fontSize: 10, padding: '4px 12px', borderRadius: 6,
+          border: '1px solid var(--border)', background: 'var(--layer-2)',
+          color: 'var(--text-muted)', cursor: 'pointer',
+        }}>
+          Schließen
+        </button>
+      </div>
+
+      {/* Crew Flow Visualization */}
+      <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+          Crew Flow
+        </div>
+        <CrewFlowViz crewId={crewId} activeAgents={agents} />
+      </div>
+
+      {streamFault && (
+        <div style={{
+          marginBottom: 12, padding: '10px 12px', borderRadius: 8,
+          border: '1px solid rgba(248,113,113,0.4)', background: 'rgba(248,113,113,0.08)',
+          fontSize: 11, color: '#fecaca',
+        }}>
+          <strong style={{ color: '#f87171' }}>Verbindungsfehler:</strong>
+          <div style={{ marginTop: 4 }}>{streamFault}</div>
+        </div>
+      )}
+
+      {/* Split: Agent Cards + Timeline */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 12 }}>
+        {/* Agent Cards */}
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            Agenten ({crewAgents.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {crewAgents.map(a => (
+              <AgentCard key={a.role} role={a.role} live={agents[a.role]} />
+            ))}
+            {/* Also show agents from live data not in static roster */}
+            {Object.keys(agents)
+              .filter(aid => !crewAgents.find(a => a.role === aid))
+              .map(aid => <AgentCard key={aid} role={aid} live={agents[aid]} />)
+            }
+            {crewAgents.length === 0 && Object.keys(agents).length === 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Warte auf Agent-Events…</div>
+            )}
+          </div>
+        </div>
+
+        {/* Timeline */}
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            Echtzeit-Log ({timeline.length})
+          </div>
+          <TimelinePanel entries={timeline} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Run Button ────────────────────────────────────────────────────────────────
+
+function RunButton({ crewId, onStarted, busy }: {
   crewId: string;
-  onStarted: (executionId: string, label: string) => void;
+  onStarted: (execId: string, crewId: string, label: string) => void;
   busy: boolean;
 }) {
-  const [state, setState] = useState<'idle' | 'running' | 'done' | 'err'>('idle');
+  const [st, setSt] = useState<'idle' | 'running' | 'done' | 'err'>('idle');
 
   async function run() {
-    if (state === 'running' || busy) return;
-    setState('running');
+    if (st === 'running' || busy) return;
+    setSt('running');
     try {
-      const inputs = DEFAULT_CREW_INPUTS[crewId] ?? {
-        topic: 'Demo',
-        category: 'Allgemein',
-        target_platforms: 'blog',
-      };
+      const inputs = DEFAULT_INPUTS[crewId] ?? { topic: 'Demo', category: 'Allgemein', target_platforms: 'blog' };
       const res = await fetch(`/api/crews/${encodeURIComponent(crewId)}/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inputs),
       });
-      const data = (await res.json().catch(() => ({}))) as { execution_id?: string; detail?: string };
+      const data = await res.json().catch(() => ({})) as { execution_id?: string };
       if (res.ok && data.execution_id) {
-        setState('done');
-        onStarted(String(data.execution_id), prettyCrewName(crewId));
-        setTimeout(() => setState('idle'), 800);
+        setSt('done');
+        onStarted(String(data.execution_id), crewId, prettyName(crewId));
+        setTimeout(() => setSt('idle'), 800);
       } else {
-        setState('err');
-        setTimeout(() => setState('idle'), 2500);
+        setSt('err');
+        setTimeout(() => setSt('idle'), 2500);
       }
     } catch {
-      setState('err');
-      setTimeout(() => setState('idle'), 2500);
+      setSt('err');
+      setTimeout(() => setSt('idle'), 2500);
     }
   }
 
-  const label =
-    state === 'running' ? 'Start…' : state === 'done' ? 'OK' : state === 'err' ? 'Fehler' : 'Crew API';
-  const bg =
-    state === 'running'
-      ? 'rgba(96,165,250,0.12)'
-      : state === 'done'
-        ? 'rgba(52,211,153,0.12)'
-        : state === 'err'
-          ? 'rgba(248,113,113,0.12)'
-          : 'var(--layer-3)';
-  const bdr =
-    state === 'running'
-      ? '#60a5fa'
-      : state === 'done'
-        ? '#34d399'
-        : state === 'err'
-          ? '#f87171'
-          : 'var(--border-bright)';
+  const label = st === 'running' ? 'Start…' : st === 'done' ? '✓ Gestartet' : st === 'err' ? '✗ Fehler' : '▶ Starten';
+  const color = st === 'running' ? '#60a5fa' : st === 'done' ? '#34d399' : st === 'err' ? '#f87171' : 'var(--text-muted)';
 
   return (
-    <button
-      type="button"
-      onClick={run}
-      disabled={state === 'running' || busy}
-      title="Crew über Crew-API starten (Live-Stream)"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 10px',
-        borderRadius: 6,
-        border: `1px solid ${bdr}`,
-        background: bg,
-        cursor: state === 'running' || busy ? 'default' : 'pointer',
-        fontSize: 11,
-        fontWeight: 600,
-        color: 'var(--text-secondary)',
-        transition: 'all 0.15s',
-      }}
-    >
+    <button type="button" onClick={run} disabled={st === 'running' || busy} style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      padding: '5px 12px', borderRadius: 8,
+      border: `1px solid ${color}40`, background: `${color}10`,
+      cursor: st === 'running' || busy ? 'default' : 'pointer',
+      fontSize: 11, fontWeight: 600, color,
+      transition: 'all 0.15s',
+    }}>
       <Play size={9} />
       {label}
     </button>
   );
 }
 
-function LiveExecutionPanel({
-  executionId,
-  crewLabel,
-  timeline,
-  agents,
-  streamFault,
-  onClose,
-}: {
-  executionId: string;
-  crewLabel: string;
-  timeline: TimelineEntry[];
-  agents: Record<string, AgentLive>;
-  streamFault?: string | null;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      style={{
-        marginBottom: 20,
-        padding: '14px 16px',
-        borderRadius: 12,
-        border: '1px solid rgba(96,165,250,0.25)',
-        background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(15,23,42,0.4))',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <Radio size={14} style={{ color: '#34d399', animation: 'pulse 1.2s ease-in-out infinite' }} />
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>Live · {crewLabel}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', flex: 1, minWidth: 200 }}>
-          {executionId}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            fontSize: 10,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            background: 'var(--layer-2)',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-          }}
-        >
-          Stream schließen
-        </button>
-      </div>
+// ── Crew Card ─────────────────────────────────────────────────────────────────
 
-      {streamFault ? (
-        <div
-          style={{
-            marginBottom: 12,
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid rgba(248,113,113,0.45)',
-            background: 'rgba(248,113,113,0.1)',
-            fontSize: 11,
-            color: '#fecaca',
-            lineHeight: 1.4,
-          }}
-        >
-          <strong style={{ color: '#f87171' }}>Stream / Verbindung</strong>
-          <div style={{ marginTop: 4 }}>{streamFault}</div>
-        </div>
-      ) : null}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(200px,0.9fr)', gap: 14 }}>
-        <div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Timeline (SSE)
-          </div>
-          <div
-            style={{
-              maxHeight: 200,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 6,
-              paddingRight: 4,
-            }}
-          >
-            {timeline.length === 0 && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Warte auf Events…</span>
-            )}
-            {timeline.map((e) => (
-              <div
-                key={e.id}
-                style={{
-                  fontSize: 11,
-                  padding: '6px 8px',
-                  borderRadius: 8,
-                  background: 'var(--layer-2)',
-                  borderLeft: `3px solid ${tlColor(e.kind)}`,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{e.title}</span>
-                  <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>
-                    {new Date(e.at).toLocaleTimeString('de-DE')}
-                  </span>
-                </div>
-                {e.detail && (
-                  <div style={{ marginTop: 4, fontSize: 10, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
-                    {e.detail}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Agenten
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {Object.keys(agents).length === 0 && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Noch keine Task-Events</span>
-            )}
-            {Object.entries(agents).map(([aid, st]) => (
-              <div
-                key={aid}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  background: 'var(--layer-2)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  {st.status === 'working' && <Activity size={12} style={{ color: '#fbbf24' }} />}
-                  {st.status === 'done' && <CheckCircle2 size={12} style={{ color: '#34d399' }} />}
-                  {st.status === 'error' && <XCircle size={12} style={{ color: '#f87171' }} />}
-                  {st.status === 'idle' && <Clock size={12} style={{ color: 'var(--text-muted)' }} />}
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{aid}</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{st.taskId}</span>
-                </div>
-                {st.output && (
-                  <p style={{ margin: 0, fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.35 }}>{st.output}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CrewCard({
-  crew,
-  onCrewStarted,
-  streamBusy,
-}: {
+function CrewCard({ crew, onStarted, busy }: {
   crew: Crew;
-  onCrewStarted: (executionId: string, label: string) => void;
-  streamBusy: boolean;
+  onStarted: (execId: string, crewId: string, label: string) => void;
+  busy: boolean;
 }) {
   const agents = CREW_AGENTS[crew.id] ?? [];
-  const accent = CREW_ICON_COLOR[crew.id] ?? '#60a5fa';
+  const accent = CREW_ACCENT[crew.id] ?? '#60a5fa';
 
   return (
-    <div
-      style={{
-        background: 'var(--layer-2)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: '16px 18px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        transition: 'border-color 0.15s',
-      }}
+    <div style={{
+      background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 14,
+      padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12,
+      transition: 'border-color 0.2s',
+    }}
+    onMouseEnter={e => (e.currentTarget.style.borderColor = accent + '50')}
+    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
     >
+      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 9,
-            flexShrink: 0,
-            background: `${accent}18`,
-            border: `1px solid ${accent}30`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Users size={16} style={{ color: accent }} />
+        <div style={{
+          width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+          background: accent + '18', border: `1px solid ${accent}35`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18,
+        }}>
+          {agents[0] ? getRobot(agents[0].role).avatar : '🤖'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{crew.name}</span>
-            <span
-              style={{
-                fontSize: 10,
-                color: 'var(--text-muted)',
-                fontFamily: 'var(--font-mono)',
-                marginLeft: 'auto',
-                flexShrink: 0,
-              }}
-            >
-              {crew.agents} Agents · {crew.tasks} Tasks
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-            <Clock size={9} style={{ color: 'var(--text-muted)' }} />
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{relTime(crew.last_run)}</span>
+          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{crew.name}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+            {crew.agents} Agents · {crew.tasks} Tasks · {relTime(crew.last_run)}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-          <CrewApiRunButton crewId={crew.id} onStarted={onCrewStarted} busy={streamBusy} />
-        </div>
+        <RunButton crewId={crew.id} onStarted={onStarted} busy={busy} />
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-        {agents.map((a) => (
-          <AgentChip key={a.role} role={a.role} color={a.color} />
-        ))}
+      {/* Agent roster with robot names */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {agents.map(a => {
+          const r = getRobot(a.role);
+          return (
+            <div key={a.role} style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 9px', borderRadius: 20,
+              background: r.bgColor, border: `1px solid ${r.color}35`,
+            }}>
+              <span style={{ fontSize: 12 }}>{r.avatar}</span>
+              <div>
+                <span style={{ fontSize: 11, color: r.color, fontWeight: 600 }}>{r.name}</span>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }}>({r.trait})</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
+      {/* Recent outputs */}
       {crew.recent_pieces.length > 0 && (
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <span
-            style={{
-              fontSize: 10,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              fontWeight: 600,
-            }}
-          >
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
             Letzte Outputs
           </span>
-          {crew.recent_pieces.map((p) => (
+          {crew.recent_pieces.slice(0, 3).map(p => (
             <div key={p.piece_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <FileText size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              <span
-                style={{
-                  fontSize: 11,
-                  color: 'var(--text-secondary)',
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {p.title ?? p.piece_id}
               </span>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 600,
-                  padding: '1px 5px',
-                  borderRadius: 4,
-                  background: p.status === 'draft' ? 'rgba(251,191,36,0.12)' : 'rgba(52,211,153,0.12)',
-                  color: p.status === 'draft' ? '#fbbf24' : '#34d399',
-                }}
-              >
+              <span style={{
+                fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 4,
+                background: p.status === 'draft' ? 'rgba(251,191,36,0.12)' : 'rgba(52,211,153,0.12)',
+                color: p.status === 'draft' ? '#fbbf24' : '#34d399',
+              }}>
                 {p.status}
               </span>
             </div>
@@ -491,7 +544,7 @@ function CrewCard({
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function AgentsPage() {
   const [crews, setCrews] = useState<Crew[]>([]);
@@ -500,335 +553,270 @@ export default function AgentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [crewApiOk, setCrewApiOk] = useState(true);
 
-  const [streamExecId, setStreamExecId] = useState<string | null>(null);
-  const [streamLabel, setStreamLabel] = useState('');
+  // Live stream state
+  const [execId, setExecId]       = useState<string | null>(null);
+  const [execCrewId, setExecCrewId] = useState('');
+  const [execLabel, setExecLabel] = useState('');
+  const [wsConnected, setWsConnected] = useState(false);
   const [streamFault, setStreamFault] = useState<string | null>(null);
-  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [timeline, setTimeline]   = useState<TimelineEntry[]>([]);
   const [agentLive, setAgentLive] = useState<Record<string, AgentLive>>({});
   const finishedRef = useRef(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const res = await fetch('/api/crews');
       const data = await res.json();
       if (!res.ok) {
-        setCrews(buildFallbackCrews());
-        setTotalPieces(0);
-        setCrewApiOk(false);
-        setError(data.error ?? 'Crew-API eingeschränkt — Fallback-Crews');
-        return;
+        setCrews(buildFallbackCrews()); setTotalPieces(0); setCrewApiOk(false);
+        setError(data.error ?? 'Crew-API eingeschränkt — Fallback'); return;
       }
       let list: Crew[] = data.crews ?? [];
       if (!list.length) {
         list = buildFallbackCrews();
         setCrewApiOk(!!data.crew_api_reachable);
-        if (!data.crew_api_reachable) {
-          setError('Crew-API lieferte keine Crews — zeige lokale Konfiguration. Prüfe CREW_API_URL.');
-        }
+        if (!data.crew_api_reachable) setError('Crew-API ohne Crews — zeige lokale Config. Prüfe CREW_API_URL.');
       } else {
         setCrewApiOk(data.crew_api_reachable !== false);
       }
-      setCrews(list);
-      setTotalPieces(data.total_pieces ?? 0);
+      setCrews(list); setTotalPieces(data.total_pieces ?? 0);
     } catch (e) {
-      setCrews(buildFallbackCrews());
-      setCrewApiOk(false);
-      setError(e instanceof Error ? e.message : 'Netzwerkfehler — Fallback-Crews');
-    } finally {
-      setLoading(false);
-    }
+      setCrews(buildFallbackCrews()); setCrewApiOk(false);
+      setError(e instanceof Error ? e.message : 'Netzwerkfehler');
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  const handleCrewStarted = useCallback((executionId: string, label: string) => {
+  const handleStarted = useCallback((newExecId: string, crewId: string, label: string) => {
     finishedRef.current = false;
-    setStreamFault(null);
-    setTimeline([]);
-    setAgentLive({});
-    setStreamLabel(label);
-    setStreamExecId(executionId);
+    setStreamFault(null); setTimeline([]); setAgentLive({});
+    setExecId(newExecId); setExecCrewId(crewId); setExecLabel(label);
   }, []);
 
   const closeStream = useCallback(() => {
-    setStreamExecId(null);
-    setStreamFault(null);
-    setTimeline([]);
-    setAgentLive({});
+    wsRef.current?.close();
+    setExecId(null); setStreamFault(null); setTimeline([]); setAgentLive({}); setWsConnected(false);
   }, []);
 
+  // WebSocket with SSE fallback
   useEffect(() => {
-    if (!streamExecId) return;
+    if (!execId) return;
 
-    const es = new EventSource(`/api/crews/stream/${encodeURIComponent(streamExecId)}`);
-
-    es.onopen = () => setStreamFault(null);
-
-    es.onmessage = (e) => {
+    function handleMsg(raw: string) {
       try {
-        const msg = JSON.parse(e.data) as Record<string, unknown>;
+        const msg = JSON.parse(raw) as Record<string, unknown>;
         const t = String(msg.type ?? '');
         const ts = new Date().toISOString();
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const agentId = String(msg.agent_id ?? '');
 
         if (t === 'execution_started') {
-          setTimeline((prev) => [
-            ...prev,
-            { id, at: ts, kind: 'info', title: 'Execution gestartet', detail: String(msg.crew_id ?? '') },
-          ]);
+          setTimeline(p => [...p, { id, at: ts, kind: 'info', title: 'Execution gestartet', detail: String(msg.crew_id ?? '') }]);
         }
         if (t === 'task_started') {
-          const aid = String(msg.agent_id ?? 'agent');
-          setAgentLive((p) => ({ ...p, [aid]: { ...p[aid], status: 'working', taskId: String(msg.task_id ?? '') } }));
-          setTimeline((prev) => [...prev, { id, at: ts, kind: 'task', title: `Task ${msg.task_id}`, detail: aid }]);
+          setAgentLive(p => ({ ...p, [agentId]: { ...p[agentId], status: 'working', taskId: String(msg.task_id ?? '') } }));
+          setTimeline(p => [...p, { id, at: ts, kind: 'task', title: `▶ Task gestartet`, detail: String(msg.task_id ?? ''), agentId }]);
         }
         if (t === 'task_completed') {
-          const aid = String(msg.agent_id ?? 'agent');
           const out = String(msg.output ?? '').slice(0, 400);
-          setAgentLive((p) => ({
-            ...p,
-            [aid]: { status: 'done', taskId: String(msg.task_id ?? p[aid]?.taskId ?? ''), output: out },
-          }));
-          setTimeline((prev) => [...prev, { id, at: ts, kind: 'ok', title: 'Task abgeschlossen', detail: out }]);
+          setAgentLive(p => ({ ...p, [agentId]: { status: 'done', taskId: String(msg.task_id ?? p[agentId]?.taskId ?? ''), output: out } }));
+          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: '✓ Task abgeschlossen', detail: out.slice(0, 120), agentId }]);
         }
         if (t === 'execution_completed') {
           finishedRef.current = true;
-          const result = String(msg.result ?? '').slice(0, 300);
-          setTimeline((prev) => [...prev, { id, at: ts, kind: 'ok', title: 'Crew fertig', detail: result }]);
-          es.close();
-          setTimeout(() => {
-            setStreamExecId(null);
-            load();
-          }, 1400);
+          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: '🎉 Crew fertig', detail: String(msg.result ?? '').slice(0, 200) }]);
+          wsRef.current?.close();
+          setTimeout(() => { setExecId(null); load(); }, 1600);
         }
         if (t === 'execution_error') {
           finishedRef.current = true;
-          setTimeline((prev) => [
-            ...prev,
-            { id, at: ts, kind: 'err', title: 'Execution-Fehler', detail: String(msg.error ?? '') },
-          ]);
-          es.close();
-          setTimeout(() => setStreamExecId(null), 2500);
+          setTimeline(p => [...p, { id, at: ts, kind: 'err', title: '✗ Execution-Fehler', detail: String(msg.error ?? '') }]);
+          wsRef.current?.close();
+          setTimeout(() => setExecId(null), 2500);
         }
-      } catch {
-        /* ignore malformed chunk */
-      }
-    };
+      } catch { /* ignore */ }
+    }
 
-    es.onerror = () => {
-      es.close();
-      if (!finishedRef.current) {
-        const detail =
-          'Netzwerk, Timeout oder Upstream-Fehler (502). Crew-API / CREW_API_URL prüfen — Stream bleibt offen bis «Stream schließen».';
-        setStreamFault(detail);
-        setTimeline((prev) => [
-          ...prev,
-          {
-            id: `err-${Date.now()}`,
-            at: new Date().toISOString(),
-            kind: 'err',
-            title: 'SSE Verbindung abgebrochen',
-            detail,
-          },
-        ]);
-      }
-    };
+    // Try WebSocket first
+    let ws: WebSocket | null = null;
+    let usedSSE = false;
+
+    try {
+      const wsUrl = `/api/crews/ws/${encodeURIComponent(execId)}`;
+      // Convert relative URL to ws:// by detecting protocol
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const fullWsUrl = `${proto}//${window.location.host}${wsUrl}`;
+      ws = new WebSocket(fullWsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => setWsConnected(true);
+      ws.onmessage = e => handleMsg(e.data);
+      ws.onerror = () => {
+        ws?.close();
+        wsRef.current = null;
+        if (!finishedRef.current && !usedSSE) {
+          usedSSE = true;
+          fallbackSSE();
+        }
+      };
+      ws.onclose = () => setWsConnected(false);
+    } catch {
+      fallbackSSE();
+    }
+
+    function fallbackSSE() {
+      setWsConnected(false);
+      const es = new EventSource(`/api/crews/stream/${encodeURIComponent(execId!)}`);
+      es.onopen = () => setStreamFault(null);
+      es.onmessage = e => handleMsg(e.data);
+      es.onerror = () => {
+        es.close();
+        if (!finishedRef.current) {
+          setStreamFault('Verbindung unterbrochen. Crew-API / CREW_API_URL prüfen.');
+        }
+      };
+      wsRef.current = null;
+      return () => es.close();
+    }
 
     return () => {
-      es.close();
+      ws?.close();
+      wsRef.current = null;
     };
-  }, [streamExecId, load]);
+  }, [execId, load]);
 
   const totalAgents = crews.reduce((s, c) => s + c.agents, 0);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--layer-0)' }}>
-      <div
-        style={{
-          padding: '16px 24px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--layer-1)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'rgba(96,165,250,0.12)',
-              border: '1px solid rgba(96,165,250,0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Bot size={16} style={{ color: 'var(--accent-blue)' }} />
-          </div>
+      {/* CSS animations */}
+      <style>{`
+        @keyframes ping {
+          75%, 100% { transform: scale(1.6); opacity: 0; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{
+        padding: '16px 24px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--layer-1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+          }}>🤖</div>
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Agent Teams</h1>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Agent Teams</h1>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-              Crew AI · Live via SSE {!crewApiOk && '(Crew-API Fallback aktiv)'}
+              Crew AI · WebSocket + SSE {!crewApiOk && '(Crew-API Fallback)'}
             </p>
           </div>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '5px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            background: 'var(--layer-2)',
-            cursor: 'pointer',
-            fontSize: 11,
-            color: 'var(--text-secondary)',
-          }}
-        >
-          <RefreshCw size={11} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-          Aktualisieren
-        </button>
-      </div>
 
-      {!loading && crews.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 0,
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--layer-1)',
-          }}
-        >
+        {/* Stats */}
+        <div style={{ display: 'flex', gap: 8 }}>
           {[
-            { icon: <Users size={12} />, label: 'Crews', value: crews.length, color: 'var(--accent-blue)' },
-            { icon: <Bot size={12} />, label: 'Agents total', value: totalAgents, color: '#a78bfa' },
-            { icon: <FileText size={12} />, label: 'Pieces (NocoDB)', value: totalPieces, color: '#34d399' },
-            {
-              icon: crewApiOk ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />,
-              label: 'Crew-API',
-              value: crewApiOk ? 'OK' : 'Fallback',
-              color: crewApiOk ? '#34d399' : '#fbbf24',
-            },
-          ].map((k, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                padding: '10px 20px',
-                borderRight: i < 3 ? '1px solid var(--border)' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <span style={{ color: k.color }}>{k.icon}</span>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: k.color, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
-                  {k.value}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>{k.label}</div>
-              </div>
+            { icon: <Bot size={12} />, label: `${crews.length} Crews`, color: '#60a5fa' },
+            { icon: <Zap size={12} />, label: `${totalAgents} Agents`, color: '#c084fc' },
+            { icon: <Activity size={12} />, label: `${totalPieces} Outputs`, color: '#34d399' },
+          ].map(s => (
+            <div key={s.label} style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 10px', borderRadius: 8,
+              background: s.color + '12', border: `1px solid ${s.color}25`,
+              fontSize: 11, fontWeight: 600, color: s.color,
+            }}>
+              {s.icon} {s.label}
             </div>
           ))}
+          <button type="button" onClick={load} disabled={loading} title="Aktualisieren" style={{
+            display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8,
+            border: '1px solid var(--border)', background: 'var(--layer-2)',
+            cursor: loading ? 'default' : 'pointer', color: 'var(--text-muted)', fontSize: 11,
+          }}>
+            <RefreshCw size={12} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            {loading ? 'Laden…' : 'Refresh'}
+          </button>
         </div>
-      )}
+      </div>
 
-      <div style={{ padding: '24px' }}>
+      {/* Body */}
+      <div style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>
+
+        {/* Error banner */}
         {error && (
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: 8,
-              background: 'rgba(251,191,36,0.08)',
-              border: '1px solid rgba(251,191,36,0.25)',
-              color: '#fbbf24',
-              fontSize: 13,
-              marginBottom: 16,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <AlertTriangle size={14} />
+          <div style={{
+            marginBottom: 16, padding: '10px 14px', borderRadius: 10,
+            border: '1px solid rgba(251,191,36,0.3)', background: 'rgba(251,191,36,0.06)',
+            display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fbbf24',
+          }}>
+            <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             {error}
           </div>
         )}
 
-        {streamExecId && (
-          <LiveExecutionPanel
-            executionId={streamExecId}
-            crewLabel={streamLabel}
-            timeline={timeline}
-            agents={agentLive}
-            streamFault={streamFault}
+        {/* Live Execution Panel */}
+        {execId && (
+          <LivePanel
+            execId={execId} crewId={execCrewId} crewLabel={execLabel}
+            timeline={timeline} agents={agentLive}
+            wsConnected={wsConnected} streamFault={streamFault}
             onClose={closeStream}
           />
         )}
 
-        {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  height: 180,
-                  borderRadius: 12,
-                  background: 'var(--layer-2)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }}
-              />
+        {/* Robot legend */}
+        <div style={{
+          marginBottom: 20, padding: '12px 16px', borderRadius: 12,
+          border: '1px solid var(--border)', background: 'var(--layer-1)',
+        }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            Agent-Charaktere
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {Object.entries(ROBOTS).map(([role, r]) => (
+              <div key={role} title={role} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+                borderRadius: 20, background: r.bgColor, border: `1px solid ${r.color}30`,
+                cursor: 'default',
+              }}>
+                <span style={{ fontSize: 14 }}>{r.avatar}</span>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: r.color }}>{r.name}</span>
+                  <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }}>· {r.trait}</span>
+                </div>
+              </div>
             ))}
           </div>
-        ) : (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {crews.map((crew) => (
-                <CrewCard
-                  key={crew.id}
-                  crew={crew}
-                  onCrewStarted={handleCrewStarted}
-                  streamBusy={!!streamExecId}
-                />
-              ))}
-            </div>
+        </div>
 
-            <div
-              style={{
-                marginTop: 24,
-                padding: '10px 16px',
-                borderRadius: 8,
-                background: 'var(--layer-2)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <Zap size={12} style={{ color: '#fbbf24' }} />
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Live-Stream: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>GET /api/crews/stream/[executionId]</span>{' '}
-                → Crew-API SSE. Start: <span style={{ fontFamily: 'var(--font-mono)' }}>POST /api/crews/[crewId]/start</span>. Env:{' '}
-                <span style={{ fontFamily: 'var(--font-mono)', color: '#34d399' }}>CREW_API_URL</span>
-              </span>
-            </div>
-          </>
+        {/* Crew Grid */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+            Lade Crews…
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 14 }}>
+            {crews.map(c => (
+              <CrewCard key={c.id} crew={c} onStarted={handleStarted} busy={!!execId} />
+            ))}
+          </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-      `}</style>
     </div>
   );
 }
