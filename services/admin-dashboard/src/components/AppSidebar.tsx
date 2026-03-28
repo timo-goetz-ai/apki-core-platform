@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Workflow, Users,
+  LayoutDashboard, Workflow, Users, Building2,
   Database, Settings, ScrollText, Factory,
   Layers, CalendarDays,
 } from 'lucide-react';
@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Overview',          href: '/',                  icon: LayoutDashboard },
   { label: 'Workflows',         href: '/workflows',         icon: Workflow        },
   { label: 'Agents',            href: '/agents',            icon: Users           },
+  { label: 'Fabrik',            href: '/fabrik',              icon: Building2       },
   { label: 'Content Factory',   href: '/content-factory',   icon: Factory         },
   { label: 'Batch Production',  href: '/batch-production',  icon: Layers          },
   { label: 'Content Planning',  href: 'https://postiz.automation-plus-ki.de', icon: CalendarDays, external: true },
