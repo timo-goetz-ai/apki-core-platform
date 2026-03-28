@@ -115,6 +115,8 @@ Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider akti
 | media_assets | `msxl4hvogh62u4u` | Medien-Assets (Bilder, Audio, Video) |
 | publish_log | `mcwxjf0na0ixkah` | Publishing-Protokoll (Social/Blog) |
 | mobile_ingest | `m3sn5vn7x9iye25` | Mobile Eingabe / Handy-Uploads |
+| content_pieces | `mm1ssn0luruhzyx` | KI-generierte Content-Pieces (crew-api Output) |
+| audit_trail | `mgeh1epw96tgx3u` | Audit-Log aller Workflow-Aktionen |
 
 ## n8n Workflow-IDs (wichtigste)
 
@@ -125,8 +127,8 @@ Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider akti
 | `330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
 | `430_DAILY_DIGEST` | `b1uFH47VF0RcahVS` | tägl. 08:00 — **AKTIV** |
 | `435_WEEKLY_SUMMARY` | `DQWIR7s5zaGRqNX2` | Mo. 09:00 — **AKTIV** |
-| `540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand |
-| `450_CONTENT_MASTER_FLOW` | `WWXFGPrz0tqPSow1` | on_demand |
+| `540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand — webhook: `/webhook/tg-assistant` |
+| `450_CONTENT_MASTER_FLOW_v2` | `j4DqKVd9N2U1AEGy` | on_demand — webhook: `/webhook/content-master` — **AKTIV** |
 
 **AI-Modell in Research-Workflows:** `gemini-2.0-flash` (direkt via Gemini API, KEIN OpenRouter)
 **Gemini API Key:** in n8n Container-Env als `GEMINI_API_KEY`
