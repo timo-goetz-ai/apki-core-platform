@@ -27,14 +27,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $vars.BLOGIFY_API_URL }}/api/v1/posts",
+        "url": "={{ $env.POSTIZ_API_URL }}/api/v1/posts",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer {{ $vars.BLOGIFY_ACCESS_TOKEN }}" },
-            { "name": "X-Integration-ID", "value": "={{ $vars.BLOGIFY_INTEGRATION_ID }}" }
+            { "name": "Authorization", "value": "Bearer {{ $env.POSTIZ_API_TOKEN }}" },
+            { "name": "X-Integration-ID", "value": "={{ $env.POSTIZ_ORG_ID }}" }
           ]
         },
         "sendBody": true,
@@ -71,11 +71,11 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $vars.NOCODB_URL }}/api/v2/tables/{{ $vars.NOCODB_PUBLISH_LOG_TABLE_ID }}/records",
+        "url": "={{ $env.NOCODB_URL }}/api/v2/tables/{{ $env.NOCODB_PUBLISH_LOG_TABLE_ID }}/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
           ]
         },
         "sendBody": true,
@@ -99,11 +99,11 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $vars.NOCODB_URL }}/api/v2/tables/{{ $vars.NOCODB_CONTENT_PIPELINE_TABLE_ID }}/records",
+        "url": "={{ $env.NOCODB_URL }}/api/v2/tables/{{ $env.NOCODB_CONTENT_PIPELINE_TABLE_ID }}/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
           ]
         },
         "sendBody": true,

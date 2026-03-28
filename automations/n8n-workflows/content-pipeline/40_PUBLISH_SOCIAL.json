@@ -31,7 +31,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization",  "value": "=Bearer {{ $vars.POSTIZ_API_TOKEN }}" },
+            { "name": "Authorization",  "value": "=Bearer {{ $env.POSTIZ_API_TOKEN }}" },
             { "name": "Content-Type",   "value": "application/json" }
           ]
         },
@@ -70,7 +70,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
           ]
         },
         "sendBody": true,
@@ -100,7 +100,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
           ]
         },
         "sendBody": true,
