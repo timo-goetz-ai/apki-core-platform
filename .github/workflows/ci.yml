@@ -126,7 +126,7 @@ jobs:
           COOLIFY_URL: op://AIOS/Coolify/url
           COOLIFY_TOKEN: op://AIOS/Coolify/token
           COOLIFY_API_KEY: op://AIOS/Coolify/token
-          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare/api_token
+          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare-API/api_token
           DASHBOARD_API_KEY: op://AIOS/Core/dashboard_api_key
 
       - name: Setup Node.js ${{ matrix.node-version }}

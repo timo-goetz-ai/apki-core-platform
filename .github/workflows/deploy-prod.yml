@@ -109,8 +109,8 @@ jobs:
           NOCODB_MCP_PROJEKTE_TABLE_ID: op://AIOS/NocoDB/mcp_projekte_table_id
           NOCODB_MCP_DIENSTE_TABLE_ID: op://AIOS/NocoDB/mcp_dienste_table_id
           NOCODB_MCP_AUDIT_TABLE_ID: op://AIOS/NocoDB/mcp_audit_table_id
-          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare/api_token
-          CLOUDFLARE_ACCOUNT_ID: op://AIOS/Cloudflare/account_id
+          CLOUDFLARE_API_TOKEN: op://AIOS/Cloudflare-API/api_token
+          CLOUDFLARE_ACCOUNT_ID: op://AIOS/Cloudflare-API/account_id
           DASHBOARD_API_KEY: op://AIOS/Core/dashboard_api_key
           AGENTIC_OS_BASE_PATH: op://AIOS/AgenticOS/base_path
           HETZNER_TOKEN: op://AIOS/Hetzner/token

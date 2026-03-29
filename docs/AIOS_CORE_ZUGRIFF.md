@@ -111,3 +111,18 @@ Workflow **Deploy – Production** patcht diese Keys per API, sofern 1Password-S
 ---
 
 *Aktualisiert: 1Password-Item „Core“, Entfernung NEXUS-Legacy im Code, Coolify-Env-Patches im Deploy-Workflow.*
+
+## Kanonische 1Password-Items (CI / `env.op.all`)
+
+| Item | Zweck |
+|------|--------|
+| `Coolify` | `url`, `token`, `aios_core_uuid`, `dashboard_uuid`, `coder_agent_uuid` |
+| `NocoDB` | `url`, `api_key`, `db_password`, MCP-Tabellen-IDs |
+| `N8N` | `url`, `api_key`, `encryption_key`, `db_password` |
+| `AI-APIs` | `anthropic_api_key`, `openai_api_key`, `openrouter_api_key` |
+| `Core` | Postgres/JWT/Dashboard + AIOS Token/URLs |
+| `Cloudflare-API` | `email`, `api_token`, `api_key`, `account_id` (eigenes API-Credential-Item; das Login-Item **Cloudflare** wird wegen SSO nicht per CLI geändert) |
+| `GITHUB` | PAT im Feld **`password`** (`op://AIOS/GITHUB/password`) |
+
+**Wiederholen / nachziehen:** `tools/op-secrets/sync-vault-canonical.sh` (nach `op signin`).
+
