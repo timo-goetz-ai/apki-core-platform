@@ -16,5 +16,7 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-# Polling mode — no inbound ports needed
+# Webhook mode — port for incoming Telegram updates
+EXPOSE 8443
+
 CMD ["python", "bot.py"]
