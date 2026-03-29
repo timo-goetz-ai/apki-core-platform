@@ -23,8 +23,22 @@ class ToolboxError(Exception):
 class Toolbox:
     def __init__(self, config_path: str | Path | None = None):
         if config_path is None:
-            # Relativer Pfad: repo-root/infra/mcp-servers.json
-            config_path = Path(__file__).resolve().parents[4] / "infra" / "mcp-servers.json"
+            import os
+            env_path = os.environ.get('MCP_CONFIG_PATH')
+            if env_path:
+                config_path = Path(env_path)
+            else:
+                candidates = [
+                    Path('/app/infra/mcp-servers.json'),
+                    Path(__file__).resolve().parent.parent.parent / 'infra' / 'mcp-servers.json',
+                ]
+                for p in Path(__file__).resolve().parents:
+                    c = p / 'infra' / 'mcp-servers.json'
+                    if c.exists():
+                        config_path = c
+                        break
+                else:
+                    config_path = candidates[0]
         self._servers: dict[str, dict] = {}
         self._circuit_failures: dict[str, int] = {}
         self._load(Path(config_path))
