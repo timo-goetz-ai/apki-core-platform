@@ -370,6 +370,7 @@ async def on_startup(bot: Bot) -> None:
     except Exception as exc:
         log.warning("DB-Verbindung fehlgeschlagen: %s", exc)
 
+    await bot.delete_webhook(drop_pending_updates=True)
     me = await bot.get_me()
     log.info("Bot gestartet: @%s (id=%s)", me.username, me.id)
 
