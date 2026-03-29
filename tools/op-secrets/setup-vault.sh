@@ -169,15 +169,29 @@ upsert_item "AIOS/AI-APIs" \
 
 # ── 8. Datenbank / Core Services ──────────────────────────────────────────────
 echo ""
-echo "🔧 Core Services (Postgres, Redis, JWT)"
+echo "🔧 Core Services (Postgres, Redis, JWT, AIOS Core API)"
 prompt POSTGRES_PASSWORD "  Postgres Passwort (AIOS DB)"
 prompt JWT_SECRET        "  JWT Secret (min. 32 Zeichen)"
 prompt DASHBOARD_API_KEY "  Dashboard API Key (langer Zufallsstring)"
+echo ""
+echo "  AIOS Core (Coolify / Dashboard: x-aios-token & URLs)"
+read -rp "  AIOS_TOKEN (leer = zufällig generieren): " AIOS_TOKEN
+AIOS_TOKEN=${AIOS_TOKEN:-$(openssl rand -hex 32)}
+read -rp "  AIOS_CORE_URL [http://aios-core:8000]: " AIOS_CORE_URL
+AIOS_CORE_URL=${AIOS_CORE_URL:-http://aios-core:8000}
+read -rp "  NEXT_PUBLIC_AIOS_CORE_API_URL [https://api.aios.automation-plus-ki.de]: " NEXT_PUBLIC_AIOS_CORE_API_URL
+NEXT_PUBLIC_AIOS_CORE_API_URL=${NEXT_PUBLIC_AIOS_CORE_API_URL:-https://api.aios.automation-plus-ki.de}
+read -rp "  NEXT_PUBLIC_WS_URL [wss://api.aios.automation-plus-ki.de]: " NEXT_PUBLIC_WS_URL
+NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-wss://api.aios.automation-plus-ki.de}
 
-upsert_item "AIOS/Core" \
+upsert_item "Core" \
   "postgres_password[password]=$POSTGRES_PASSWORD" \
   "jwt_secret[password]=$JWT_SECRET" \
-  "dashboard_api_key[password]=$DASHBOARD_API_KEY"
+  "dashboard_api_key[password]=$DASHBOARD_API_KEY" \
+  "aios_token[password]=$AIOS_TOKEN" \
+  "aios_core_url[text]=$AIOS_CORE_URL" \
+  "next_public_aios_core_api_url[text]=$NEXT_PUBLIC_AIOS_CORE_API_URL" \
+  "next_public_ws_url[text]=$NEXT_PUBLIC_WS_URL"
 
 # ── 9. Google Workspace ───────────────────────────────────────────────────────
 echo ""
