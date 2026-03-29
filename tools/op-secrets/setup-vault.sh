@@ -77,7 +77,7 @@ prompt COOLIFY_AIOS_CORE_UUID   "  aios-core Application UUID (Coolify UI → Ap
 prompt COOLIFY_DASHBOARD_UUID    "  admin-dashboard Application UUID"
 prompt COOLIFY_CODER_AGENT_UUID  "  coder-agent Application UUID"
 
-upsert_item "AIOS/Coolify" \
+upsert_item "Coolify" \
   "url[text]=$COOLIFY_URL" \
   "token[password]=$COOLIFY_TOKEN" \
   "aios_core_uuid[text]=$COOLIFY_AIOS_CORE_UUID" \
@@ -96,7 +96,7 @@ if [[ -f "$HETZNER_SSH_KEY" ]]; then
   SSH_KEY_CONTENT=$(cat "$HETZNER_SSH_KEY")
 fi
 
-upsert_item "AIOS/Hetzner" \
+upsert_item "Hetzner" \
   "token[password]=$HETZNER_TOKEN" \
   "ip[text]=$HETZNER_IP" \
   "ssh_private_key[password]=$SSH_KEY_CONTENT"
@@ -111,7 +111,7 @@ prompt NOCODB_MCP_DIENSTE_TABLE_ID    "  MCP-Dienste Table ID  (md_xxx)"
 prompt NOCODB_MCP_AUDIT_TABLE_ID      "  MCP-Audit Table ID    (md_xxx)"
 prompt NOCODB_DB_PASSWORD             "  Postgres Passwort (NocoDB Stack)"
 
-upsert_item "AIOS/NocoDB" \
+upsert_item "NocoDB" \
   "url[text]=$NOCODB_URL" \
   "api_key[password]=$NOCODB_API_KEY" \
   "mcp_projekte_table_id[text]=$NOCODB_MCP_PROJEKTE_TABLE_ID" \
@@ -127,7 +127,7 @@ prompt CLOUDFLARE_API_TOKEN  "  Zone API Token (für Tunnel + DNS)"
 prompt CLOUDFLARE_EMAIL      "  Account Email"
 prompt CLOUDFLARE_ACCOUNT_ID "  Account ID"
 
-upsert_item "AIOS/Cloudflare" \
+upsert_item "Cloudflare-API" \
   "api_key[password]=$CLOUDFLARE_API_KEY" \
   "api_token[password]=$CLOUDFLARE_API_TOKEN" \
   "email[text]=$CLOUDFLARE_EMAIL" \
@@ -138,8 +138,8 @@ echo ""
 echo "🔧 GitHub"
 prompt GITHUB_TOKEN "  Personal Access Token (ghp_...)"
 
-upsert_item "AIOS/GitHub" \
-  "token[password]=$GITHUB_TOKEN"
+upsert_item "GITHUB" \
+  "password[password]=$GITHUB_TOKEN"
 
 # ── 6. N8N ────────────────────────────────────────────────────────────────────
 echo ""
@@ -149,7 +149,7 @@ prompt N8N_API_KEY        "  API Key"
 prompt N8N_ENCRYPTION_KEY "  Encryption Key (32+ Zeichen)"
 prompt N8N_DB_PASSWORD    "  Postgres Passwort"
 
-upsert_item "AIOS/N8N" \
+upsert_item "N8N" \
   "url[text]=$N8N_BASE_URL" \
   "api_key[password]=$N8N_API_KEY" \
   "encryption_key[password]=$N8N_ENCRYPTION_KEY" \
@@ -162,7 +162,7 @@ prompt ANTHROPIC_API_KEY "  Anthropic API Key (sk-ant-...)"
 prompt OPENAI_API_KEY    "  OpenAI API Key    (sk-...)"
 prompt OPENROUTER_API_KEY "  OpenRouter API Key (sk-or-...)"
 
-upsert_item "AIOS/AI-APIs" \
+upsert_item "AI-APIs" \
   "anthropic_api_key[password]=$ANTHROPIC_API_KEY" \
   "openai_api_key[password]=$OPENAI_API_KEY" \
   "openrouter_api_key[password]=$OPENROUTER_API_KEY"
@@ -199,7 +199,7 @@ echo "🔧 Google Workspace"
 prompt GOOGLE_PROJECT_ID      "  Project ID"
 prompt GOOGLE_DELEGATED_USER  "  Delegated User (timo@automation-plus-ki.de)"
 
-upsert_item "AIOS/Google-Workspace" \
+upsert_item "Google-Workspace" \
   "project_id[text]=$GOOGLE_PROJECT_ID" \
   "delegated_user[text]=$GOOGLE_DELEGATED_USER"
 
@@ -208,7 +208,7 @@ echo ""
 echo "🔧 Agentic OS"
 prompt AGENTIC_OS_BASE_PATH "  Basispfad auf dem Server (/pfad/zu/03_ai-agent-platform)"
 
-upsert_item "AIOS/AgenticOS" \
+upsert_item "AgenticOS" \
   "base_path[text]=$AGENTIC_OS_BASE_PATH"
 
 # ── 11. Slack ────────────────────────────────────────────────────────────────
@@ -216,7 +216,7 @@ echo ""
 echo "🔧 Slack"
 prompt SLACK_WEBHOOK "  Webhook URL (https://hooks.slack.com/services/...)"
 
-upsert_item "AIOS/Slack" \
+upsert_item "Slack" \
   "webhook_url[password]=$SLACK_WEBHOOK"
 
 # ── 12. CI Service Account Token ─────────────────────────────────────────────
