@@ -6,7 +6,7 @@
 Das **Automation + KI Admin Dashboard** ist die zentrale Steuereinheit für die Plattform
 rund um:
 
-- Nexus-Core API (`api.automation-plus-ki.de`)
+- AIOS-Core API (`api.automation-plus-ki.de`)
 - AIOS Admin Dashboard (`admin.automation-plus-ki.de`)
 - Agents Platform, n8n, NocoDB, Monitoring (Grafana, Prometheus)
 - SSO (Authentik) und Infrastruktur (Coolify, Homestack)
@@ -83,7 +83,7 @@ auch Außenstehende ohne Vorwissen bedienen und verstehen können.
    - Icon + Farbe nach Typ (deploy/dns/database/build)
 
 4. **Kern-Services** (4 Kacheln)
-   - Admin Dashboard, Nexus-Core API, Infra Monitor, Agents Platform
+   - Admin Dashboard, AIOS-Core API, Infra Monitor, Agents Platform
    - Icon, Status-Dot, Beschreibung, URL (monospace), Latenz
 
 5. **API & Endpoints**
@@ -106,7 +106,7 @@ auch Außenstehende ohne Vorwissen bedienen und verstehen können.
 | Service              | URL                                           |
 |----------------------|-----------------------------------------------|
 | **Admin Dashboard**  | https://admin.automation-plus-ki.de           |
-| **Nexus-Core API**   | https://api.automation-plus-ki.de             |
+| **AIOS-Core API**   | https://api.automation-plus-ki.de             |
 | **API Docs**         | https://api.automation-plus-ki.de/docs        |
 | **API Health**       | https://api.automation-plus-ki.de/health      |
 | **Infra Monitor**    | https://infra.automation-plus-ki.de           |

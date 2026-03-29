@@ -11,7 +11,7 @@ on:
         required: true
         default: "all"
         type: choice
-        options: [all, nexus-core, admin-dashboard, coder-agent]
+        options: [all, aios-core, admin-dashboard, coder-agent]
       confirm:
         description: "BESTÄTIGUNG: 'deploy' eingeben"
         required: true
@@ -69,7 +69,7 @@ jobs:
             set -e
             cd /opt/aios
             echo "Starte Alembic Migration..."
-            docker exec aios-nexus-core alembic upgrade head
+            docker exec aios-core alembic upgrade head
             echo "Migration erfolgreich"
 
   # ──────────────────────────────────────────────
@@ -92,7 +92,7 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           COOLIFY_URL: op://AIOS/Coolify/url
           COOLIFY_TOKEN: op://AIOS/Coolify/token
-          COOLIFY_NEXUS_CORE_UUID: op://AIOS/Coolify/nexus_core_uuid
+          COOLIFY_AIOS_CORE_UUID: op://AIOS/Coolify/aios_core_uuid
           COOLIFY_DASHBOARD_UUID: op://AIOS/Coolify/dashboard_uuid
           COOLIFY_CODER_AGENT_UUID: op://AIOS/Coolify/coder_agent_uuid
 
@@ -139,13 +139,13 @@ jobs:
           set_env "HETZNER_TOKEN"                "$HETZNER_TOKEN"
           echo "✓ Coolify Env-Variablen gesetzt (admin-dashboard)"
 
-      - name: Deploy nexus-core
-        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
+      - name: Deploy aios-core
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'aios-core' || startsWith(github.ref, 'refs/tags/') }}
         run: |
           curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"uuid\": \"${COOLIFY_NEXUS_CORE_UUID}\", \"force\": true}"
+            -d "{\"uuid\": \"${COOLIFY_AIOS_CORE_UUID}\", \"force\": true}"
 
       - name: Deploy admin-dashboard
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
@@ -175,12 +175,12 @@ jobs:
     needs: [deploy]
 
     steps:
-      - name: Check nexus-core
+      - name: Check aios-core
         run: |
           for i in {1..5}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.aios.automation-plus-ki.de/health)
             if [[ "$STATUS" == "200" ]]; then
-              echo "nexus-core: OK (HTTP $STATUS)"
+              echo "aios-core: OK (HTTP $STATUS)"
               break
             fi
             echo "Versuch $i/5 fehlgeschlagen (HTTP $STATUS) – warte 15s..."
@@ -230,8 +230,8 @@ jobs:
             set -e
             echo "ROLLBACK GESTARTET..."
             cd /opt/aios
-            docker service update --rollback nexus-core 2>/dev/null || \
-              docker-compose up -d --no-deps --scale nexus-core=1
+            docker service update --rollback aios-core 2>/dev/null || \
+              docker-compose up -d --no-deps --scale aios-core=1
             echo "Rollback abgeschlossen"
 
   # ──────────────────────────────────────────────

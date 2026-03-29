@@ -73,14 +73,14 @@ echo ""
 echo "🔧 Coolify"
 prompt COOLIFY_URL               "  URL (https://coolify.automation-plus-ki.de)"
 prompt COOLIFY_TOKEN             "  API Token (Coolify → Settings → API Tokens)"
-prompt COOLIFY_NEXUS_CORE_UUID   "  nexus-core Application UUID (Coolify UI → App → UUID)"
+prompt COOLIFY_AIOS_CORE_UUID   "  aios-core Application UUID (Coolify UI → App → UUID)"
 prompt COOLIFY_DASHBOARD_UUID    "  admin-dashboard Application UUID"
 prompt COOLIFY_CODER_AGENT_UUID  "  coder-agent Application UUID"
 
 upsert_item "AIOS/Coolify" \
   "url[text]=$COOLIFY_URL" \
   "token[password]=$COOLIFY_TOKEN" \
-  "nexus_core_uuid[text]=$COOLIFY_NEXUS_CORE_UUID" \
+  "aios_core_uuid[text]=$COOLIFY_AIOS_CORE_UUID" \
   "dashboard_uuid[text]=$COOLIFY_DASHBOARD_UUID" \
   "coder_agent_uuid[text]=$COOLIFY_CODER_AGENT_UUID"
 

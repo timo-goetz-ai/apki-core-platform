@@ -44,7 +44,7 @@ curl -f https://admin.automation-plus-ki.de/api/health
 | Service | Image |
 |---------|-------|
 | Admin Dashboard | `ghcr.io/timogoetz1988/aios-admin-dashboard` |
-| Nexus Core | `ghcr.io/timogoetz1988/nexus-core` |
+| AIOS Core | `ghcr.io/timogoetz1988/aios-core` |
 | Crew API | `ghcr.io/timogoetz1988/crew-api` |
 | Landing Page | `ghcr.io/timogoetz1988/landing-page` |
 

@@ -39,7 +39,7 @@ All notable changes to the AIOS project will be documented in this file.
 ## [0.1.0] — 2026-01-01 (Initial)
 
 ### Added
-- Initiales Projekt-Setup: Nexus Core (FastAPI), Admin Dashboard (Next.js), Crew API
+- Initiales Projekt-Setup: AIOS Core (FastAPI), Admin Dashboard (Next.js), Crew API
 - Infra-Dashboard, SaaS-Landing, Salon-Stack als eigenständige Projekte
 - MCP-Server: PostgreSQL, Filesystem, Google Workspace, Cloudflare DNS, GitHub, Hetzner Cloud, Coolify
 - Monitoring Stack: Prometheus, Grafana, Loki, Promtail

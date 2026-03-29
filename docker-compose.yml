@@ -1,10 +1,10 @@
 services:
 
-  nexus-core:
+  aios-core:
     build:
-      context: ./services/nexus-core
+      context: ./services/aios-core
       dockerfile: Dockerfile
-    container_name: aios-nexus-core
+    container_name: aios-core
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -24,12 +24,12 @@ services:
       - JWT_SECRET=${JWT_SECRET:-local_dev_secret_min_32_chars_abc}
       - LOG_LEVEL=DEBUG
     volumes:
-      - ./services/nexus-core:/app
+      - ./services/aios-core:/app
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - frontend-net   # admin-dashboard → nexus-core
-      - workers-net    # crew-api → nexus-core
-      - data-net       # nexus-core → db, redis, browserless
+      - frontend-net   # admin-dashboard → aios-core
+      - workers-net    # crew-api → aios-core
+      - data-net       # aios-core → db, redis, browserless
       - monitoring-net # prometheus scraping
     depends_on:
       aios-db:
@@ -52,12 +52,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_NEXUS_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_AIOS_CORE_API_URL=http://localhost:8000
       - NEXT_PUBLIC_WS_URL=ws://localhost:8000
     networks:
-      - frontend-net   # only nexus-core visible, not db/redis
+      - frontend-net   # only aios-core visible, not db/redis
     depends_on:
-      - nexus-core
+      - aios-core
 
   crew-api:
     build:
@@ -76,12 +76,12 @@ services:
           memory: 128M
     environment:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - NEXUS_CORE_URL=http://nexus-core:8000
+      - AIOS_CORE_URL=http://aios-core:8000
       - LOG_LEVEL=debug
     networks:
-      - workers-net    # only nexus-core visible, not db/redis
+      - workers-net    # only aios-core visible, not db/redis
     depends_on:
-      - nexus-core
+      - aios-core
 
   aios-db:
     image: postgres:15-alpine
@@ -96,7 +96,7 @@ services:
     volumes:
       - aios-db-data:/var/lib/postgresql/data
     networks:
-      - data-net       # only nexus-core can reach this
+      - data-net       # only aios-core can reach this
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aios_user -d aios_db"]
       interval: 10s
@@ -117,7 +117,7 @@ services:
         limits:
           memory: 256M
     networks:
-      - data-net       # only nexus-core can reach this
+      - data-net       # only aios-core can reach this
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -135,7 +135,7 @@ services:
       - MAX_CONCURRENT_SESSIONS=5
       - TOKEN=${BROWSERLESS_TOKEN:-local-dev-token}
     networks:
-      - data-net       # only nexus-core can reach this
+      - data-net       # only aios-core can reach this
     shm_size: 1gb
 
   aios-loki:
@@ -177,14 +177,14 @@ services:
       - monitoring-net
 
 networks:
-  # admin-dashboard and crew-api can only reach nexus-core, not data services
+  # admin-dashboard and crew-api can only reach aios-core, not data services
   frontend-net:
     driver: bridge
     internal: false
   workers-net:
     driver: bridge
     internal: false
-  # db, redis, browserless: only reachable from nexus-core
+  # db, redis, browserless: only reachable from aios-core
   data-net:
     driver: bridge
     internal: true   # no direct internet access from data services

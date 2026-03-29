@@ -86,7 +86,7 @@ docker compose up -d
 docker compose ps
 ```
 
-Homestack includes: PostgreSQL, Redis, n8n, Grafana, Prometheus, Authentik, Qdrant, Nexus-Core API, Crew API, Ollama.
+Homestack includes: PostgreSQL, Redis, n8n, Grafana, Prometheus, Authentik, Qdrant, AIOS-Core API, Crew API, Ollama.
 
 ---
 

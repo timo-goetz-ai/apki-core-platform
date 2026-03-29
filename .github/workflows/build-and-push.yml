@@ -10,17 +10,17 @@ on:
         required: true
         default: "all"
         type: choice
-        options: [all, nexus-core, admin-dashboard, crew-api, landing-page, telegram-bot]
+        options: [all, aios-core, admin-dashboard, crew-api, landing-page, telegram-bot]
 
 env:
   REGISTRY: ghcr.io
   OWNER: timogoetz1988
 
 jobs:
-  build-nexus-core:
-    name: Build nexus-core
+  build-aios-core:
+    name: Build aios-core
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || github.event_name == 'push' }}
+    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'aios-core' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
@@ -41,14 +41,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-core
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v5
         with:
-          context: services/nexus-core
+          context: services/aios-core
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -58,9 +58,9 @@ jobs:
       - name: Trivy – Scan pushed image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core:latest
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-core:latest
           format: sarif
-          output: trivy-nexus-core.sarif
+          output: trivy-aios-core.sarif
           severity: CRITICAL,HIGH
           exit-code: 0
 
@@ -69,8 +69,8 @@ jobs:
         if: always()
         continue-on-error: true
         with:
-          sarif_file: trivy-nexus-core.sarif
-          category: trivy-nexus-core
+          sarif_file: trivy-aios-core.sarif
+          category: trivy-aios-core
 
   build-admin-dashboard:
     name: Build admin-dashboard
@@ -108,7 +108,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            NEXT_PUBLIC_NEXUS_API_URL=https://api.automation-plus-ki.de
+            NEXT_PUBLIC_AIOS_CORE_API_URL=https://api.automation-plus-ki.de
             NEXT_PUBLIC_WS_URL=wss://api.automation-plus-ki.de
           cache-from: type=gha
           cache-to: type=gha,mode=max
