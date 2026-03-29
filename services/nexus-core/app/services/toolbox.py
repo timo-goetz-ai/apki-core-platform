@@ -98,7 +98,7 @@ class Toolbox:
                 self._circuit_failures[server] = 0  # Reset bei Erfolg
                 return resp.json()
 
-            except httpx.TimeoutException as exc:
+            except httpx.TimeoutException:
                 # Exit Code 28 Äquivalent: Timeout
                 last_exc = ToolboxError(
                     f"{server}/{tool} timed out after {timeout}s (attempt {attempt}/3)",
