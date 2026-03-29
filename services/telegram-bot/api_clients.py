@@ -239,3 +239,33 @@ async def get_coolify_deployment_logs(
     if isinstance(data, list):
         return data[:limit]
     return data.get("data", [])[:limit]
+
+
+# ─── Conversational AI (n8n Memory Workflow) ─────────────────────────────────
+
+CHAT_MEMORY_WEBHOOK = os.environ.get(
+    "CHAT_MEMORY_WEBHOOK_URL",
+    "https://n8n.automation-plus-ki.de/webhook/chat-memory",
+)
+
+
+async def send_to_conversational_ai(
+    client: httpx.AsyncClient,
+    chat_id: str,
+    user_name: str,
+    message: str,
+) -> str:
+    """Route message to the 555_CONVERSATIONAL_AI n8n workflow with persistent memory."""
+    try:
+        resp = await client.post(
+            CHAT_MEMORY_WEBHOOK,
+            json={"chat_id": chat_id, "user_name": user_name, "message": message},
+            timeout=35.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("response", "Keine Antwort erhalten.")
+    except httpx.TimeoutException:
+        return "⏱ Die Antwort hat zu lange gedauert. Bitte versuche es erneut."
+    except Exception as exc:
+        return f"❌ AI nicht erreichbar: {exc}"
