@@ -931,16 +931,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await _trigger_workflow(update, intent.workflow_name)
         return
 
-    # For HELP intent with natural language (not a direct /hilfe command):
-    # Ask a clarifying question if the message looks like a real question
-    if intent.name == "HELP" and len(text) > 10 and not text.lower().startswith(("hilfe", "help", "/", "was kann")):
-        clarification = await ai_agent.ask_clarification(http_client, text, memory, user_id)
-        if clarification:
-            await update.message.reply_text(clarification, parse_mode="Markdown")
-            return
+    # Known system intents → dedicated handlers
+    handler = INTENT_HANDLERS.get(intent.name)
+    if handler and intent.name != "HELP":
+        await handler(update, context)
+        return
 
-    handler = INTENT_HANDLERS.get(intent.name, handle_help)
-    await handler(update, context)
+    # /reset command → clear memory
+    if text.strip().lower() == "/reset":
+        msg = await loading(update, "🗑 Memory wird gelöscht…")
+        response = await api.send_to_conversational_ai(
+            http_client, str(update.effective_chat.id),
+            update.effective_user.first_name or "User", "/reset",
+        )
+        await msg.edit_text(response)
+        return
+
+    # Explicit /hilfe or very short text → help screen
+    if intent.name == "HELP" and (len(text) <= 10 or text.lower().startswith(("hilfe", "help", "/", "was kann"))):
+        await handle_help(update, context)
+        return
+
+    # Everything else → Conversational AI with persistent memory
+    msg = await loading(update, "🧠 Denke nach…")
+    response = await api.send_to_conversational_ai(
+        http_client, str(update.effective_chat.id),
+        update.effective_user.first_name or "User", text,
+    )
+    try:
+        await msg.edit_text(response, parse_mode="Markdown")
+    except Exception:
+        await msg.edit_text(response)
+
+
+# ─── Memory Reset Handler ─────────────────────────────────────────────────────
+
+@require_auth
+async def handle_reset_memory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = await loading(update, "🗑 Memory wird gelöscht…")
+    response = await api.send_to_conversational_ai(
+        http_client, str(update.effective_chat.id),
+        update.effective_user.first_name or "User", "/reset",
+    )
+    await msg.edit_text(response)
 
 
 # ─── Application lifecycle ────────────────────────────────────────────────────
