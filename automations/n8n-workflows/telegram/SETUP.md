@@ -148,3 +148,56 @@ Dieser Workflow folgt der AIOS-Namenskonvention:
 - `70a_` → Workflow Control Sub-Workflow
 - `70b_` → Status Report Sub-Workflow
 - `70c_` → Research Data Sub-Workflow
+
+---
+
+## Jarvis HITL (550 / 551) — Nexus-Core, Netzwerk, Webhooks
+
+### Dateien
+
+- `550_JARVIS_APPROVAL_FLOW.json` — Webhook `jarvis-intent` (POST) → Plan → Telegram mit Approve/Ablehnen-URLs
+- `551_JARVIS_CALLBACK.json` — Webhook `jarvis-callback` (GET) → Status PATCH → ggf. Execute
+
+Die Exporte nutzen **Webhook-Nodes `typeVersion: 1`** (klassische Registrierung). Nach Import in n8n: Workflow **deaktivieren → aktivieren** oder n8n neu starten, damit Webhooks aus der DB geladen werden.
+
+### Nexus-Core von n8n aus
+
+**Variante A — intern (Docker, empfohlen):** Basis-URL `http://aios-nexus-core:8000`  
+Voraussetzung: n8n- und Nexus-Container hängen am **gleichen Docker-Netzwerk**; Hostname `aios-nexus-core` löst auf (ggf. Netzwerk-Alias am Nexus-Container).
+
+**Variante B — öffentlich:** Basis-URL `https://api.automation-plus-ki.de` (oder eure Traefik-URL).
+
+In den HTTP-Nodes der Workflows die URLs anpassen: Pfade bleiben `/api/jarvis/plan`, `/api/jarvis/execute/{id}`, `/api/jarvis/tasks/{id}/status`.
+
+### Credential „AIOS Token“ (Header Auth)
+
+Nexus-Core prüft **`x-aios-token`** (Middleware `AiosTokenMiddleware`). In n8n muss das Credential genau diesen Header setzen:
+
+| Feld | Wert |
+|------|------|
+| Header Name | `x-aios-token` |
+| Header Value | identisch zu `AIOS_TOKEN` / `aios_token` in **nexus-core** (Coolify-Env) |
+
+Ohne Übereinstimmung: **401** auf allen Jarvis-Routen (Health `/health` bleibt ohne Token erreichbar).
+
+### Kurz-Checks (vom n8n-Container)
+
+```bash
+# Health (ohne Token)
+wget -qO- http://aios-nexus-core:8000/health
+
+# Jarvis mit Token
+wget -qO- --header="x-aios-token: <DEIN_TOKEN>" \
+  http://aios-nexus-core:8000/api/jarvis/tasks
+```
+
+### Telegram-Callback-URL im Code-Node (550)
+
+Der Node **„Build Telegram Message“** baut `baseUrl` auf `https://n8n.automation-plus-ki.de/webhook/jarvis-callback` — muss zu eurer **öffentlichen n8n-URL** passen (oder intern, falls Telegram die URL nicht aufrufen kann: immer **öffentlich** nutzen).
+
+### End-to-End (manuell)
+
+1. `POST https://<n8n>/webhook/jarvis-intent` mit Body z. B. `{"intent":"test","tg_chat_id":"123"}`  
+2. Telegram: Nachricht mit Inline-Buttons kommt an.  
+3. Button klicken → `GET …/webhook/jarvis-callback?task_id=…&action=approve` → Nexus PATCH/Execute mit **401**-Frei nur bei korrektem `x-aios-token`.
+
