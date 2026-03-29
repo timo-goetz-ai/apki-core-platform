@@ -9,7 +9,10 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 from starlette.responses import Response
 
 from app.api import agents, automations, models, prompts, tasks
+from app.api import jarvis
 from app.config.settings import settings
+from app.db import init_db
+from app.middleware.auth import AiosTokenMiddleware
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger(__name__)
@@ -21,6 +24,8 @@ REQUEST_LATENCY = Histogram("nexus_request_latency_seconds", "Request latency")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Nexus-Core starting – environment: %s", settings.environment)
+    await init_db()
+    logger.info("Database tables verified/created")
     yield
     logger.info("Nexus-Core shutting down")
 
@@ -34,6 +39,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(AiosTokenMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,6 +53,7 @@ app.include_router(tasks.router,       prefix="/api/tasks",       tags=["tasks"]
 app.include_router(models.router,      prefix="/api/models",      tags=["models"])
 app.include_router(prompts.router,     prefix="/api/prompts",     tags=["prompts"])
 app.include_router(automations.router, prefix="/api/automations", tags=["automations"])
+app.include_router(jarvis.router,      prefix="/api/jarvis",      tags=["jarvis"])
 
 
 @app.get("/health")

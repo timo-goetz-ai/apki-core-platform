@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import Settings
-from app.routers import crews, mcp
+from app.routers import crews, jarvis, mcp
 from app.services.crew_manager import CrewManager
 from app.services.event_stream import EventBroadcaster
 
@@ -25,6 +25,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(mcp.router)
 app.include_router(crews.router)
+app.include_router(jarvis.router)
 
 
 @app.get("/health")

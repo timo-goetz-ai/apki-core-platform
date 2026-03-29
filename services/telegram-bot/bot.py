@@ -858,6 +858,27 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 # ─── Universal text handler ───────────────────────────────────────────────────
 
+# ─── Jarvis HITL Handler ──────────────────────────────────────────────────────
+
+@require_auth
+async def handle_jarvis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Leitet write-Operationen an den Jarvis Approval-Workflow weiter."""
+    text = update.message.text if update.message else ""
+    chat_id = str(update.effective_chat.id) if update.effective_chat else ""
+    msg = await loading(update, "🤖 Jarvis analysiert deinen Befehl…")
+    try:
+        result = await api.trigger_jarvis_plan(http_client, text, tg_chat_id=chat_id)
+        task_id = result.get("task_id", "?")
+        await msg.edit_text(
+            f"🤖 *Jarvis Plan erstellt* (Task #{task_id})\n\n"
+            f"Du bekommst gleich eine Bestätigungsanfrage mit ✅/❌ Buttons.\n"
+            f"_Keine Aktion ohne deine Zustimmung._",
+            parse_mode="Markdown",
+        )
+    except Exception as exc:
+        await msg.edit_text(f"❌ Jarvis nicht erreichbar: {exc}")
+
+
 INTENT_HANDLERS = {
     "STATUS_OVERVIEW":  handle_status,
     "LIST_WORKFLOWS":   handle_workflows,
@@ -878,6 +899,9 @@ INTENT_HANDLERS = {
     "FILES":            handle_files,
     "DATABASES":        handle_databases,
     "SETTINGS":         handle_settings,
+    "JARVIS_DEPLOY":    handle_jarvis,
+    "JARVIS_RESTART":   handle_jarvis,
+    "JARVIS_ACTION":    handle_jarvis,
     "HELP":             handle_help,
 }
 
@@ -888,6 +912,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_id = update.effective_user.id
     intent = await classify(http_client, text)
     logger.info("Message: %r → intent: %s (workflow: %s)", text[:60], intent.name, intent.workflow_name)
+
+    # Jarvis HITL: write operations → forward to approval workflow
+    if intent.name in ("JARVIS_DEPLOY", "JARVIS_RESTART", "JARVIS_ACTION"):
+        await handle_jarvis(update, context)
+        return
 
     if intent.name == "ACTIVATE_WORKFLOW" and intent.workflow_name:
         await _activate_workflow(update, intent.workflow_name)

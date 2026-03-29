@@ -1,0 +1,113 @@
+{
+  "name": "550_JARVIS_APPROVAL_FLOW",
+  "nodes": [
+    {
+      "id": "550-webhook-intent",
+      "name": "Webhook: Jarvis Intent",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jarvis-intent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "jarvis-intent"
+    },
+    {
+      "id": "550-plan",
+      "name": "Nexus Core: Plan erstellen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.automation-plus-ki.de/api/jarvis/plan",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "intent",     "value": "={{ $json.body.intent || $json.intent }}" },
+            { "name": "source",     "value": "={{ $json.body.source || 'telegram' }}" },
+            { "name": "tg_chat_id", "value": "={{ $json.body.tg_chat_id || '' }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "aios-token-cred", "name": "AIOS Token" }
+      }
+    },
+    {
+      "id": "550-format-message",
+      "name": "Nachricht formatieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "const taskId = $json.task_id;\nconst action = $json.proposed_action || {};\nconst intent = $input.first().json.intent || action.description || '?';\nconst mcpServer = $json.mcp_server || action.mcp_server || '?';\nconst description = action.description || 'Keine Beschreibung';\nconst tool = action.tool || '?';\n\nconst baseUrl = 'https://n8n.automation-plus-ki.de/webhook/jarvis-callback';\nconst approveUrl = `${baseUrl}?task_id=${taskId}&action=approve`;\nconst rejectUrl  = `${baseUrl}?task_id=${taskId}&action=reject`;\n\nconst text = [\n  '🤖 *Jarvis Aktionsplan*',\n  '',\n  `*Intent:* ${intent}`,\n  `*Server:* \\`${mcpServer}\\``,\n  `*Tool:* \\`${tool}\\``,\n  `*Beschreibung:* ${description}`,\n  `*Task-ID:* ${taskId}`,\n].join('\\n');\n\nconst replyMarkup = JSON.stringify({\n  inline_keyboard: [[\n    { text: '✅ Ausführen', url: approveUrl },\n    { text: '❌ Ablehnen',  url: rejectUrl }\n  ]]\n});\n\nreturn [{\n  json: {\n    task_id: taskId,\n    tg_chat_id: $('Webhook: Jarvis Intent').item.json.body?.tg_chat_id || '',\n    text,\n    reply_markup: replyMarkup,\n  }\n}];"
+      }
+    },
+    {
+      "id": "550-telegram-send",
+      "name": "Telegram: Approval-Nachricht senden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id",      "value": "={{ $json.tg_chat_id }}" },
+            { "name": "text",         "value": "={{ $json.text }}" },
+            { "name": "parse_mode",   "value": "Markdown" },
+            { "name": "reply_markup", "value": "={{ $json.reply_markup }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "550-respond",
+      "name": "Respond: OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"task_id\": {{ $('Nexus Core: Plan erstellen').item.json.task_id }} }"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Jarvis Intent": {
+      "main": [[{ "node": "Nexus Core: Plan erstellen", "type": "main", "index": 0 }]]
+    },
+    "Nexus Core: Plan erstellen": {
+      "main": [[{ "node": "Nachricht formatieren", "type": "main", "index": 0 }]]
+    },
+    "Nachricht formatieren": {
+      "main": [[{ "node": "Telegram: Approval-Nachricht senden", "type": "main", "index": 0 }]]
+    },
+    "Telegram: Approval-Nachricht senden": {
+      "main": [[{ "node": "Respond: OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [{ "name": "HUMAN" }, { "name": "jarvis" }],
+  "meta": {
+    "templateId": "550_JARVIS_APPROVAL_FLOW",
+    "description": "Jarvis HITL — Intent → LLM Plan → Telegram Approval Request"
+  }
+}

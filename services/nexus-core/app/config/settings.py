@@ -12,6 +12,13 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     n8n_base_url: str = "https://n8n.automation-plus-ki.de"
 
+    # Jarvis / Security
+    aios_token: str = ""  # x-aios-token header — set in Coolify
+    crew_api_url: str = "http://crew-api:8001"  # internal service URL
+    nocodb_api_token: str = ""
+    nocodb_base_url: str = "https://nocodb.automation-plus-ki.de"
+    nocodb_jarvis_table_id: str = "mfj6bnevjle0u0x"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
