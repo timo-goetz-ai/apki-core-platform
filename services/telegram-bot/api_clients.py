@@ -15,6 +15,7 @@ NOCODB_PROJECT  = os.environ.get("NOCODB_PROJECT_ID", "pfx0ca6docorj8n")
 PROM_BASE_URL   = os.environ.get("PROMETHEUS_BASE_URL", "http://10.0.1.29:9090")
 COOLIFY_BASE    = os.environ.get("COOLIFY_BASE_URL", "https://coolify.automation-plus-ki.de")
 COOLIFY_TOKEN   = os.environ.get("COOLIFY_API_TOKEN", "")
+JARVIS_WEBHOOK  = os.environ.get("JARVIS_WEBHOOK_URL", "https://n8n.automation-plus-ki.de/webhook/jarvis-intent")
 
 TIMEOUT = httpx.Timeout(12.0)
 
@@ -203,6 +204,22 @@ async def get_coolify_applications(client: httpx.AsyncClient) -> list[dict]:
     if isinstance(data, list):
         return data
     return data.get("data", [])
+
+
+async def trigger_jarvis_plan(
+    client: httpx.AsyncClient,
+    intent: str,
+    tg_chat_id: str,
+    source: str = "telegram",
+) -> dict:
+    """Schickt einen Intent an den Jarvis Approval-Workflow in n8n."""
+    r = await client.post(
+        JARVIS_WEBHOOK,
+        json={"intent": intent, "tg_chat_id": tg_chat_id, "source": source},
+        timeout=TIMEOUT,
+    )
+    r.raise_for_status()
+    return r.json()
 
 
 async def get_coolify_deployment_logs(

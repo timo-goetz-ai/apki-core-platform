@@ -118,6 +118,11 @@ _TRIGGER_RE    = re.compile(r"^starte\s+(.+)$", re.IGNORECASE)
 _ACTIVATE2_RE  = re.compile(r"^aktiviere\s+den\s+workflow\s+[\"']?(.+?)[\"']?$", re.IGNORECASE)
 _DEACTIVATE2_RE = re.compile(r"^deaktiviere\s+den\s+workflow\s+[\"']?(.+?)[\"']?$", re.IGNORECASE)
 
+# Jarvis HITL commands (write operations → require approval)
+_DEPLOY_RE   = re.compile(r"^deploy(?:e|en)?\s+(.+)$", re.IGNORECASE)
+_RESTART_RE  = re.compile(r"^restart(?:e|en)?\s+(.+)$", re.IGNORECASE)
+_SCALE_RE    = re.compile(r"^(?:skaliere|scale)\s+(.+)$", re.IGNORECASE)
+
 
 # ─── AI fallback ──────────────────────────────────────────────────────────────
 
@@ -130,10 +135,13 @@ Erlaubte Intents:
 STATUS_OVERVIEW, LIST_WORKFLOWS, ACTIVATE_WORKFLOW, DEACTIVATE_WORKFLOW, TRIGGER_WORKFLOW,
 AGENTS, KNOWLEDGE, MONITORING, ACTIVITY, LOGS, DEPLOYMENTS, ANALYTICS, CONTENT_FACTORY,
 MCP_SERVICES, NOCODB_TRENDS, NOCODB_SENTIMENT, ALERTS,
-KANBAN, TEMPLATES, FILES, DATABASES, SETTINGS, HELP, UNKNOWN
+KANBAN, TEMPLATES, FILES, DATABASES, SETTINGS,
+JARVIS_DEPLOY, JARVIS_RESTART, JARVIS_ACTION,
+HELP, UNKNOWN
 
+Verwende JARVIS_* Intents für schreibende Aktionen (deploy, restart, skalieren, DNS-Änderungen).
 Antworte ausschließlich mit:
-{"intent": "INTENT_NAME", "workflow_name": null_oder_workflow_name}"""
+{"intent": "INTENT_NAME", "workflow_name": null_oder_workflow_name, "target": null_oder_ziel}"""
 
 
 async def ai_classify(client: httpx.AsyncClient, text: str) -> Intent:
@@ -188,7 +196,16 @@ async def classify(client: httpx.AsyncClient, text: str) -> Intent:
     """
     t = text.strip()
 
-    # 1. Regex: workflow control
+    # 1. Regex: Jarvis HITL commands (write operations — checked before workflow control)
+    for pat, intent_name in [
+        (_DEPLOY_RE,  "JARVIS_DEPLOY"),
+        (_RESTART_RE, "JARVIS_RESTART"),
+        (_SCALE_RE,   "JARVIS_ACTION"),
+    ]:
+        if m := pat.match(t):
+            return Intent(intent_name, extra={"target": m.group(1).strip()})
+
+    # 2. Regex: workflow control
     for pat, intent_name in [
         (_ACTIVATE2_RE,   "ACTIVATE_WORKFLOW"),
         (_DEACTIVATE2_RE, "DEACTIVATE_WORKFLOW"),
@@ -206,7 +223,7 @@ async def classify(client: httpx.AsyncClient, text: str) -> Intent:
             if kw in t_lower:
                 return Intent(intent_name)
 
-    # 3. AI fallback
+    # 3. AI fallback (renumbered)
     if OPENROUTER_API_KEY:
         ai_result = await ai_classify(client, t)
         if ai_result.name != "UNKNOWN":

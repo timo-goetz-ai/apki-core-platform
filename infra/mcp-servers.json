@@ -1,6 +1,6 @@
 {
   "platform": "automation-plus-ki",
-  "updated": "2026-03-17",
+  "updated": "2026-03-29",
   "transport": "streamable-http",
   "base_domain": "automation-plus-ki.de",
   "mcpServers": {
@@ -139,6 +139,40 @@
       "category": "ai",
       "status": "active",
       "description": "Qdrant vector database — collections, upsert, search"
+    },
+    "hetzner-ssh": {
+      "url": "ssh://10.0.1.16",
+      "coolify_id": null,
+      "env_vars": {
+        "SSH_HOST": "10.0.1.16",
+        "SSH_USER": "root",
+        "SSH_KEY_PATH": "/root/.ssh/id_rsa"
+      },
+      "category": "infrastructure",
+      "status": "active",
+      "description": "Direct SSH access to Hetzner host — exec commands, sudo, Docker management"
+    },
+    "mcp-registry": {
+      "url": "https://registry.npmmirror.com",
+      "coolify_id": null,
+      "env_vars": {},
+      "category": "utility",
+      "status": "active",
+      "description": "MCP server registry — search and suggest MCP connectors"
     }
+  },
+  "metadata": {
+    "total_servers": 17,
+    "jarvis_table_id": "mfj6bnevjle0u0x",
+    "nocodb_base_id": "pmox01979j55xbd",
+    "updated": "2026-03-29",
+    "removed_legacy_dns": [
+      "github.automation-plus-ki.de",
+      "mcp-database.automation-plus-ki.de",
+      "mcp-docker.automation-plus-ki.de",
+      "mcp-gitops.automation-plus-ki.de",
+      "mcp-infra.automation-plus-ki.de",
+      "mcp-security.automation-plus-ki.de"
+    ]
   }
 }
