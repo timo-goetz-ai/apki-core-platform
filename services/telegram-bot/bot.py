@@ -46,6 +46,9 @@ load_dotenv()
 BOT_TOKEN        = os.environ["TELEGRAM_BOT_TOKEN"]
 ALLOWED_USER_ID  = int(os.environ["TELEGRAM_ALLOWED_USER_ID"])
 DASHBOARD_URL    = os.environ.get("DASHBOARD_URL", "https://aios.automation-plus-ki.de")
+WEBHOOK_URL      = os.environ.get("WEBHOOK_URL", "")          # e.g. https://tg-bot.automation-plus-ki.de
+WEBHOOK_PORT     = int(os.environ.get("WEBHOOK_PORT", "8443"))
+WEBHOOK_SECRET   = os.environ.get("WEBHOOK_SECRET", "aios-tg-bot-secret-2026")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -993,12 +996,26 @@ def main() -> None:
     # All text messages (no slash prefix) → intent classifier
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    logger.info("AIOS Control Bot startet (Polling)…")
-    logger.info("Allowed user ID: %s", ALLOWED_USER_ID)
-    app.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True,  # Discard backlog from while bot was offline
-    )
+    if WEBHOOK_URL:
+        webhook_path = f"/webhook/{WEBHOOK_SECRET}"
+        logger.info("AIOS Control Bot startet (Webhook auf %s)…", WEBHOOK_URL)
+        logger.info("Allowed user ID: %s", ALLOWED_USER_ID)
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=WEBHOOK_PORT,
+            url_path=webhook_path,
+            webhook_url=f"{WEBHOOK_URL}{webhook_path}",
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+            secret_token=WEBHOOK_SECRET,
+        )
+    else:
+        logger.info("AIOS Control Bot startet (Polling-Fallback)…")
+        logger.info("Allowed user ID: %s", ALLOWED_USER_ID)
+        app.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+        )
 
 
 if __name__ == "__main__":
