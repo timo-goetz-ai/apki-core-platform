@@ -5,8 +5,11 @@
       "id": "551-webhook-callback",
       "name": "Webhook: Jarvis Callback",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [240, 300],
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
       "parameters": {
         "httpMethod": "GET",
         "path": "jarvis-callback",
@@ -20,30 +23,47 @@
       "name": "Switch: approve / reject",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [460, 300],
+      "position": [
+        460,
+        300
+      ],
       "parameters": {
         "rules": {
           "rules": [
             {
               "outputKey": "approve",
               "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [{
-                  "leftValue": "={{ $json.query.action }}",
-                  "rightValue": "approve",
-                  "operator": { "type": "string", "operation": "equals" }
-                }]
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.action }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
               }
             },
             {
               "outputKey": "reject",
               "conditions": {
-                "options": { "caseSensitive": false },
-                "conditions": [{
-                  "leftValue": "={{ $json.query.action }}",
-                  "rightValue": "reject",
-                  "operator": { "type": "string", "operation": "equals" }
-                }]
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.action }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
               }
             }
           ]
@@ -56,7 +76,10 @@
       "name": "Nexus: Status → approved",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [700, 180],
+      "position": [
+        700,
+        180
+      ],
       "parameters": {
         "method": "PATCH",
         "url": "=https://api.automation-plus-ki.de/api/jarvis/tasks/{{ $json.query.task_id }}/status",
@@ -64,12 +87,20 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "bodyParameters": {
-          "parameters": [{ "name": "status", "value": "approved" }]
+          "parameters": [
+            {
+              "name": "status",
+              "value": "approved"
+            }
+          ]
         },
         "options": {}
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "aios-token-cred", "name": "AIOS Token" }
+        "httpHeaderAuth": {
+          "id": "aios-token-cred",
+          "name": "AIOS Token"
+        }
       }
     },
     {
@@ -77,16 +108,24 @@
       "name": "Nexus: Execute Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 180],
+      "position": [
+        920,
+        180
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.automation-plus-ki.de/api/jarvis/execute/{{ $('Webhook: Jarvis Callback').item.json.query.task_id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "aios-token-cred", "name": "AIOS Token" }
+        "httpHeaderAuth": {
+          "id": "aios-token-cred",
+          "name": "AIOS Token"
+        }
       }
     },
     {
@@ -94,16 +133,28 @@
       "name": "Telegram: Ausgeführt",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1140, 180],
+      "position": [
+        1140,
+        180
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id",    "value": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}" },
-            { "name": "text",       "value": "=✅ *Ausgeführt* — Task #{{ $('Webhook: Jarvis Callback').item.json.query.task_id }}\n\nErgebnis: {{ JSON.stringify($json.result || {}).substring(0, 300) }}" },
-            { "name": "parse_mode", "value": "Markdown" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}"
+            },
+            {
+              "name": "text",
+              "value": "=✅ *Ausgeführt* — Task #{{ $('Webhook: Jarvis Callback').item.json.query.task_id }}\n\nErgebnis: {{ JSON.stringify($json.result || {}).substring(0, 300) }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            }
           ]
         },
         "options": {}
@@ -114,7 +165,10 @@
       "name": "Nexus: Status → aborted",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [700, 420],
+      "position": [
+        700,
+        420
+      ],
       "parameters": {
         "method": "PATCH",
         "url": "=https://api.automation-plus-ki.de/api/jarvis/tasks/{{ $json.query.task_id }}/status",
@@ -122,12 +176,20 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "bodyParameters": {
-          "parameters": [{ "name": "status", "value": "aborted" }]
+          "parameters": [
+            {
+              "name": "status",
+              "value": "aborted"
+            }
+          ]
         },
         "options": {}
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "aios-token-cred", "name": "AIOS Token" }
+        "httpHeaderAuth": {
+          "id": "aios-token-cred",
+          "name": "AIOS Token"
+        }
       }
     },
     {
@@ -135,16 +197,28 @@
       "name": "Telegram: Abgebrochen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 420],
+      "position": [
+        920,
+        420
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id",    "value": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}" },
-            { "name": "text",       "value": "=❌ *Abgebrochen* — Task #{{ $('Webhook: Jarvis Callback').item.json.query.task_id }}" },
-            { "name": "parse_mode", "value": "Markdown" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}"
+            },
+            {
+              "name": "text",
+              "value": "=❌ *Abgebrochen* — Task #{{ $('Webhook: Jarvis Callback').item.json.query.task_id }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            }
           ]
         },
         "options": {}
@@ -155,7 +229,10 @@
       "name": "Respond: Bestätigung",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1360, 300],
+      "position": [
+        1360,
+        300
+      ],
       "parameters": {
         "respondWith": "text",
         "responseBody": "✅ Aktion registriert. Du kannst dieses Fenster schließen."
@@ -164,28 +241,88 @@
   ],
   "connections": {
     "Webhook: Jarvis Callback": {
-      "main": [[{ "node": "Switch: approve / reject", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Switch: approve / reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Switch: approve / reject": {
       "main": [
-        [{ "node": "Nexus: Status → approved", "type": "main", "index": 0 }],
-        [{ "node": "Nexus: Status → aborted",  "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Nexus: Status → approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nexus: Status → aborted",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Nexus: Status → approved": {
-      "main": [[{ "node": "Nexus: Execute Task", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Nexus: Execute Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Nexus: Execute Task": {
-      "main": [[{ "node": "Telegram: Ausgeführt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Telegram: Ausgeführt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Telegram: Ausgeführt": {
-      "main": [[{ "node": "Respond: Bestätigung", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond: Bestätigung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Nexus: Status → aborted": {
-      "main": [[{ "node": "Telegram: Abgebrochen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Telegram: Abgebrochen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Telegram: Abgebrochen": {
-      "main": [[{ "node": "Respond: Bestätigung", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond: Bestätigung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -194,7 +331,14 @@
     "saveDataErrorExecution": "all",
     "saveManualExecutions": true
   },
-  "tags": [{ "name": "HUMAN" }, { "name": "jarvis" }],
+  "tags": [
+    {
+      "name": "HUMAN"
+    },
+    {
+      "name": "jarvis"
+    }
+  ],
   "meta": {
     "templateId": "551_JARVIS_CALLBACK",
     "description": "Jarvis HITL — Telegram Button Callback → approve/reject → Nexus Execute"
