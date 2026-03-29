@@ -2,10 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const AIOS_CORE_BASE =
-  process.env.AIOS_CORE_URL ??
-  process.env.NEXUS_CORE_URL ??
-  'http://aios-core:8000';
+const AIOS_CORE_BASE = process.env.AIOS_CORE_URL ?? 'http://aios-core:8000';
 const AIOS_TOKEN = process.env.AIOS_TOKEN ?? '';
 
 /** GET /api/jarvis/tasks?status=pending&limit=50 */

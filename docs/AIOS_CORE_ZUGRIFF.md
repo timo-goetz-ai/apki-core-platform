@@ -1,19 +1,17 @@
 # AIOS Core — Zugriffspunkte und URLs
 
-**Begriff:** **AIOS Core** ist der zentrale FastAPI-Orchestrierungsdienst (Agents, Tasks, Models, Prompts, Automations, Jarvis). Er ist **nicht** [CrewAI](https://www.crewai.com/) und **nicht** identisch mit **Crew API** (`services/crew-api`) — Crew API ist ein separater Service im Monorepo.
+**Begriff:** **AIOS Core** ist der zentrale FastAPI-Orchestrierungsdienst (Agents, Tasks, Models, Prompts, Automations, Jarvis). Er ist **nicht** [CrewAI](https://www.crewai.com/) und **nicht** identisch mit **Crew API** (`services/crew-api`).
 
 ---
 
 ## Öffentlich (Traefik / Coolify)
 
-| Zweck | URL (Beispiel Prod) | Hinweis |
-|--------|---------------------|---------|
-| REST + Docs | `https://api.automation-plus-ki.de` | OpenAPI: `/docs`, `/redoc` |
-| Health (ohne Token) | `GET https://api.automation-plus-ki.de/health` | Für Loadbalancer / Monitoring |
-| Metrics (ohne Token) | `GET https://api.automation-plus-ki.de/metrics` | Prometheus-Format |
-| WebSocket Dashboard | `wss://api.automation-plus-ki.de/ws/...` | Siehe unten |
-
-Konkrete Hostnamen in **Coolify** / DNS können abweichen; die **Pfade** bleiben gleich.
+| Zweck | URL (Beispiele Prod) | Hinweis |
+|--------|----------------------|---------|
+| REST + Docs | `https://api.aios.automation-plus-ki.de` oder `https://api.automation-plus-ki.de` | DNS je nach Stack; Pfade identisch |
+| Health | `GET …/health` | Ohne Token |
+| Metrics | `GET …/metrics` | Prometheus |
+| WebSocket | `wss://…/ws/...` | Siehe Middleware-Ausnahmen |
 
 ---
 
@@ -22,10 +20,10 @@ Konkrete Hostnamen in **Coolify** / DNS können abweichen; die **Pfade** bleiben
 | Von | Nach | Basis-URL |
 |-----|------|-----------|
 | `admin-dashboard` | AIOS Core | `http://aios-core:8000` |
-| `crew-api` | AIOS Core | `http://aios-core:8000` (Env: `AIOS_CORE_URL`) |
-| Browser / lokal | Dev | `http://localhost:8000` |
+| `crew-api` | AIOS Core | `http://aios-core:8000` (`AIOS_CORE_URL` in Compose) |
+| Lokal | Dev | `http://localhost:8000` |
 
-**Container-Name:** `aios-core` · **Image (GHCR):** `ghcr.io/timogoetz1988/aios-core`
+**Image (GHCR):** `ghcr.io/timogoetz1988/aios-core`
 
 ---
 
@@ -34,55 +32,82 @@ Konkrete Hostnamen in **Coolify** / DNS können abweichen; die **Pfade** bleiben
 | Mechanismus | Wert |
 |-------------|------|
 | Header | `x-aios-token: <AIOS_TOKEN>` |
-| Env im Core | `AIOS_TOKEN` (siehe `app/config/settings.py` → Feld `aios_token`) |
-| Wenn `AIOS_TOKEN` leer | Alle Routen ohne Prüfung (nur für Dev gedacht) |
+| Env im Core | `AIOS_TOKEN` → `settings.aios_token` |
+| Leer lassen | Nur für Dev: Middleware lässt alles durch |
 
-**Ohne Token erlaubt** (Middleware-Ausnahme): `/health`, `/metrics`, `/docs`, `/redoc`, `/openapi.json`, `/ws/dashboard`, sowie alle Pfade unter `/ws`.
+**Ohne Token erlaubt:** `/health`, `/metrics`, `/docs`, `/redoc`, `/openapi.json`, `/ws/dashboard`, `/ws/*`.
 
 ---
 
-## REST-API-Prefixe (`/api/...`)
+## REST unter `/api/...`
 
-| Prefix | Inhalt (Kurz) |
-|--------|----------------|
+| Prefix | Inhalt |
+|--------|--------|
 | `/api/agents` | Agenten |
 | `/api/tasks` | Aufgaben |
 | `/api/models` | Modelle |
 | `/api/prompts` | Prompts |
 | `/api/automations` | Automationen |
-| `/api/jarvis` | Jarvis (u. a. Tasks-Proxy) |
-
-Root-Endpoints: `GET /health`, `GET /metrics`.
+| `/api/jarvis` | Jarvis |
 
 ---
 
-## Admin-Dashboard (Next.js) — relevante Env-Variablen
+## Admin-Dashboard (Next.js) — Env
 
-| Variable | Bedeutung |
-|----------|-----------|
-| `NEXT_PUBLIC_AIOS_CORE_API_URL` | Öffentliche oder interne Basis-URL des Core für Browser/Server Components |
-| `NEXT_PUBLIC_NEXUS_API_URL` | **Legacy-Fallback** (gleiche Rolle wie oben), bis Coolify überall umgestellt ist |
-| `NEXT_PUBLIC_WS_URL` | WebSocket-Basis (z. B. `wss://api.automation-plus-ki.de`) |
-| `AIOS_CORE_URL` | Server-only: interner Fetch zur Jarvis-Route (`/api/jarvis/tasks`) |
-| `NEXUS_CORE_URL` | **Legacy-Fallback** für `AIOS_CORE_URL` |
+| Variable | Rolle |
+|----------|--------|
+| `NEXT_PUBLIC_AIOS_CORE_API_URL` | Öffentliche API-Basis (Client/Server) |
+| `NEXT_PUBLIC_WS_URL` | WebSocket-Basis |
+| `AIOS_CORE_URL` | Server-only: Proxy zu Core (z. B. Jarvis) |
+| `AIOS_TOKEN` | Server-only: `x-aios-token` beim Aufruf des Core |
+
+**Hinweis:** `NEXT_PUBLIC_*` werden beim **Docker-Build** mit `build-args` gesetzt; Runtime-Env in Coolify sollte dieselben Werte tragen, falls ihr ohne Rebuild arbeitet.
+
+---
+
+## 1Password CLI (`op`)
+
+Vault **AIOS**, Item **`Core`** (anlegen mit `tools/op-secrets/setup-vault.sh` oder manuell):
+
+| Feld (Label) | `op://`-Referenz | Verwendung |
+|--------------|------------------|------------|
+| `aios_token` | `op://AIOS/Core/aios_token` | Core + Dashboard + Coolify |
+| `aios_core_url` | `op://AIOS/Core/aios_core_url` | z. B. `http://aios-core:8000` |
+| `next_public_aios_core_api_url` | `op://AIOS/Core/next_public_aios_core_api_url` | öffentliche API-URL |
+| `next_public_ws_url` | `op://AIOS/Core/next_public_ws_url` | öffentliche WS-URL |
+| `postgres_password` | `op://AIOS/Core/postgres_password` | laut `env.op.all` |
+| `jwt_secret` | `op://AIOS/Core/jwt_secret` | … |
+| `dashboard_api_key` | `op://AIOS/Core/dashboard_api_key` | … |
+
+**Lokal injizieren:**
+
+```bash
+cd ~/projects/ai-os
+op run --env-file=tools/op-secrets/env.op.all -- <dein-befehl>
+```
+
+(Einzelwert lesen: `op read op://AIOS/Core/aios_token` — Ausgabe nicht loggen/teilen.)
+
+**Wichtig:** `postgres_password` / `jwt_secret` / `dashboard_api_key` im Item **Core** müssen zu eurer **echten** Prod-Umgebung passen; bei Neu-Anlage wurden ggf. Platzhalter-Zufallswerte gesetzt — in der 1Password-App gegen Hetzner/Coolify-DB abgleichen.
+
+---
+
+## Coolify (Prod-Deploy)
+
+- **aios-core:** Image `ghcr.io/timogoetz1988/aios-core`, Env mindestens `DATABASE_URL`, `REDIS_URL`, **`AIOS_TOKEN`** (gleicher Wert wie im 1Password-Feld `aios_token`).
+- **admin-dashboard:** `NEXT_PUBLIC_AIOS_CORE_API_URL`, `NEXT_PUBLIC_WS_URL`, **`AIOS_CORE_URL`**, **`AIOS_TOKEN`**.
+
+Workflow **Deploy – Production** patcht diese Keys per API, sofern 1Password-Service-Account die `op://AIOS/Core/...`-Referenzen auflösen kann.
 
 ---
 
 ## Crew API (Abgrenzung)
 
-| Service | Pfad im Repo | Typische Rolle |
-|---------|----------------|----------------|
-| **AIOS Core** | `services/aios-core` | Zentrale Orchestrierung, Jarvis-Anbindung, Prometheus |
-| **Crew API** | `services/crew-api` | Eigener API-Dienst (eigener Port / eigenes Image), nicht mit CrewAI-Produkt verwechseln |
+| Service | Pfad | Rolle |
+|---------|------|--------|
+| **AIOS Core** | `services/aios-core` | Orchestrierung, Jarvis, Metrics |
+| **Crew API** | `services/crew-api` | eigener Dienst, nicht CrewAI-Framework |
 
 ---
 
-## Deploy / CI (Referenz)
-
-- Build-Job: `.github/workflows/build-and-push.yml` — Image `aios-core`
-- Coolify: Ressource auf Image `ghcr.io/timogoetz1988/aios-core` umstellen, falls noch `nexus-core` eingetragen war
-- Geheimnis-Workflow: ggf. `COOLIFY_AIOS_CORE_UUID` / 1Password-Feld `aios_core_uuid`
-
----
-
-*Stand: generiert im Rahmen der Umbenennung Nexus Core → AIOS Core.*
+*Aktualisiert: 1Password-Item „Core“, Entfernung NEXUS-Legacy im Code, Coolify-Env-Patches im Deploy-Workflow.*

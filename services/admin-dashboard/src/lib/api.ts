@@ -1,7 +1,4 @@
-const BASE =
-  process.env.NEXT_PUBLIC_AIOS_CORE_API_URL ??
-  process.env.NEXT_PUBLIC_NEXUS_API_URL ??
-  "http://localhost:8000";
+const BASE = process.env.NEXT_PUBLIC_AIOS_CORE_API_URL ?? "http://localhost:8000";
 
 export async function fetchHealth() {
   const res = await fetch(`${BASE}/health`, { next: { revalidate: 0 } });
