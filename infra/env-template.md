@@ -122,12 +122,15 @@ OLLAMA_ORIGINS=*
 # No auth by default — keep internal, do not expose publicly
 ```
 
-### Nexus-Core API
+### AIOS Core API (FastAPI, früher „Nexus Core“)
+
+Variablennamen entsprechen `pydantic-settings` (`database_url` → `DATABASE_URL`, usw.).
 
 ```env
-NEXUS_SECRET_KEY=          # FastAPI secret key
-NEXUS_DB_URL=postgresql+asyncpg://aios_user:...@homestack-postgres:5432/aios_db
-NEXUS_REDIS_URL=redis://homestack-redis:6379/0
+DATABASE_URL=postgresql+asyncpg://aios_user:...@homestack-postgres:5432/aios_db
+REDIS_URL=redis://homestack-redis:6379/0
+AIOS_TOKEN=                # Pflicht in Prod: Header x-aios-token für geschützte Routen
+CREW_API_URL=http://crew-api:8002   # interner Crew-API-Base-URL (Port je nach Deploy anpassen)
 OPENROUTER_API_KEY=        # OpenRouter API key
 ANTHROPIC_API_KEY=         # Anthropic direct API key
 OPENAI_API_KEY=            # OpenAI API key (optional)
@@ -147,7 +150,7 @@ OPENAI_API_KEY=            # OpenAI (optional)
 OLLAMA_BASE_URL=           # Ollama API (z.B. http://ollama:11434) — für SauerkrautLM: ollama pull sauerkrautlm
 
 # Internal API
-NEXT_PUBLIC_NEXUS_API_URL=https://api.automation-plus-ki.de
+NEXT_PUBLIC_AIOS_CORE_API_URL=https://api.automation-plus-ki.de
 NEXT_PUBLIC_WS_URL=wss://api.automation-plus-ki.de
 
 # Infrastructure APIs

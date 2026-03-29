@@ -151,7 +151,7 @@ Dieser Workflow folgt der AIOS-Namenskonvention:
 
 ---
 
-## Jarvis HITL (550 / 551) — Nexus-Core, Netzwerk, Webhooks
+## Jarvis HITL (550 / 551) — AIOS-Core, Netzwerk, Webhooks
 
 ### Dateien
 
@@ -160,10 +160,10 @@ Dieser Workflow folgt der AIOS-Namenskonvention:
 
 Die Exporte nutzen **Webhook-Nodes `typeVersion: 1`** (klassische Registrierung). Nach Import in n8n: Workflow **deaktivieren → aktivieren** oder n8n neu starten, damit Webhooks aus der DB geladen werden.
 
-### Nexus-Core von n8n aus
+### AIOS-Core von n8n aus
 
-**Variante A — intern (Docker, empfohlen):** Basis-URL `http://aios-nexus-core:8000`  
-Voraussetzung: n8n- und Nexus-Container hängen am **gleichen Docker-Netzwerk**; Hostname `aios-nexus-core` löst auf (ggf. Netzwerk-Alias am Nexus-Container).
+**Variante A — intern (Docker, empfohlen):** Basis-URL `http://aios-core:8000`  
+Voraussetzung: n8n- und Nexus-Container hängen am **gleichen Docker-Netzwerk**; Hostname `aios-core` löst auf (ggf. Netzwerk-Alias am Nexus-Container).
 
 **Variante B — öffentlich:** Basis-URL `https://api.automation-plus-ki.de` (oder eure Traefik-URL).
 
@@ -171,12 +171,12 @@ In den HTTP-Nodes der Workflows die URLs anpassen: Pfade bleiben `/api/jarvis/pl
 
 ### Credential „AIOS Token“ (Header Auth)
 
-Nexus-Core prüft **`x-aios-token`** (Middleware `AiosTokenMiddleware`). In n8n muss das Credential genau diesen Header setzen:
+AIOS-Core prüft **`x-aios-token`** (Middleware `AiosTokenMiddleware`). In n8n muss das Credential genau diesen Header setzen:
 
 | Feld | Wert |
 |------|------|
 | Header Name | `x-aios-token` |
-| Header Value | identisch zu `AIOS_TOKEN` / `aios_token` in **nexus-core** (Coolify-Env) |
+| Header Value | identisch zu `AIOS_TOKEN` / `aios_token` in **aios-core** (Coolify-Env) |
 
 Ohne Übereinstimmung: **401** auf allen Jarvis-Routen (Health `/health` bleibt ohne Token erreichbar).
 
@@ -184,11 +184,11 @@ Ohne Übereinstimmung: **401** auf allen Jarvis-Routen (Health `/health` bleibt 
 
 ```bash
 # Health (ohne Token)
-wget -qO- http://aios-nexus-core:8000/health
+wget -qO- http://aios-core:8000/health
 
 # Jarvis mit Token
 wget -qO- --header="x-aios-token: <DEIN_TOKEN>" \
-  http://aios-nexus-core:8000/api/jarvis/tasks
+  http://aios-core:8000/api/jarvis/tasks
 ```
 
 ### Telegram-Callback-URL im Code-Node (550)

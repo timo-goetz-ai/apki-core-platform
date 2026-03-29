@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const HEALTH_CHECKS = [
   // Interne Docker-Hostnamen für Services auf demselben Server (kein Cloudflare-Loop)
-  { id: "nexus-core",     url: "http://aios-nexus-core:8000/health" },
+  { id: "aios-core",     url: "http://aios-core:8000/health" },
   { id: "infra",          url: "http://localhost:3000/api/health" },
   { id: "voice",          url: "http://voice-api-ckgw404o88ow0ccs00cow8k8:8000/health" },
   // Homestack-Services via öffentliche URL (eigenes Netzwerk)

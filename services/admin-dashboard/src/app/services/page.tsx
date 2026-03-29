@@ -26,7 +26,7 @@ interface Service {
 // ── Data ──────────────────────────────────────────────────────────────────────
 const SERVICES: Service[] = [
   { name: 'Admin Dashboard',  desc: 'Zentrale Steuereinheit',         url: 'admin.automation-plus-ki.de',         status: 'online', latency: 12,  category: 'core' },
-  { name: 'Nexus-Core API',   desc: 'REST + WebSocket Backend',       url: 'api.automation-plus-ki.de',           status: 'online', latency: 45,  category: 'core' },
+  { name: 'AIOS-Core API',   desc: 'REST + WebSocket Backend',       url: 'api.automation-plus-ki.de',           status: 'online', latency: 45,  category: 'core' },
   { name: 'n8n Workflows',    desc: 'Automation Engine',              url: 'n8n.automation-plus-ki.de',           status: 'online', latency: 89,  category: 'automation', note: 'SSO via Authentik' },
   { name: 'NocoDB',           desc: 'Datenbank-Interface',            url: 'nocodb.automation-plus-ki.de',        status: 'online', latency: 34,  category: 'data' },
   { name: 'Grafana',          desc: 'Monitoring & Dashboards',        url: 'grafana.automation-plus-ki.de',       status: 'online', latency: 28,  category: 'monitoring' },

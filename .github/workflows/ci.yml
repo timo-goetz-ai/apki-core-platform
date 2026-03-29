@@ -13,7 +13,7 @@ env:
 
 jobs:
   # ──────────────────────────────────────────────
-  # Python: nexus-core + crew-api + agents
+  # Python: aios-core + crew-api + agents
   # ──────────────────────────────────────────────
   python-lint-test:
     name: Python – Lint & Test
@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
-        service: [services/nexus-core, services/crew-api]
+        service: [services/aios-core, services/crew-api]
 
     steps:
       - uses: actions/checkout@v4
@@ -152,7 +152,7 @@ jobs:
         working-directory: services/admin-dashboard
         run: npm run build
         env:
-          NEXT_PUBLIC_NEXUS_API_URL: https://api.aios.automation-plus-ki.de
+          NEXT_PUBLIC_AIOS_CORE_API_URL: https://api.aios.automation-plus-ki.de
           NEXT_PUBLIC_WS_URL: wss://api.aios.automation-plus-ki.de
 
   # ──────────────────────────────────────────────
@@ -168,8 +168,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - context: services/nexus-core
-            image: nexus-core
+          - context: services/aios-core
+            image: aios-core
           - context: services/admin-dashboard
             image: aios-admin-dashboard
 

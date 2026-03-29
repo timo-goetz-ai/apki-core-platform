@@ -17,21 +17,21 @@ from app.middleware.auth import AiosTokenMiddleware
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger(__name__)
 
-REQUEST_COUNT = Counter("nexus_requests_total", "Total HTTP requests", ["method", "endpoint"])
-REQUEST_LATENCY = Histogram("nexus_request_latency_seconds", "Request latency")
+REQUEST_COUNT = Counter("aios_core_requests_total", "Total HTTP requests", ["method", "endpoint"])
+REQUEST_LATENCY = Histogram("aios_core_request_latency_seconds", "Request latency")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Nexus-Core starting – environment: %s", settings.environment)
+    logger.info("AIOS Core starting – environment: %s", settings.environment)
     await init_db()
     logger.info("Database tables verified/created")
     yield
-    logger.info("Nexus-Core shutting down")
+    logger.info("AIOS Core shutting down")
 
 
 app = FastAPI(
-    title="Nexus-Core",
+    title="AIOS Core",
     description="Central AI orchestration backend — agents, tasks, models, automations",
     version="1.0.0",
     lifespan=lifespan,
