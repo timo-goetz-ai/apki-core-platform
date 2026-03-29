@@ -71,6 +71,38 @@ async function nocoGet<T>(tableId: string, params?: Record<string, string>): Pro
   return (json.list ?? json) as T[];
 }
 
+/** Alle Zeilen einer Tabelle laden (offset-Pagination bis `isLastPage`). */
+async function nocoGetAll<T>(
+  tableId: string,
+  params?: Record<string, string>,
+  pageSize = 200
+): Promise<T[]> {
+  const out: T[] = [];
+  let offset = 0;
+  for (;;) {
+    const url = new URL(`${BASE}/api/v2/tables/${tableId}/records`);
+    url.searchParams.set("limit", String(pageSize));
+    url.searchParams.set("offset", String(offset));
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (k === "limit" || k === "offset") continue;
+        url.searchParams.set(k, v);
+      }
+    }
+    const res = await fetch(url.toString(), {
+      headers: { "xc-token": TOKEN },
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) throw new Error(`NocoDB GET ${tableId}: ${res.status}`);
+    const json = (await res.json()) as { list?: T[]; pageInfo?: { isLastPage?: boolean } };
+    const batch = json.list ?? [];
+    out.push(...batch);
+    if (batch.length === 0 || json.pageInfo?.isLastPage) break;
+    offset += pageSize;
+  }
+  return out;
+}
+
 async function nocoPost<T>(tableId: string, data: Record<string, unknown>): Promise<T> {
   const res = await fetch(`${BASE}/api/v2/tables/${tableId}/records`, {
     method: "POST",
@@ -268,13 +300,59 @@ export function getNocoDBClient() {
 
 // ── AI System & Dashboard table queries ──────────────────────────────────────
 
-export async function getAgents(): Promise<Record<string, unknown>[]> {
+/** NocoDB-Tabelle `agents` (TABLE_AGENTS) — Spalten wie REST-API (`/records`) liefert */
+export interface NocoAgent {
+  Id: number;
+  CreatedAt?: string;
+  UpdatedAt?: string | null;
+  Name: string;
+  Typ: string;
+  Model: string;
+  Webhook_URL?: string;
+  Status: string;
+  Beschreibung?: string;
+  Layer?: string;
+  /** n8n Workflow-ID (String, z. B. aus n8n-URL oder API) */
+  n8n_workflow_id?: string | null;
+}
+
+export type NocoAgentPatch = Partial<
+  Pick<
+    NocoAgent,
+    | "Name"
+    | "Typ"
+    | "Model"
+    | "Webhook_URL"
+    | "Status"
+    | "Beschreibung"
+    | "Layer"
+    | "n8n_workflow_id"
+  >
+>;
+
+export async function getAgents(): Promise<NocoAgent[]> {
   try {
-    return await nocoGet<Record<string, unknown>>(TABLE_AGENTS);
+    return await nocoGetAll<NocoAgent>(TABLE_AGENTS, { sort: "Layer" });
   } catch (e) {
     console.warn("[NocoDB] getAgents Fehler:", e);
     return [];
   }
+}
+
+export async function updateAgent(id: number | string, patch: NocoAgentPatch): Promise<void> {
+  if (!TOKEN) throw new Error("NOCODB_API_TOKEN nicht konfiguriert");
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum)) throw new Error("Ungültige Agent-Id");
+  const body: Record<string, unknown> = { Id: idNum };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v !== undefined) body[k] = v;
+  }
+  const res = await fetch(`${BASE}/api/v2/tables/${TABLE_AGENTS}/records`, {
+    method: "PATCH",
+    headers: { "xc-token": TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`NocoDB PATCH agents ${idNum}: ${res.status}`);
 }
 
 export async function getTasks(): Promise<Record<string, unknown>[]> {
