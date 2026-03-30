@@ -155,8 +155,8 @@ Dieser Workflow folgt der AIOS-Namenskonvention:
 
 ### Dateien
 
-- `550_JARVIS_APPROVAL_FLOW.json` — Webhook `jarvis-intent` (POST) → Plan → Telegram mit Approve/Ablehnen-URLs
-- `551_JARVIS_CALLBACK.json` — Webhook `jarvis-callback` (GET) → Status PATCH → ggf. Execute
+- `50_550_JARVIS_APPROVAL_FLOW.json` — Webhook `jarvis-intent` (POST) → Plan → Telegram mit Approve/Ablehnen-URLs
+- `50_551_JARVIS_CALLBACK.json` — Webhook `jarvis-callback` (GET) → Status PATCH → ggf. Execute
 
 Die Exporte nutzen **Webhook-Nodes `typeVersion: 1`** (klassische Registrierung). Nach Import in n8n: Workflow **deaktivieren → aktivieren** oder n8n neu starten, damit Webhooks aus der DB geladen werden.
 

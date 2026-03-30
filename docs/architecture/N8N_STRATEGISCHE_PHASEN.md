@@ -5,13 +5,13 @@ Dieses Dokument **verbindet zwei Achsen**, die parallel genutzt werden:
 | Achse | Zweck | Wo sichtbar |
 |--------|--------|-------------|
 | **Phase 10 / 20 / 30** | Roadmap, Priorisierung, Agenten-Buckets, Management-Sicht | Doku, NocoDB (`agents.Phase` optional), Tickets |
-| **Layer 100–599** | Technische n8n-Namenskonvention, Exporte, Scanner | **Workflow-Name** in n8n (z. B. `310_TREND_MONITOR`) |
+| **Layer 100–599** | Technische n8n-Namenskonvention (Zahl im Namen) | **Workflow-Name** in n8n: `{Zehner}_{NNN}_…` (z. B. `30_310_TREND_MONITOR`) |
 
-**Regel:** In n8n heißen Workflows weiterhin **`NNN_BESCHREIBUNG`** mit `N` aus dem Layer-Bereich — **kein** Umbenennen zu `10_…` / `20_…`. Die Zehner-Phasen sind **Überordnung**, keine Ersatz-Präfixe.
+**Regel (2026-03-30):** Der **sichtbare Workflow-Name** setzt sich aus **Zehner-Layer** (`floor(NNN/100)*10`) und dem **bisherigen technischen Namen** zusammen: dreistellige Jobs wie `310_FOO` werden zu `30_310_FOO`. Sonderfälle (z. B. `40_PUBLISH_SOCIAL` → `40_40_PUBLISH_SOCIAL`, `50_NOCODB_BACKUP` → `10_50_NOCODB_BACKUP`) stehen in `docs/operations/N8N_WORKFLOW_RENAME_MAP.md`. Die strategischen Phasen **10 / 20 / 30** (NocoDB/Roadmap) bleiben **eigenständig** und ersetzen dieses Präfix nicht.
 
 ---
 
-## 1. Technische Layer (unverändert kanonisch)
+## 1. Technische Layer (Zahl im Namen, kanonisch)
 
 | Layer | Präfix (Zahl im Namen) | Zweck |
 |--------|-------------------------|--------|
@@ -46,8 +46,8 @@ Dieses Dokument **verbindet zwei Achsen**, die parallel genutzt werden:
 |--------|---------------------------|--------------------------------|
 | Query / Filter | BRAIN + NocoDB Views | IF/SWITCH, NocoDB-Nodes |
 | Logic / Brain | BRAIN | Sub-Workflows „AI Brain Core“ |
-| Research-Outputs | RESEARCH | `310_TREND_MONITOR`, `320_SENTIMENT_TRACKER`, `330_CONTENT_OPPORTUNITY` |
-| Status / Digest | CONTENT (+ Ausgabe HUMAN) | `430_DAILY_DIGEST`, `435_WEEKLY_SUMMARY` |
+| Research-Outputs | RESEARCH | `30_310_TREND_MONITOR`, `30_320_SENTIMENT_TRACKER`, `30_330_CONTENT_OPPORTUNITY` |
+| Status / Digest | CONTENT (+ Ausgabe HUMAN) | `40_430_DAILY_DIGEST`, `40_435_WEEKLY_SUMMARY` |
 | Metriken | extern Grafana/Prometheus | n8n ruft Webhooks/APIs an, kein eigener Layer |
 
 **Korrektur älterer Entwürfe:** Nicht `11_`/`12_`/`60_` als Namen — das waren Abkürzungen. Kanonisch: **310 / 320 / 330 / 430**.
@@ -58,9 +58,9 @@ Dieses Dokument **verbindet zwei Achsen**, die parallel genutzt werden:
 
 | Thema | Typische technische Layer | Beispiel-Workflows (Ist/Muster) |
 |--------|---------------------------|--------------------------------|
-| Content-Pipeline | CONTENT | `450_CONTENT_MASTER_FLOW_v2` |
-| Human / Approvals | HUMAN | `540_TELEGRAM_ASSISTANT` |
-| Discovery / Index | BRAIN | `240_AIOS_DISCOVERY` (wenn aktiv), Workflow-Index-Sync |
+| Content-Pipeline | CONTENT | `40_450_CONTENT_MASTER_FLOW_v2` |
+| Human / Approvals | HUMAN | `50_540_TELEGRAM_ASSISTANT` |
+| Discovery / Index | BRAIN | `20_240_AIOS_DISCOVERY` (wenn aktiv), Workflow-Index-Sync |
 | „Signal / Recovery“ | BRAIN + CONTENT | als **neue** Workflows im `2xx`/`4xx`-Bereich anlegen — Namen einhalten |
 
 ---
@@ -94,7 +94,7 @@ Zwei Felder ergänzen oder nutzen, ohne n8n umzubenennen:
 | `Layer` | `INGEST` / `BRAIN` / … oder numerisch `100`–`599` | technische Zuordnung (bereits im Dashboard-Sort gedacht) |
 | `Phase` | `10` / `20` / `30` | strategische Roadmap |
 
-Optional: `workflow_id` (n8n-ID) + `workflow_name` (exakter String `310_…`).
+Optional: `workflow_id` (n8n-ID) + `workflow_name` (exakter String inkl. Präfix, z. B. `30_310_TREND_MONITOR`).
 
 **Umsetzung (2026-03-30):** Spalte **Phase** in NocoDB-Tabelle `agents` als SingleSelect **10 / 20 / 30** angelegt. Wiederholbar/idempotent: `scripts/nocodb-agents-ensure-phase-column.sh` (nutzt `NOCODB_URL` + `NOCODB_API_TOKEN`). Admin-Dashboard: `NocoAgent.Phase`, Sortierung `getAgents()` nach `Phase`.
 
@@ -103,7 +103,7 @@ Optional: `workflow_id` (n8n-ID) + `workflow_name` (exakter String `310_…`).
 ## 5. Agenten-Liste (100) — Arbeitsteilung
 
 - **Kategorisierung** nach Agenten-Typ → zuerst **Phase** (10/20/30), dann **Layer** (100er).
-- **Implementierung** immer mit **eindeutigem n8n-Namen** im 100er-Raster; Duplikat-Namen vermeiden.
+- **Implementierung** mit **eindeutigem n8n-Namen** nach Rename-Map; Duplikat-Namen vermeiden.
 
 ---
 
@@ -112,3 +112,4 @@ Optional: `workflow_id` (n8n-ID) + `workflow_name` (exakter String `310_…`).
 | Datum | Änderung |
 |--------|----------|
 | 2026-03-30 | Erstversion: duale Führung Phase 10/20/30 + Layer 100–599 |
+| 2026-03-30 | Breaking: Workflow-Namen mit Zehner-Präfix (`30_310_*` …); siehe `N8N_WORKFLOW_RENAME_MAP.md` |

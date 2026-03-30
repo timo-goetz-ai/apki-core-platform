@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimelineFeed } from '@/components/overview/TimelineFeed';
+import { CrewLivePanel } from '@/components/overview/CrewLivePanel';
+import { ObservabilityPanel } from '@/components/overview/ObservabilityPanel';
 import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -255,6 +257,10 @@ export default function OverviewPage() {
 
           <div style={{ height: 1, background: 'var(--border)' }} />
 
+          <CrewLivePanel />
+
+          <div style={{ height: 1, background: 'var(--border)' }} />
+
           {/* Quick Triggers */}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -282,6 +288,10 @@ export default function OverviewPage() {
               <Row label="Services online" value={`${CORE_SERVICES.filter(s => services[s]?.status === 'online').length}/${CORE_SERVICES.length}`} color="var(--accent-blue)" />
             </div>
           </section>
+
+          <div style={{ height: 1, background: 'var(--border)' }} />
+
+          <ObservabilityPanel />
 
           <div style={{ height: 1, background: 'var(--border)' }} />
 

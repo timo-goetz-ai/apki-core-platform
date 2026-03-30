@@ -1,5 +1,5 @@
 {
-  "name": "551_JARVIS_CALLBACK",
+  "name": "50_551_JARVIS_CALLBACK",
   "nodes": [
     {
       "id": "551-webhook-callback",
@@ -340,7 +340,7 @@
     }
   ],
   "meta": {
-    "templateId": "551_JARVIS_CALLBACK",
+    "templateId": "50_551_JARVIS_CALLBACK",
     "description": "Jarvis HITL — Telegram Button Callback → approve/reject → Nexus Execute"
   }
 }

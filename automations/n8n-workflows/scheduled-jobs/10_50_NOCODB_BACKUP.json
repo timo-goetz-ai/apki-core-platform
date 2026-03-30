@@ -1,17 +1,25 @@
 {
-  "name": "50_NOCODB_BACKUP",
+  "name": "10_50_NOCODB_BACKUP",
   "nodes": [
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "0 3 * * *" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 3 * * *"
+            }
+          ]
         }
       },
       "id": "schedule-trigger",
       "name": "Schedule (tägl. 03:00)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -21,7 +29,10 @@
       "name": "Tabellen definieren",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -30,7 +41,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -38,7 +52,10 @@
       "name": "Records abrufen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -48,7 +65,10 @@
       "name": "Upload vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -57,21 +77,32 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type",    "value": "application/json" },
-            { "name": "x-amz-acl",       "value": "private" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-amz-acl",
+              "value": "private"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
         "body": "={{ $json.body }}",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "s3-upload",
       "name": "S3 Upload",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -81,7 +112,10 @@
       "name": "Zusammenfassen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -91,8 +125,14 @@
         "contentType": "json",
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "6495183720" },
-            { "name": "text",    "value": "=💾 *NocoDB Backup*\nDatum: {{ $json.date.split('T')[0] }}\n✅ OK: {{ $json.tables_ok }} | ❌ Fehler: {{ $json.tables_error }}" }
+            {
+              "name": "chat_id",
+              "value": "6495183720"
+            },
+            {
+              "name": "text",
+              "value": "=💾 *NocoDB Backup*\nDatum: {{ $json.date.split('T')[0] }}\n✅ OK: {{ $json.tables_ok }} | ❌ Fehler: {{ $json.tables_error }}"
+            }
           ]
         }
       },
@@ -100,17 +140,89 @@
       "name": "Telegram Benachrichtigung",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     }
   ],
   "connections": {
-    "Schedule (tägl. 03:00)": { "main": [[{ "node": "Tabellen definieren", "type": "main", "index": 0 }]] },
-    "Tabellen definieren":    { "main": [[{ "node": "Records abrufen",     "type": "main", "index": 0 }]] },
-    "Records abrufen":        { "main": [[{ "node": "Upload vorbereiten",  "type": "main", "index": 0 }]] },
-    "Upload vorbereiten":     { "main": [[{ "node": "S3 Upload",           "type": "main", "index": 0 }]] },
-    "S3 Upload":              { "main": [[{ "node": "Zusammenfassen",      "type": "main", "index": 0 }]] },
-    "Zusammenfassen":         { "main": [[{ "node": "Telegram Benachrichtigung", "type": "main", "index": 0 }]] }
+    "Schedule (tägl. 03:00)": {
+      "main": [
+        [
+          {
+            "node": "Tabellen definieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tabellen definieren": {
+      "main": [
+        [
+          {
+            "node": "Records abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Records abrufen": {
+      "main": [
+        [
+          {
+            "node": "Upload vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "S3 Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3 Upload": {
+      "main": [
+        [
+          {
+            "node": "Zusammenfassen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zusammenfassen": {
+      "main": [
+        [
+          {
+            "node": "Telegram Benachrichtigung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1" },
-  "tags": [{ "name": "backup" }, { "name": "50_ops" }]
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "backup"
+    },
+    {
+      "name": "50_ops"
+    }
+  ]
 }

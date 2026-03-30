@@ -1,15 +1,23 @@
 {
-  "name": "435_WEEKLY_SUMMARY",
+  "name": "40_435_WEEKLY_SUMMARY",
   "nodes": [
     {
       "id": "435-schedule",
       "name": "Every Monday 09:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [200, 400],
+      "position": [
+        200,
+        400
+      ],
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "0 9 * * 1" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
         }
       }
     },
@@ -18,23 +26,39 @@
       "name": "Fetch Content Pieces",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 200],
+      "position": [
+        440,
+        200
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://homestack-nocodb:8080/api/v2/tables/mm1ssn0luruhzyx/records",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" },
-            { "name": "sort", "value": "-created_at" }
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "sort",
+              "value": "-created_at"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -43,23 +67,39 @@
       "name": "Fetch Pipeline Jobs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 360],
+      "position": [
+        440,
+        360
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://homestack-nocodb:8080/api/v2/tables/mgjsuwl4jwlyhdc/records",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "100" },
-            { "name": "sort", "value": "-created_at" }
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "sort",
+              "value": "-created_at"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -68,20 +108,35 @@
       "name": "Fetch n8n Executions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 520],
+      "position": [
+        440,
+        520
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.16:5678/api/v1/executions",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "limit", "value": "100" }]
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -90,23 +145,39 @@
       "name": "Fetch Content Opportunities",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 680],
+      "position": [
+        440,
+        680
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://homestack-nocodb:8080/api/v2/tables/m5abfrtfyr2j912/records",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "20" },
-            { "name": "sort", "value": "-created_at" }
+            {
+              "name": "limit",
+              "value": "20"
+            },
+            {
+              "name": "sort",
+              "value": "-created_at"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -115,7 +186,10 @@
       "name": "Weekly Analysis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [740, 440],
+      "position": [
+        740,
+        440
+      ],
       "parameters": {
         "jsCode": "// ── Hilfsfunktionen ──\nconst now = Date.now();\nconst msPerDay = 86400000;\nconst isThisWeek = (dateStr) => {\n  if (!dateStr) return false;\n  return (now - new Date(dateStr).getTime()) < 7 * msPerDay;\n};\n\n// ── Content Pieces ──\nlet pieces = [];\ntry { pieces = $('Fetch Content Pieces').first().json?.list ?? []; } catch(e) {}\nconst piecesThisWeek = pieces.filter(p => isThisWeek(p.created_at ?? p.CreatedAt));\nconst byStatus = {};\nfor (const p of piecesThisWeek) {\n  const s = p.status ?? 'unknown';\n  byStatus[s] = (byStatus[s] ?? 0) + 1;\n}\n\n// Top Pieces (published zuerst, dann approved, dann draft)\nconst statusOrder = { published: 0, approved: 1, review: 2, draft: 3, idea: 4 };\nconst topPieces = [...piecesThisWeek]\n  .sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9))\n  .slice(0, 5);\n\n// ── Pipeline Jobs ──\nlet pipelineJobs = [];\ntry { pipelineJobs = $('Fetch Pipeline Jobs').first().json?.list ?? []; } catch(e) {}\nconst jobsThisWeek = pipelineJobs.filter(j => isThisWeek(j.created_at ?? j.CreatedAt));\nconst jobsByStatus = {};\nconst jobsByStage = {};\nfor (const j of jobsThisWeek) {\n  const s = j.status ?? 'unknown';\n  const stage = j.stage ?? 'unknown';\n  jobsByStatus[s] = (jobsByStatus[s] ?? 0) + 1;\n  jobsByStage[stage] = (jobsByStage[stage] ?? 0) + 1;\n}\nconst jobsDone = jobsByStatus['completed'] ?? jobsByStatus['done'] ?? 0;\nconst jobsFailed = jobsByStatus['failed'] ?? jobsByStatus['error'] ?? 0;\nconst jobsTotal = jobsThisWeek.length;\nconst successRate = jobsTotal > 0 ? Math.round(jobsDone / jobsTotal * 100) : 0;\n\n// Bottleneck: Stage mit meisten Fehlern\nconst failedJobs = jobsThisWeek.filter(j => ['failed','error'].includes(j.status));\nconst failedByStage = {};\nfor (const j of failedJobs) {\n  const stage = j.stage ?? 'unknown';\n  failedByStage[stage] = (failedByStage[stage] ?? 0) + 1;\n}\nconst bottleneck = Object.entries(failedByStage).sort((a,b) => b[1]-a[1])[0];\n\n// ── n8n Ausführungen ──\nlet executions = [];\ntry { executions = $('Fetch n8n Executions').first().json?.data ?? []; } catch(e) {}\nconst execThisWeek = executions.filter(e => isThisWeek(e.startedAt ?? e.created_at));\nconst execSuccess = execThisWeek.filter(e => e.status === 'success').length;\nconst execFailed = execThisWeek.filter(e => ['error','failed'].includes(e.status)).length;\nconst execRate = execThisWeek.length > 0 ? Math.round(execSuccess / execThisWeek.length * 100) : 0;\n\n// Top Workflows nach Ausführungen\nconst wfCount = {};\nfor (const e of execThisWeek) {\n  const wfName = e.workflowData?.name ?? e.workflowId ?? 'unbekannt';\n  wfCount[wfName] = (wfCount[wfName] ?? 0) + 1;\n}\nconst topWorkflows = Object.entries(wfCount).sort((a,b) => b[1]-a[1]).slice(0, 3);\n\n// ── Content Opportunities ──\nlet opportunities = [];\ntry { opportunities = $('Fetch Content Opportunities').first().json?.list ?? []; } catch(e) {}\nconst newOpportunities = opportunities.filter(o => isThisWeek(o.created_at ?? o.CreatedAt));\nconst topOpportunities = newOpportunities.slice(0, 3);\n\n// ── Gesamtbewertung ──\nconst contentScore = piecesThisWeek.length >= 5 ? '🟢' : piecesThisWeek.length >= 2 ? '🟡' : '🔴';\nconst pipelineScore = successRate >= 80 ? '🟢' : successRate >= 50 ? '🟡' : '🔴';\nconst n8nScore = execRate >= 90 ? '🟢' : execRate >= 70 ? '🟡' : '🔴';\n\n// ── Report zusammenbauen ──\nconst kw = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * msPerDay));\nconst dateStr = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });\n\nlet report = `📊 *AIOS Weekly Summary — KW${kw}* (${dateStr})\\n`;\nreport += `━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n`;\n\n// KPI-Überblick\nreport += `*KPIs auf einen Blick:*\\n`;\nreport += `${contentScore} Content: ${piecesThisWeek.length} neue Pieces\\n`;\nreport += `${pipelineScore} Pipeline: ${successRate}% Erfolgsrate (${jobsDone}/${jobsTotal} Jobs)\\n`;\nreport += `${n8nScore} n8n: ${execRate}% Erfolgsrate (${execSuccess}/${execThisWeek.length} Runs)\\n\\n`;\n\n// Content-Produktion\nreport += `*📝 Content-Produktion:*\\n`;\nif (piecesThisWeek.length === 0) {\n  report += `• Keine neuen Pieces diese Woche\\n`;\n} else {\n  const statusLabels = { published: 'Published', approved: 'Approved', review: 'In Review', draft: 'Draft', idea: 'Idee' };\n  for (const [s, count] of Object.entries(byStatus)) {\n    report += `• ${statusLabels[s] ?? s}: ${count}\\n`;\n  }\n}\nif (topPieces.length > 0) {\n  report += `\\n*Top Pieces:*\\n`;\n  for (const p of topPieces) {\n    const icon = p.status === 'published' ? '✅' : p.status === 'approved' ? '🟢' : '📝';\n    const title = (p.title ?? p.topic ?? 'Unbekannt').substring(0, 50);\n    report += `${icon} ${title}\\n`;\n  }\n}\nreport += `\\n`;\n\n// Pipeline-Gesundheit\nreport += `*⚙️ Pipeline-Gesundheit:*\\n`;\nif (jobsTotal === 0) {\n  report += `• Keine Jobs diese Woche\\n`;\n} else {\n  report += `• Gesamt: ${jobsTotal} | ✅ ${jobsDone} | ❌ ${jobsFailed}\\n`;\n  if (bottleneck) {\n    report += `• 🚨 Bottleneck: Stage \"${bottleneck[0]}\" (${bottleneck[1]} Fehler)\\n`;\n  }\n}\nreport += `\\n`;\n\n// n8n-Statistik\nreport += `*🔄 n8n-Aktivität:*\\n`;\nreport += `• ${execThisWeek.length} Runs | ✅ ${execSuccess} | ❌ ${execFailed}\\n`;\nif (topWorkflows.length > 0) {\n  report += `• Aktivste Workflows:\\n`;\n  for (const [name, count] of topWorkflows) {\n    const shortName = name.substring(0, 35);\n    report += `  - ${shortName}: ${count}x\\n`;\n  }\n}\nreport += `\\n`;\n\n// Content-Chancen\nif (newOpportunities.length > 0) {\n  report += `*💡 Neue Content-Chancen (${newOpportunities.length}):*\\n`;\n  for (const o of topOpportunities) {\n    const topic = (o.topic ?? o.keyword ?? o.title ?? 'Unbekannt').substring(0, 45);\n    report += `• ${topic}\\n`;\n  }\n  report += `\\n`;\n}\n\n// Empfehlung\nreport += `*📌 Fokus nächste Woche:*\\n`;\nif (bottleneck) {\n  report += `• Stage \"${bottleneck[0]}\" debuggen (${bottleneck[1]} Fehler)\\n`;\n}\nif (piecesThisWeek.length < 3) {\n  report += `• Content-Produktion hochfahren (Ziel: 5+ Pieces/Woche)\\n`;\n}\nif (newOpportunities.length > 0) {\n  const bestOpportunity = topOpportunities[0];\n  const topic = (bestOpportunity?.topic ?? bestOpportunity?.keyword ?? 'Trend-Thema').substring(0, 40);\n  report += `• Beste Chance: \"${topic}\" aufgreifen\\n`;\n}\nif (!bottleneck && piecesThisWeek.length >= 3 && newOpportunities.length === 0) {\n  report += `• Alles im grünen Bereich — weiter so! 🚀\\n`;\n}\n\nreturn [{ json: { report } }];"
       }
@@ -125,7 +199,10 @@
       "name": "Send to Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 440],
+      "position": [
+        1000,
+        440
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
@@ -133,25 +210,95 @@
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ chat_id: $env.TELEGRAM_ALLOWED_CHAT_ID, text: $json.report, parse_mode: 'Markdown' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     }
   ],
   "connections": {
     "Every Monday 09:00": {
-      "main": [[
-        { "node": "Fetch Content Pieces",       "type": "main", "index": 0 },
-        { "node": "Fetch Pipeline Jobs",         "type": "main", "index": 0 },
-        { "node": "Fetch n8n Executions",        "type": "main", "index": 0 },
-        { "node": "Fetch Content Opportunities", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Fetch Content Pieces",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Pipeline Jobs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch n8n Executions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Content Opportunities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Fetch Content Pieces":       { "main": [[{ "node": "Weekly Analysis", "type": "main", "index": 0 }]] },
-    "Fetch Pipeline Jobs":        { "main": [[{ "node": "Weekly Analysis", "type": "main", "index": 0 }]] },
-    "Fetch n8n Executions":       { "main": [[{ "node": "Weekly Analysis", "type": "main", "index": 0 }]] },
-    "Fetch Content Opportunities":{ "main": [[{ "node": "Weekly Analysis", "type": "main", "index": 0 }]] },
-    "Weekly Analysis":            { "main": [[{ "node": "Send to Telegram", "type": "main", "index": 0 }]] }
+    "Fetch Content Pieces": {
+      "main": [
+        [
+          {
+            "node": "Weekly Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pipeline Jobs": {
+      "main": [
+        [
+          {
+            "node": "Weekly Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch n8n Executions": {
+      "main": [
+        [
+          {
+            "node": "Weekly Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Content Opportunities": {
+      "main": [
+        [
+          {
+            "node": "Weekly Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Analysis": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -159,7 +306,10 @@
     "saveDataSuccessExecution": "none"
   },
   "staticData": null,
-  "tags": ["content", "reporting"],
+  "tags": [
+    "content",
+    "reporting"
+  ],
   "meta": {
     "description": "435 — Wöchentlicher Summary: Content-Produktion, Pipeline-Gesundheit, n8n-Stats, Content-Chancen — jeden Montag 09:00 via Telegram"
   }

@@ -1,16 +1,26 @@
 {
-  "name": "340_NICHE_RESEARCH",
+  "name": "30_340_NICHE_RESEARCH",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "triggerAtHour": 10, "triggerAtMinute": 0 }] },
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
         "cronExpression": "0 10 * * 1"
       },
       "id": "schedule-trigger",
       "name": "Montag 10:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -18,7 +28,10 @@
       "name": "Manuell starten",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 480]
+      "position": [
+        240,
+        480
+      ]
     },
     {
       "parameters": {
@@ -27,7 +40,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -35,7 +51,10 @@
       "name": "Top Opportunities laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 380]
+      "position": [
+        460,
+        380
+      ]
     },
     {
       "parameters": {
@@ -45,7 +64,10 @@
       "name": "Items aufteilen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 380]
+      "position": [
+        680,
+        380
+      ]
     },
     {
       "parameters": {
@@ -55,7 +77,10 @@
       "name": "Gemini-Prompt bauen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 380]
+      "position": [
+        900,
+        380
+      ]
     },
     {
       "parameters": {
@@ -64,7 +89,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -75,7 +103,10 @@
       "name": "Gemini: Nischen-Analyse",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 380]
+      "position": [
+        1120,
+        380
+      ]
     },
     {
       "parameters": {
@@ -85,7 +116,10 @@
       "name": "Analyse extrahieren",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 380]
+      "position": [
+        1340,
+        380
+      ]
     },
     {
       "parameters": {
@@ -94,7 +128,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
@@ -105,7 +142,10 @@
       "name": "Opportunity aktualisieren",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 380]
+      "position": [
+        1560,
+        380
+      ]
     },
     {
       "parameters": {
@@ -114,49 +154,123 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"340_NICHE_RESEARCH\", \"action\": \"niche.analyzed\", \"resource_type\": \"content_opportunity\", \"resource_id\": \"{{ $('Analyse extrahieren').item.json.opp_id }}\", \"result\": \"ok\" }"
+        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"30_340_NICHE_RESEARCH\", \"action\": \"niche.analyzed\", \"resource_type\": \"content_opportunity\", \"resource_id\": \"{{ $('Analyse extrahieren').item.json.opp_id }}\", \"result\": \"ok\" }"
       },
       "id": "audit-log",
       "name": "Audit Log",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 380]
+      "position": [
+        1780,
+        380
+      ]
     }
   ],
   "connections": {
     "Montag 10:00": {
-      "main": [[{ "node": "Top Opportunities laden", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Top Opportunities laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Manuell starten": {
-      "main": [[{ "node": "Top Opportunities laden", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Top Opportunities laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Top Opportunities laden": {
-      "main": [[{ "node": "Items aufteilen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Items aufteilen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Items aufteilen": {
-      "main": [[{ "node": "Gemini-Prompt bauen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gemini-Prompt bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Gemini-Prompt bauen": {
-      "main": [[{ "node": "Gemini: Nischen-Analyse", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gemini: Nischen-Analyse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Gemini: Nischen-Analyse": {
-      "main": [[{ "node": "Analyse extrahieren", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Analyse extrahieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Analyse extrahieren": {
-      "main": [[{ "node": "Opportunity aktualisieren", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Opportunity aktualisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Opportunity aktualisieren": {
-      "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": ["research", "niche", "audience"]
+  "tags": [
+    "research",
+    "niche",
+    "audience"
+  ]
 }
