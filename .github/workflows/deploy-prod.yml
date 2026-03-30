@@ -264,21 +264,22 @@ jobs:
     if: success()
 
     steps:
-      - name: Load Slack Webhook from 1Password
+      - name: Load deploy notification webhook from 1Password
         uses: 1password/load-secrets-action@v2
         continue-on-error: true
         with:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          SLACK_WEBHOOK: op://05_INFRASTRUCTURE/Slack/webhook_url
+          # Existierendes Item DISCORD (05_INFRASTRUCTURE): Incoming-Webhook; Feld-ID aus 1Password (stabiler als langer URL-Feldname).
+          DEPLOY_NOTIFY_WEBHOOK: op://05_INFRASTRUCTURE/DISCORD/fcg2xntlbwh3mzp4wusxq5622m
 
-      - name: Sende Success-Notification
+      - name: Sende Success-Notification (Discord)
         run: |
-          if [ -z "${SLACK_WEBHOOK:-}" ]; then
-            echo "Kein Slack-Webhook (1Password Item Slack/webhook_url fehlt oder Load fehlgeschlagen) — überspringe."
+          if [ -z "${DEPLOY_NOTIFY_WEBHOOK:-}" ]; then
+            echo "Kein Webhook (1Password DISCORD-Feld oder Load fehlgeschlagen) — überspringe."
             exit 0
           fi
-          curl -s -X POST "$SLACK_WEBHOOK" \
+          curl -s -X POST "$DEPLOY_NOTIFY_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"text\": \"✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de\"}"
+            -d "{\"content\": \"✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de\"}"
