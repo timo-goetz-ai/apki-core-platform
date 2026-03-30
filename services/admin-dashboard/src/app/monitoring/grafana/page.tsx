@@ -75,7 +75,7 @@ export default function GrafanaPage() {
           <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'var(--layer-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13 }}>
             <RefreshCw size={13} /> Reload
           </button>
-          <a href={GRAFANA_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'var(--accent-blue)', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+          <a href={GRAFANA_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'var(--accent-blue)', color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
             <ExternalLink size={13} /> Grafana öffnen
           </a>
         </div>

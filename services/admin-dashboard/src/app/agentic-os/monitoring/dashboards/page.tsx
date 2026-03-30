@@ -22,7 +22,7 @@ export default function DashboardsPage() {
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-lg bg-[#070b14] border border-[#1a2540] hover:border-[#1d6ef5]/30 transition-colors group"
+              className="flex items-center gap-3 p-3 rounded-lg bg-[var(--layer-0)] border border-[var(--border)] hover:border-[var(--accent-blue)]/30 transition-colors group"
             >
               <span className="text-base">{s.icon}</span>
               <div>

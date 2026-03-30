@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
-  Zap, FileText, Image, Volume2, Share2, CheckCircle2,
+  Zap, FileText, Image as ImageIcon, Volume2, Share2, CheckCircle2,
   Loader2, Download, Eye, Youtube, Wand2, AlertCircle, ChevronDown
 } from "lucide-react";
 
@@ -18,7 +19,7 @@ interface PipelineStep {
 
 const STEPS: PipelineStep[] = [
   { id: "blog",      label: "Blog generieren",      icon: <FileText className="w-4 h-4" />,  requiresKey: null },
-  { id: "hero",      label: "Hero-Image",            icon: <Image className="w-4 h-4" />,     requiresKey: "PICSART" },
+  { id: "hero",      label: "Hero-Image",            icon: <ImageIcon className="w-4 h-4" />,     requiresKey: "PICSART" },
   { id: "social",    label: "Social Media Assets",   icon: <Share2 className="w-4 h-4" />,    requiresKey: "PICSART" },
   { id: "thumbnail", label: "YouTube Thumbnail",     icon: <Youtube className="w-4 h-4" />,   requiresKey: "PICSART" },
   { id: "voice",     label: "Voice-Over",            icon: <Volume2 className="w-4 h-4" />,   requiresKey: "FISH_AUDIO" },
@@ -253,12 +254,16 @@ export default function ContentFactoryWidget() {
           {/* Hero Image */}
           {stepsResult?.hero && (
             <div className="rounded-lg overflow-hidden border border-slate-700">
-              <img
-                src={String((stepsResult.hero as Record<string, unknown>).imageUrl ?? "")}
-                alt="Hero"
-                className="w-full object-cover max-h-40"
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              <div className="relative h-40 w-full">
+                <Image
+                  src={String((stepsResult.hero as Record<string, unknown>).imageUrl ?? "")}
+                  alt="Generiertes Hero-Bild"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800">
                 <Eye className="w-3.5 h-3.5 text-purple-400" />
                 <span className="text-xs text-slate-400 flex-1">Hero Image (1920×1080)</span>
@@ -280,8 +285,8 @@ export default function ContentFactoryWidget() {
               <div className="grid grid-cols-4 gap-1.5">
                 {Object.entries(stepsResult.social as Record<string, string>).map(([platform, url]) => (
                   <a key={platform} href={url} target="_blank" rel="noopener noreferrer"
-                    className="group relative rounded overflow-hidden border border-slate-700 aspect-square">
-                    <img src={url} alt={platform} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                    className="group relative aspect-square overflow-hidden rounded border border-slate-700">
+                    <Image src={url} alt={`Vorschau ${platform}`} fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
                       <span className="text-lg">{SOCIAL_ICONS[platform] ?? "📱"}</span>
                       <span className="text-[10px] text-white capitalize">{platform}</span>
@@ -295,11 +300,15 @@ export default function ContentFactoryWidget() {
           {/* YouTube Thumbnail */}
           {stepsResult?.thumbnail && (
             <div className="rounded-lg overflow-hidden border border-slate-700">
-              <img
-                src={String(stepsResult.thumbnail)}
-                alt="YouTube Thumbnail"
-                className="w-full object-cover max-h-28"
-              />
+              <div className="relative h-28 w-full">
+                <Image
+                  src={String(stepsResult.thumbnail)}
+                  alt="YouTube-Thumbnail"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
               <div className="px-3 py-1.5 bg-slate-800 flex items-center gap-2">
                 <Youtube className="w-3.5 h-3.5 text-red-500" />
                 <span className="text-xs text-slate-400 flex-1">YouTube Thumbnail (1280×720)</span>

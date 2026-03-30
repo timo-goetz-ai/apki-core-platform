@@ -28,9 +28,9 @@ const QUICK_PROMPTS = [
 ];
 
 const PROVIDERS = [
-  { provider: 'openrouter' as const, label: '⚡ Free · OpenRouter', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',  selBorder: 'rgba(56,189,248,0.2)',  selColor: '#38bdf8' },
-  { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude', color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',  selBorder: 'rgba(251,191,36,0.25)', selColor: '#fbbf24' },
-  { provider: 'google'     as const, label: '◈ Google AI Studio',   color: '#34d399',             selBg: 'rgba(52,211,153,0.08)',  selBorder: 'rgba(52,211,153,0.25)', selColor: '#34d399' },
+  { provider: 'openrouter' as const, label: '⚡ Free · OpenRouter', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',  selBorder: 'rgba(56,189,248,0.2)',  selColor: 'var(--accent-blue)' },
+  { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude', color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',  selBorder: 'rgba(251,191,36,0.25)', selColor: 'var(--accent-amber)' },
+  { provider: 'google'     as const, label: '◈ Google AI Studio',   color: 'var(--accent-green)',             selBg: 'rgba(52,211,153,0.08)',  selBorder: 'rgba(52,211,153,0.25)', selColor: 'var(--accent-green)' },
 ] as const;
 
 // ── Markdown-lite renderer ─────────────────────────────────────────────────────
@@ -78,13 +78,13 @@ function renderContent(content: string) {
     } else if (isBullet) {
       elements.push(
         <div key={i} style={{ display: 'flex', gap: 6, margin: '2px 0', alignItems: 'flex-start' }}>
-          <span style={{ color: '#38bdf8', marginTop: 3, flexShrink: 0 }}>·</span>
+          <span style={{ color: 'var(--accent-blue)', marginTop: 3, flexShrink: 0 }}>·</span>
           <span style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-secondary)' }}>{renderInline(line.slice(2))}</span>
         </div>
       );
     } else if (isTool) {
       elements.push(
-        <span key={i} style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#fbbf24', margin: '3px 0' }}>{line}</span>
+        <span key={i} style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-amber)', margin: '3px 0' }}>{line}</span>
       );
     } else {
       elements.push(
@@ -210,7 +210,7 @@ export default function ClaudeWorkspacePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 16px rgba(56,189,248,0.1)',
             }}>
-              <Bot size={16} style={{ color: '#38bdf8' }} />
+              <Bot size={16} style={{ color: 'var(--accent-blue)' }} />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Claude Workspace</p>
@@ -228,7 +228,7 @@ export default function ClaudeWorkspacePage() {
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '5px 10px', borderRadius: 8,
                 background: 'rgba(255,99,99,0.08)', border: '1px solid rgba(255,99,99,0.2)',
-                color: '#ff6363', fontSize: 11, fontFamily: 'var(--font-mono)', textDecoration: 'none',
+                color: 'var(--accent-red)', fontSize: 11, fontFamily: 'var(--font-mono)', textDecoration: 'none',
                 transition: 'background 0.12s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,99,99,0.14)')}
@@ -246,10 +246,10 @@ export default function ClaudeWorkspacePage() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999,
                     background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)',
-                    fontSize: 10, color: '#38bdf8', fontFamily: 'var(--font-mono)',
+                    fontSize: 10, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)',
                   }}
                 >
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#38bdf8', animation: 'status-pulse 0.8s ease-in-out infinite' }} />
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'status-pulse 0.8s ease-in-out infinite' }} />
                   streaming
                 </motion.div>
               )}
@@ -264,12 +264,12 @@ export default function ClaudeWorkspacePage() {
                   background: 'var(--layer-2)', border: '1px solid var(--border)',
                   color: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)', transition: 'border-color 0.12s',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#38bdf8')}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent-blue)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
-                <Zap size={10} style={{ color: '#fbbf24' }} />
+                <Zap size={10} style={{ color: 'var(--accent-amber)' }} />
                 {currentModel.label}
-                {currentModel.free && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
+                {currentModel.free && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: 'var(--accent-amber)' }}>FREE</span>}
                 <ChevronDown size={9} style={{ transform: modelOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
               </button>
 
@@ -280,17 +280,17 @@ export default function ClaudeWorkspacePage() {
                   borderRadius: 12, padding: 8, zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
                   maxHeight: 420, overflowY: 'auto',
                 }}>
-                  <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
+                  <p style={{ fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 4px 3px', marginBottom: 2, opacity: 0.85 }}>🔄 Auto · Orchestrator</p>
                   <button onClick={() => { setModelKey(ORCHESTRATOR_AUTO); setModelOpen(false); }} style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '5px 8px', borderRadius: 7, cursor: 'pointer', marginBottom: 8,
                     background: modelKey === ORCHESTRATOR_AUTO ? 'rgba(34,211,238,0.08)' : 'transparent',
                     border: modelKey === ORCHESTRATOR_AUTO ? '1px solid rgba(34,211,238,0.25)' : '1px solid transparent',
-                    color: modelKey === ORCHESTRATOR_AUTO ? '#22d3ee' : '#94a3b8',
+                    color: modelKey === ORCHESTRATOR_AUTO ? 'var(--accent-blue)' : 'var(--text-secondary)',
                     fontSize: 11, fontFamily: 'var(--font-mono)', textAlign: 'left',
                   }}>
                     <span>Auto — OpenRouter · Claude · Gemini</span>
-                    <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>ROUTING</span>
+                    <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: 'var(--accent-blue)' }}>ROUTING</span>
                   </button>
                   <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />
                   {PROVIDERS.map(({ provider, label, color, selBg, selBorder, selColor }) => {
@@ -310,8 +310,8 @@ export default function ClaudeWorkspacePage() {
                           }}>
                             <span>{m.label}</span>
                             <div style={{ display: 'flex', gap: 3 }}>
-                              {m.free  && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>FREE</span>}
-                              {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>TOOLS</span>}
+                              {m.free  && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(251,191,36,0.15)', color: 'var(--accent-amber)' }}>FREE</span>}
+                              {m.tools && <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(56,189,248,0.12)', color: 'var(--accent-blue)' }}>TOOLS</span>}
                             </div>
                           </button>
                         ))}
@@ -342,7 +342,7 @@ export default function ClaudeWorkspacePage() {
                   border: '1px solid rgba(56,189,248,0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2,
                 }}>
-                  <Sparkles size={13} style={{ color: '#38bdf8' }} />
+                  <Sparkles size={13} style={{ color: 'var(--accent-blue)' }} />
                 </div>
               )}
               <div style={{ maxWidth: '84%', position: 'relative' }}>
@@ -357,7 +357,7 @@ export default function ClaudeWorkspacePage() {
                   {msg.isStreaming && (
                     <span style={{
                       display: 'inline-block', width: 8, height: 14, marginLeft: 3,
-                      background: '#38bdf8', borderRadius: 2, verticalAlign: 'text-bottom',
+                      background: 'var(--accent-blue)', borderRadius: 2, verticalAlign: 'text-bottom',
                       animation: 'status-pulse 0.7s ease-in-out infinite',
                     }} />
                   )}
@@ -399,7 +399,7 @@ export default function ClaudeWorkspacePage() {
                   background: 'var(--layer-2)', color: 'var(--text-muted)',
                   fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)', transition: 'all 0.12s',
                 }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = '#38bdf8'; el.style.color = '#38bdf8'; el.style.background = 'rgba(56,189,248,0.06)'; }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'var(--accent-blue)'; el.style.color = 'var(--accent-blue)'; el.style.background = 'rgba(56,189,248,0.06)'; }}
                 onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)'; el.style.background = 'var(--layer-2)'; }}
                 >
                   <Icon size={10} />
@@ -423,7 +423,7 @@ export default function ClaudeWorkspacePage() {
                 fontSize: 13, fontFamily: 'var(--font-ui)', lineHeight: 1.5,
                 outline: 'none', transition: 'border-color 0.15s',
               }}
-              onFocus={e => (e.target.style.borderColor = '#38bdf8')}
+              onFocus={e => (e.target.style.borderColor = 'var(--accent-blue)')}
               onBlur={e => (e.target.style.borderColor = 'var(--border)')}
             />
             <button
@@ -431,12 +431,12 @@ export default function ClaudeWorkspacePage() {
               disabled={!input.trim() || streaming}
               style={{
                 width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                background: input.trim() && !streaming ? '#38bdf8' : 'var(--layer-3)',
+                background: input.trim() && !streaming ? 'var(--accent-blue)' : 'var(--layer-3)',
                 border: 'none', cursor: input.trim() && !streaming ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
               }}
             >
-              <Send size={15} style={{ color: input.trim() && !streaming ? '#fff' : 'var(--text-muted)' }} />
+              <Send size={15} style={{ color: input.trim() && !streaming ? 'white' : 'var(--text-muted)' }} />
             </button>
           </div>
         </div>

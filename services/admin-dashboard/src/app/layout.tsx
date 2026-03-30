@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { LLMProvider } from '@/lib/llm-context';
-import { AppSidebar } from '@/components/AppSidebar';
-import { AppHeader } from '@/components/AppHeader';
+import { AppShell } from '@/components/AppShell';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
@@ -29,19 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         style={{ background: 'var(--layer-0)', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}
       >
         <LLMProvider>
-          {/* Fixed sidebar */}
-          <AppSidebar />
-
-          {/* Fixed top header (starts after sidebar) */}
-          <AppHeader />
-
-          {/* Main content area */}
-          <main
-            className="min-h-screen"
-            style={{ paddingLeft: '240px', paddingTop: '60px' }}
-          >
-            {children}
-          </main>
+          <AppShell>{children}</AppShell>
           <Toaster />
         </LLMProvider>
       </body>

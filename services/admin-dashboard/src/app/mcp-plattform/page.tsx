@@ -13,27 +13,27 @@ interface ServiceStatus { status: 'online' | 'degraded' | 'offline' | 'unknown';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const MCP_SERVERS = [
-  { id: 'nocodb',     label: 'NocoDB',      desc: 'Datenbank-Backend',       icon: <Database size={14} />,  color: '#fb923c', url: 'https://nocodb.automation-plus-ki.de' },
-  { id: 'n8n',        label: 'n8n',         desc: 'Workflow Automation',      icon: <Zap size={14} />,       color: '#60a5fa', url: 'https://n8n.automation-plus-ki.de' },
-  { id: 'grafana',    label: 'Grafana',     desc: 'Monitoring & Alerts',      icon: <BarChart2 size={14} />, color: '#f97316', url: 'https://grafana.automation-plus-ki.de' },
-  { id: 'prometheus', label: 'Prometheus',  desc: 'Metriken & Alerting',      icon: <Activity size={14} />, color: '#a78bfa', url: 'https://prometheus.automation-plus-ki.de' },
-  { id: 'coolify',    label: 'Coolify',     desc: 'Deployment-Plattform',     icon: <Cloud size={14} />,    color: '#38bdf8', url: 'https://coolify.automation-plus-ki.de' },
-  { id: 'authentik',  label: 'Authentik',   desc: 'SSO & Identity Provider',  icon: <Shield size={14} />,   color: '#34d399', url: 'https://auth.automation-plus-ki.de' },
-  { id: 'qdrant',     label: 'Qdrant',      desc: 'Vektor-Datenbank',         icon: <Box size={14} />,      color: '#fbbf24', url: 'https://qdrant.automation-plus-ki.de' },
-  { id: 'redis',      label: 'Redis',       desc: 'In-Memory Cache',          icon: <Database size={14} />, color: '#f87171', url: null },
-  { id: 'postgres',   label: 'PostgreSQL',  desc: 'Relationale Datenbank',    icon: <Database size={14} />, color: '#60a5fa', url: null },
-  { id: 'traefik',    label: 'Traefik',     desc: 'Reverse Proxy & Routing',  icon: <Globe size={14} />,    color: '#34d399', url: null },
-  { id: 'github',     label: 'GitHub',      desc: 'Code & Versionierung',     icon: <GitBranch size={14} />,color: '#94a3b8', url: 'https://github.com/TimoGoetz1988/aios' },
-  { id: 'cloudflare', label: 'Cloudflare',  desc: 'DNS & CDN',                icon: <Globe size={14} />,    color: '#fbbf24', url: 'https://dash.cloudflare.com' },
+  { id: 'nocodb',     label: 'NocoDB',      desc: 'Datenbank-Backend',       icon: <Database size={14} />,  color: 'var(--accent-amber)', url: 'https://nocodb.automation-plus-ki.de' },
+  { id: 'n8n',        label: 'n8n',         desc: 'Workflow Automation',      icon: <Zap size={14} />,       color: 'var(--accent-blue)', url: 'https://n8n.automation-plus-ki.de' },
+  { id: 'grafana',    label: 'Grafana',     desc: 'Monitoring & Alerts',      icon: <BarChart2 size={14} />, color: 'var(--accent-amber)', url: 'https://grafana.automation-plus-ki.de' },
+  { id: 'prometheus', label: 'Prometheus',  desc: 'Metriken & Alerting',      icon: <Activity size={14} />, color: 'var(--accent-purple)', url: 'https://prometheus.automation-plus-ki.de' },
+  { id: 'coolify',    label: 'Coolify',     desc: 'Deployment-Plattform',     icon: <Cloud size={14} />,    color: 'var(--accent-blue)', url: 'https://coolify.automation-plus-ki.de' },
+  { id: 'authentik',  label: 'Authentik',   desc: 'SSO & Identity Provider',  icon: <Shield size={14} />,   color: 'var(--accent-green)', url: 'https://auth.automation-plus-ki.de' },
+  { id: 'qdrant',     label: 'Qdrant',      desc: 'Vektor-Datenbank',         icon: <Box size={14} />,      color: 'var(--accent-amber)', url: 'https://qdrant.automation-plus-ki.de' },
+  { id: 'redis',      label: 'Redis',       desc: 'In-Memory Cache',          icon: <Database size={14} />, color: 'var(--accent-red)', url: null },
+  { id: 'postgres',   label: 'PostgreSQL',  desc: 'Relationale Datenbank',    icon: <Database size={14} />, color: 'var(--accent-blue)', url: null },
+  { id: 'traefik',    label: 'Traefik',     desc: 'Reverse Proxy & Routing',  icon: <Globe size={14} />,    color: 'var(--accent-green)', url: null },
+  { id: 'github',     label: 'GitHub',      desc: 'Code & Versionierung',     icon: <GitBranch size={14} />,color: 'var(--text-secondary)', url: 'https://github.com/TimoGoetz1988/aios' },
+  { id: 'cloudflare', label: 'Cloudflare',  desc: 'DNS & CDN',                icon: <Globe size={14} />,    color: 'var(--accent-amber)', url: 'https://dash.cloudflare.com' },
 ];
 
 const INFRA = [
-  { label: 'Coolify',    sub: 'Deployments',      url: 'https://coolify.automation-plus-ki.de',    color: '#38bdf8' },
-  { label: 'Grafana',    sub: 'Monitoring',        url: 'https://grafana.automation-plus-ki.de',    color: '#f97316' },
-  { label: 'Authentik',  sub: 'SSO & Identity',    url: 'https://auth.automation-plus-ki.de',       color: '#34d399' },
-  { label: 'Prometheus', sub: 'Metriken',          url: 'https://prometheus.automation-plus-ki.de', color: '#a78bfa' },
-  { label: 'NocoDB',     sub: 'No-Code DB',        url: 'https://nocodb.automation-plus-ki.de',     color: '#fb923c' },
-  { label: 'n8n',        sub: 'Automations',       url: 'https://n8n.automation-plus-ki.de',        color: '#60a5fa' },
+  { label: 'Coolify',    sub: 'Deployments',      url: 'https://coolify.automation-plus-ki.de',    color: 'var(--accent-blue)' },
+  { label: 'Grafana',    sub: 'Monitoring',        url: 'https://grafana.automation-plus-ki.de',    color: 'var(--accent-amber)' },
+  { label: 'Authentik',  sub: 'SSO & Identity',    url: 'https://auth.automation-plus-ki.de',       color: 'var(--accent-green)' },
+  { label: 'Prometheus', sub: 'Metriken',          url: 'https://prometheus.automation-plus-ki.de', color: 'var(--accent-purple)' },
+  { label: 'NocoDB',     sub: 'No-Code DB',        url: 'https://nocodb.automation-plus-ki.de',     color: 'var(--accent-amber)' },
+  { label: 'n8n',        sub: 'Automations',       url: 'https://n8n.automation-plus-ki.de',        color: 'var(--accent-blue)' },
 ];
 
 const ENDPOINTS = [
@@ -47,7 +47,7 @@ const ENDPOINTS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function StatusDot({ s }: { s: ServiceStatus | undefined }) {
-  const c = !s ? '#475569' : s.status === 'online' ? '#34d399' : s.status === 'degraded' ? '#fbbf24' : s.status === 'offline' ? '#f87171' : '#475569';
+  const c = !s ? 'var(--text-muted)' : s.status === 'online' ? 'var(--accent-green)' : s.status === 'degraded' ? 'var(--accent-amber)' : s.status === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)';
   const pulse = s?.status === 'online';
   return (
     <span style={{
@@ -59,10 +59,10 @@ function StatusDot({ s }: { s: ServiceStatus | undefined }) {
 }
 
 function StatusIcon({ s }: { s: ServiceStatus | undefined }) {
-  if (!s || s.status === 'unknown') return <span style={{ color: '#475569', fontSize: 10, fontFamily: 'var(--font-mono)' }}>—</span>;
-  if (s.status === 'online') return <CheckCircle2 size={11} style={{ color: '#34d399' }} />;
-  if (s.status === 'degraded') return <AlertTriangle size={11} style={{ color: '#fbbf24' }} />;
-  return <XCircle size={11} style={{ color: '#f87171' }} />;
+  if (!s || s.status === 'unknown') return <span style={{ color: 'var(--text-muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}>—</span>;
+  if (s.status === 'online') return <CheckCircle2 size={11} style={{ color: 'var(--accent-green)' }} />;
+  if (s.status === 'degraded') return <AlertTriangle size={11} style={{ color: 'var(--accent-amber)' }} />;
+  return <XCircle size={11} style={{ color: 'var(--accent-red)' }} />;
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -70,7 +70,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#34d399' : 'var(--text-muted)', display: 'flex', padding: 2 }}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--accent-green)' : 'var(--text-muted)', display: 'flex', padding: 2 }}
     >
       {copied ? <Check size={11} /> : <Copy size={11} />}
     </button>
@@ -109,7 +109,7 @@ export default function MCPPlattformPage() {
             width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)',
           }}>
-            <Server size={18} style={{ color: '#38bdf8' }} />
+            <Server size={18} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>MCP Plattform</h1>
@@ -135,7 +135,7 @@ export default function MCPPlattformPage() {
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
               borderRadius: 8, textDecoration: 'none',
               background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.2)',
-              color: '#38bdf8', fontSize: 12, fontWeight: 600,
+              color: 'var(--accent-blue)', fontSize: 12, fontWeight: 600,
             }}
           >
             Coolify <ExternalLink size={10} />
@@ -146,10 +146,10 @@ export default function MCPPlattformPage() {
       {/* ── KPI Strip ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Online',    value: loading ? '…' : String(online),    color: '#34d399', icon: <CheckCircle2 size={13} /> },
-          { label: 'Degraded',  value: loading ? '…' : String(degraded), color: '#fbbf24', icon: <AlertTriangle size={13} /> },
-          { label: 'Offline',   value: loading ? '…' : String(offline),  color: '#f87171', icon: <XCircle size={13} /> },
-          { label: 'Gesamt',    value: String(MCP_SERVERS.length),        color: '#60a5fa', icon: <Server size={13} /> },
+          { label: 'Online',    value: loading ? '…' : String(online),    color: 'var(--accent-green)', icon: <CheckCircle2 size={13} /> },
+          { label: 'Degraded',  value: loading ? '…' : String(degraded), color: 'var(--accent-amber)', icon: <AlertTriangle size={13} /> },
+          { label: 'Offline',   value: loading ? '…' : String(offline),  color: 'var(--accent-red)', icon: <XCircle size={13} /> },
+          { label: 'Gesamt',    value: String(MCP_SERVERS.length),        color: 'var(--accent-blue)', icon: <Server size={13} /> },
         ].map(k => (
           <div key={k.label} style={{
             background: 'var(--layer-2)', border: '1px solid var(--border)',
@@ -277,7 +277,7 @@ export default function MCPPlattformPage() {
                   <span style={{ display: 'block', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.url}</span>
                 </div>
                 <span style={{
-                  fontSize: 8, fontFamily: 'var(--font-mono)', color: '#60a5fa',
+                  fontSize: 8, fontFamily: 'var(--font-mono)', color: 'var(--accent-blue)',
                   background: 'rgba(96,165,250,0.1)', padding: '2px 6px', borderRadius: 4, flexShrink: 0,
                 }}>{ep.auth}</span>
                 <CopyBtn text={ep.url} />

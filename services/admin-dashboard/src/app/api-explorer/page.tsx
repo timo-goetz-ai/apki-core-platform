@@ -87,11 +87,11 @@ const API_ENDPOINTS: EndpointGroup[] = [
 ];
 
 const METHOD_STYLE: Record<HttpMethod, { bg: string; border: string; color: string }> = {
-  GET:    { bg: 'rgba(56,189,248,0.12)',  border: 'rgba(56,189,248,0.25)',  color: '#38bdf8' },
-  POST:   { bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.25)',  color: '#34d399' },
-  PUT:    { bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)',  color: '#fbbf24' },
-  DELETE: { bg: 'rgba(248,113,113,0.12)',border: 'rgba(248,113,113,0.25)', color: '#f87171' },
-  WS:     { bg: 'rgba(167,139,250,0.12)',border: 'rgba(167,139,250,0.25)', color: '#a78bfa' },
+  GET:    { bg: 'rgba(56,189,248,0.12)',  border: 'rgba(56,189,248,0.25)',  color: 'var(--accent-blue)' },
+  POST:   { bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.25)',  color: 'var(--accent-green)' },
+  PUT:    { bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)',  color: 'var(--accent-amber)' },
+  DELETE: { bg: 'rgba(248,113,113,0.12)',border: 'rgba(248,113,113,0.25)', color: 'var(--accent-red)' },
+  WS:     { bg: 'rgba(167,139,250,0.12)',border: 'rgba(167,139,250,0.25)', color: 'var(--accent-purple)' },
 };
 
 const BASE_URL = 'https://api.automation-plus-ki.de';
@@ -129,11 +129,11 @@ function CopyButton({ text }: { text: string }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: 26, height: 26, borderRadius: 6, cursor: 'pointer',
         background: 'rgba(22,27,34,0.6)', border: '1px solid rgba(148,163,184,0.1)',
-        color: copied ? '#34d399' : '#475569', transition: 'all 0.15s',
+        color: copied ? 'var(--accent-green)' : 'var(--text-muted)', transition: 'all 0.15s',
         flexShrink: 0,
       }}
-      onMouseEnter={e => { if (!copied) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.25)'; el.style.color = '#94a3b8'; } }}
-      onMouseLeave={e => { if (!copied) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = '#475569'; } }}
+      onMouseEnter={e => { if (!copied) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.25)'; el.style.color = 'var(--text-secondary)'; } }}
+      onMouseLeave={e => { if (!copied) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = 'var(--text-muted)'; } }}
       title="Copy full URL"
     >
       {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -177,13 +177,13 @@ export default function ApiExplorerPage() {
               border: '1px solid rgba(52,211,153,0.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Code2 size={17} style={{ color: '#34d399' }} />
+              <Code2 size={17} style={{ color: 'var(--accent-green)' }} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
+              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 API Explorer
               </h1>
-              <p style={{ margin: 0, fontSize: 12, color: '#475569', fontFamily: 'var(--font-mono)' }}>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {BASE_URL} · {totalEndpoints} Endpoints
               </p>
             </div>
@@ -205,11 +205,11 @@ export default function ApiExplorerPage() {
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
                   background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.1)',
-                  color: '#94a3b8', fontSize: 12, fontWeight: 500, textDecoration: 'none',
+                  color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
                   transition: 'all 0.12s',
                 }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(56,189,248,0.3)'; el.style.color = '#38bdf8'; el.style.background = 'rgba(56,189,248,0.06)'; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = '#94a3b8'; el.style.background = 'rgba(22,27,34,0.8)'; }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(56,189,248,0.3)'; el.style.color = 'var(--accent-blue)'; el.style.background = 'rgba(56,189,248,0.06)'; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = 'var(--text-secondary)'; el.style.background = 'rgba(22,27,34,0.8)'; }}
               >
                 {btn.icon}
                 {btn.label}
@@ -229,16 +229,16 @@ export default function ApiExplorerPage() {
           style={{
             width: '100%', padding: '10px 14px 10px 40px',
             background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.1)',
-            borderRadius: 10, color: '#f1f5f9', fontSize: 13,
+            borderRadius: 10, color: 'var(--text-primary)', fontSize: 13,
             fontFamily: 'var(--font-mono)', outline: 'none',
             transition: 'border-color 0.15s', boxSizing: 'border-box',
           }}
-          onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#38bdf8'}
+          onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'var(--accent-blue)'}
           onBlur={e => (e.target as HTMLInputElement).style.borderColor = 'rgba(148,163,184,0.1)'}
         />
         <Code2 size={14} style={{
           position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-          color: '#475569', pointerEvents: 'none',
+          color: 'var(--text-muted)', pointerEvents: 'none',
         }} />
       </div>
 
@@ -263,11 +263,11 @@ export default function ApiExplorerPage() {
           <motion.div key={group.group} variants={item}>
             {/* Group header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {group.group}
               </span>
               <div style={{ flex: 1, height: 1, background: 'rgba(148,163,184,0.08)' }} />
-              <span style={{ fontSize: 9, color: '#475569', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {group.endpoints.length} endpoints
               </span>
             </div>
@@ -293,19 +293,19 @@ export default function ApiExplorerPage() {
                   <code style={{
                     flex: '0 0 auto', minWidth: 200,
                     fontSize: 12, fontFamily: 'var(--font-mono)',
-                    color: '#f1f5f9',
+                    color: 'var(--text-primary)',
                   }}>
                     {ep.path}
                   </code>
                   <span style={{
-                    flex: 1, fontSize: 12, color: '#94a3b8',
+                    flex: 1, fontSize: 12, color: 'var(--text-secondary)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {ep.desc}
                   </span>
                   {ep.latency && (
                     <span style={{
-                      fontSize: 10, fontFamily: 'var(--font-mono)', color: '#475569',
+                      fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
                       padding: '2px 7px', borderRadius: 4,
                       background: 'rgba(148,163,184,0.05)',
                       flexShrink: 0,
@@ -322,7 +322,7 @@ export default function ApiExplorerPage() {
       </motion.div>
 
       {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#475569', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
           Keine Endpoints gefunden für &ldquo;{search}&rdquo;
         </div>
       )}

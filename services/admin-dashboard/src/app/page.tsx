@@ -6,6 +6,7 @@ import {
   CheckCircle2, AlertTriangle, Minus, ExternalLink,
   Play, Zap, TrendingUp, Clock, ArrowRight,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { TimelineFeed } from '@/components/overview/TimelineFeed';
 import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
@@ -14,7 +15,7 @@ interface ServiceHealth { status: 'online' | 'degraded' | 'offline' | 'unknown';
 interface ContentPending { Id: number; topic: string; tone?: string; confidence_score?: number; }
 
 const STATUS_DOT: Record<string, string> = {
-  online: '#34d399', degraded: '#fbbf24', offline: '#f87171', unknown: '#475569',
+  online: 'var(--accent-green)', degraded: 'var(--accent-amber)', offline: 'var(--accent-red)', unknown: 'var(--text-muted)',
 };
 const STATUS_ICON = {
   online:   <CheckCircle2 size={11} />,
@@ -26,9 +27,9 @@ const STATUS_ICON = {
 const CORE_SERVICES = ['n8n', 'nocodb', 'grafana', 'coolify', 'authentik', 'prometheus'];
 
 const QUICK_TRIGGERS = [
-  { label: 'Trend-Scan',    id: 'fEYWN4pWhRcG2tLg', color: '#60a5fa' },
-  { label: 'Content-Gen',   id: 'xptdJvE2eiTNTtK0', color: '#a78bfa' },
-  { label: 'Daily Digest',  id: 'zb9g2zj7SKptuBRq', color: '#fb923c' },
+  { label: 'Trend-Scan',    id: 'fEYWN4pWhRcG2tLg', accent: 'var(--accent-blue)' },
+  { label: 'Content-Gen',   id: 'xptdJvE2eiTNTtK0', accent: 'var(--accent-purple)' },
+  { label: 'Daily Digest',  id: 'zb9g2zj7SKptuBRq', accent: 'var(--accent-amber)' },
 ];
 
 function confidenceAmpel(score?: number): string {
@@ -50,11 +51,11 @@ function StatusStrip({ services }: { services: Record<string, ServiceHealth> }) 
     <div style={{
       display: 'flex', alignItems: 'center',
       padding: '8px 20px',
-      background: allGood ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)',
-      borderBottom: `1px solid ${allGood ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.2)'}`,
+      background: allGood ? 'color-mix(in srgb, var(--accent-green) 8%, var(--layer-0))' : 'color-mix(in srgb, var(--accent-amber) 8%, var(--layer-0))',
+      borderBottom: allGood ? '1px solid color-mix(in srgb, var(--accent-green) 22%, var(--border))' : '1px solid color-mix(in srgb, var(--accent-amber) 22%, var(--border))',
       fontSize: 11, color: 'var(--text-muted)', flexWrap: 'wrap', gap: 12,
     }}>
-      <span style={{ color: allGood ? '#34d399' : '#fbbf24', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+      <span style={{ color: allGood ? 'var(--accent-green)' : 'var(--accent-amber)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
         {allGood ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
         {allGood ? 'Alle Services online' : `${degraded > 0 ? `${degraded} degraded` : ''}${offline > 0 ? ` · ${offline} offline` : ''}`}
       </span>
@@ -110,15 +111,13 @@ function PendingCard({ item, onAction }: { item: ContentPending; onAction: () =>
           {item.tone}
         </span>
       )}
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button onClick={() => act('approve')} disabled={!!loading}
-          style={{ flex: 1, fontSize: 11, padding: '4px 0', borderRadius: 5, border: 'none', cursor: 'pointer', fontWeight: 700, background: '#34d399', color: '#052e16', opacity: loading === 'approve' ? 0.6 : 1 }}>
+      <div className="flex gap-2">
+        <Button type="button" variant="success" size="sm" className="flex-1 text-xs font-bold" onClick={() => act('approve')} disabled={!!loading}>
           {loading === 'approve' ? '…' : '✅ Freigeben'}
-        </button>
-        <button onClick={() => act('discard')} disabled={!!loading}
-          style={{ flex: 1, fontSize: 11, padding: '4px 0', borderRadius: 5, border: 'none', cursor: 'pointer', fontWeight: 700, background: 'var(--layer-2)', color: 'var(--text-muted)', opacity: loading === 'discard' ? 0.6 : 1 }}>
+        </Button>
+        <Button type="button" variant="secondary" size="sm" className="flex-1 text-xs font-bold text-[--text-muted]" onClick={() => act('discard')} disabled={!!loading}>
           {loading === 'discard' ? '…' : '🗑️ Verwerfen'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -137,18 +136,26 @@ function QuickTrigger({ wf, onDone }: { wf: typeof QUICK_TRIGGERS[0]; onDone: ()
     } catch { setState('error'); }
   }
 
-  const bg    = state === 'running' ? `${wf.color}15` : state === 'done' ? '#34d39915' : state === 'error' ? '#f8717115' : 'var(--layer-1)';
-  const bdr   = state === 'running' ? wf.color : state === 'done' ? '#34d399' : state === 'error' ? '#f87171' : 'var(--border)';
+  const bg =
+    state === 'running' ? `color-mix(in srgb, ${wf.accent} 14%, var(--layer-1))`
+    : state === 'done' ? 'color-mix(in srgb, var(--accent-green) 14%, var(--layer-1))'
+    : state === 'error' ? 'color-mix(in srgb, var(--accent-red) 14%, var(--layer-1))'
+    : 'var(--layer-1)';
+  const bdr =
+    state === 'running' ? wf.accent
+    : state === 'done' ? 'var(--accent-green)'
+    : state === 'error' ? 'var(--accent-red)'
+    : 'var(--border)';
   const label = state === 'running' ? 'Läuft…' : state === 'done' ? 'Gestartet ✓' : state === 'error' ? 'Fehler' : wf.label;
 
   return (
-    <button onClick={trigger} style={{
+    <button type="button" onClick={trigger} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]" style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 12px', borderRadius: 7, border: `1px solid ${bdr}`,
       background: bg, cursor: 'pointer', width: '100%',
       fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', transition: 'all 0.15s',
     }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: state === 'done' ? '#34d399' : wf.color, flexShrink: 0,
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: state === 'done' ? 'var(--accent-green)' : wf.accent, flexShrink: 0,
         animation: state === 'running' ? 'pulse-dot 0.8s ease-in-out infinite' : 'none' }} />
       <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
       <Play size={10} color="var(--text-muted)" />
@@ -220,10 +227,10 @@ export default function OverviewPage() {
           {/* Pending Approvals */}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <Clock size={13} color="#a78bfa" />
+              <Clock size={13} color="var(--accent-purple)" />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Freigabe ausstehend</span>
               {pending.length > 0 && (
-                <span style={{ marginLeft: 'auto', background: '#a78bfa', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '1px 7px' }}>
+                <span style={{ marginLeft: 'auto', background: 'var(--accent-purple)', color: 'white', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '1px 7px' }}>
                   {pending.length}
                 </span>
               )}
@@ -251,7 +258,7 @@ export default function OverviewPage() {
           {/* Quick Triggers */}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <Zap size={13} color="#fb923c" />
+              <Zap size={13} color="var(--accent-amber)" />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Quick Trigger</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -266,13 +273,13 @@ export default function OverviewPage() {
           {/* System Snapshot */}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <TrendingUp size={13} color="#34d399" />
+              <TrendingUp size={13} color="var(--accent-green)" />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>System Snapshot</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
-              <Row label="Trends in DB" value={trendCount != null ? String(trendCount) : '…'} color="#34d399" />
-              <Row label="Freigaben offen" value={String(pending.length)} color={pending.length > 0 ? '#a78bfa' : '#34d399'} />
-              <Row label="Services online" value={`${CORE_SERVICES.filter(s => services[s]?.status === 'online').length}/${CORE_SERVICES.length}`} color="#60a5fa" />
+              <Row label="Trends in DB" value={trendCount != null ? String(trendCount) : '…'} color="var(--accent-green)" />
+              <Row label="Freigaben offen" value={String(pending.length)} color={pending.length > 0 ? 'var(--accent-purple)' : 'var(--accent-green)'} />
+              <Row label="Services online" value={`${CORE_SERVICES.filter(s => services[s]?.status === 'online').length}/${CORE_SERVICES.length}`} color="var(--accent-blue)" />
             </div>
           </section>
 

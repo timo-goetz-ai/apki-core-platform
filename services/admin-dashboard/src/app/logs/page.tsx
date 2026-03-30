@@ -14,10 +14,10 @@ interface LogEntry {
 type LevelFilter = 'all' | 'info' | 'warn' | 'error' | 'critical';
 
 const LEVEL_COLOR: Record<string, string> = {
-  info:     '#94a3b8',
-  warn:     '#f59e0b',
-  error:    '#ef4444',
-  critical: '#ef4444',
+  info:     'var(--text-secondary)',
+  warn:     'var(--accent-amber)',
+  error:    'var(--accent-red)',
+  critical: 'var(--accent-red)',
 };
 
 const LEVEL_BG: Record<string, string> = {
@@ -210,7 +210,7 @@ export default function LogsPage() {
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
             background: autoScroll ? 'rgba(52,211,153,0.1)' : 'var(--layer-3)',
             border: autoScroll ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--border)',
-            color: autoScroll ? '#34d399' : 'var(--text-muted)',
+            color: autoScroll ? 'var(--accent-green)' : 'var(--text-muted)',
           }}
         >
           <span style={{ fontSize: 9, lineHeight: 1, opacity: autoScroll ? 1 : 0.5 }}>●</span>
@@ -239,7 +239,7 @@ export default function LogsPage() {
         {error && !loading && (
           <div style={{
             margin: '16px 16px 0', padding: '10px 14px', borderRadius: 6, fontSize: 12,
-            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--accent-red)',
           }}>
             {error}
           </div>
@@ -253,7 +253,7 @@ export default function LogsPage() {
 
         {filtered.map((entry, idx) => {
           const isExpanded = expanded === entry.id;
-          const color      = LEVEL_COLOR[entry.level] ?? '#94a3b8';
+          const color      = LEVEL_COLOR[entry.level] ?? 'var(--text-secondary)';
           const isCritical = entry.level === 'critical';
           const isOdd      = idx % 2 === 1;
 
@@ -346,17 +346,17 @@ export default function LogsPage() {
       }}>
         <span>
           {counts.error > 0 && (
-            <span style={{ color: '#ef4444', marginRight: 12 }}>
+            <span style={{ color: 'var(--accent-red)', marginRight: 12 }}>
               ● {counts.error} error{counts.error !== 1 ? 's' : ''}
             </span>
           )}
           {counts.warn > 0 && (
-            <span style={{ color: '#f59e0b', marginRight: 12 }}>
+            <span style={{ color: 'var(--accent-amber)', marginRight: 12 }}>
               ● {counts.warn} warning{counts.warn !== 1 ? 's' : ''}
             </span>
           )}
           {counts.critical > 0 && (
-            <span style={{ color: '#ef4444', fontWeight: 700 }}>
+            <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>
               ● {counts.critical} critical
             </span>
           )}

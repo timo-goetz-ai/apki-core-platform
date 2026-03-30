@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 
 // ── Color constants (status-only) ─────────────────────────────────────────────
 const C = {
-  success: '#34d399',
-  warning: '#f59e0b',
-  error:   '#ef4444',
-  unknown: '#94a3b8',
+  success: 'var(--accent-green)',
+  warning: 'var(--accent-amber)',
+  error:   'var(--accent-red)',
+  unknown: 'var(--text-secondary)',
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ function Sparkline({ values, color, width = 120, height = 28 }: {
 // ── Progress bar ──────────────────────────────────────────────────────────────
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div style={{ height: 3, background: '#1c1f23', borderRadius: 2, overflow: 'hidden', marginTop: 4 }}>
+    <div style={{ height: 3, background: 'var(--layer-2)', borderRadius: 2, overflow: 'hidden', marginTop: 4 }}>
       <div style={{
         height: '100%',
         width: `${Math.min(Math.max(pct, 0), 100)}%`,
@@ -265,29 +265,29 @@ export default function MonitoringPage() {
   const S = {
     page: {
       padding: '24px 28px 48px',
-      background: 'var(--layer-0, #0f1011)',
+      background: 'var(--layer-0, var(--layer-0))',
       minHeight: '100vh',
       fontFamily: 'var(--font-ui, system-ui)',
-      color: 'var(--text-primary, #e8eaed)',
+      color: 'var(--text-primary, var(--text-primary))',
     } as React.CSSProperties,
     label: {
       fontSize: 10,
       fontFamily: 'var(--font-mono)',
       textTransform: 'uppercase' as const,
       letterSpacing: '0.1em',
-      color: 'var(--text-muted, #4a5058)',
+      color: 'var(--text-muted, var(--text-muted))',
     },
     sectionTitle: {
       fontSize: 10,
       fontFamily: 'var(--font-mono)',
       textTransform: 'uppercase' as const,
       letterSpacing: '0.12em',
-      color: 'var(--text-muted, #4a5058)',
+      color: 'var(--text-muted, var(--text-muted))',
       marginBottom: 10,
     },
     card: {
-      background: 'var(--layer-2, #1c1f23)',
-      border: '1px solid var(--border, #252a2f)',
+      background: 'var(--layer-2, var(--layer-2))',
+      border: '1px solid var(--border, var(--layer-3))',
       borderRadius: 8,
     } as React.CSSProperties,
   };
@@ -297,7 +297,7 @@ export default function MonitoringPage() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary, #e8eaed)' }}>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary, var(--text-primary))' }}>
             Monitoring
           </h1>
           {firingAlerts.length > 0 && (
@@ -313,7 +313,7 @@ export default function MonitoringPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {lastUpdated && (
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, #4a5058)' }}>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, var(--text-muted))' }}>
               Updated {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           )}
@@ -333,9 +333,9 @@ export default function MonitoringPage() {
             disabled={spinning}
             style={{
               padding: '5px 12px', borderRadius: 6, fontSize: 12,
-              background: 'var(--layer-2, #1c1f23)',
-              border: '1px solid var(--border, #252a2f)',
-              color: 'var(--text-secondary, #8c9196)',
+              background: 'var(--layer-2, var(--layer-2))',
+              border: '1px solid var(--border, var(--layer-3))',
+              color: 'var(--text-secondary, var(--text-secondary))',
               cursor: spinning ? 'default' : 'pointer',
               opacity: spinning ? 0.5 : 1,
               fontFamily: 'var(--font-ui)',
@@ -361,8 +361,8 @@ export default function MonitoringPage() {
                 padding: '14px 16px',
                 transition: 'border-color 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-bright, #353b42)'}
-              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border, #252a2f)'}
+              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-bright, var(--layer-3))'}
+              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border, var(--layer-3))'}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   <span style={{
@@ -370,7 +370,7 @@ export default function MonitoringPage() {
                     flexShrink: 0,
                     animation: st === 'online' ? 'mon-pulse 2.5s ease-in-out infinite' : 'none',
                   }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #e8eaed)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, var(--text-primary))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {svc.label}
                   </span>
                 </div>
@@ -378,7 +378,7 @@ export default function MonitoringPage() {
                   {st === 'unknown' && loading ? '…' : st}
                 </div>
                 {health?.latency !== undefined && (
-                  <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, #4a5058)' }}>
+                  <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, var(--text-muted))' }}>
                     {health.latency}ms
                   </div>
                 )}
@@ -562,7 +562,7 @@ export default function MonitoringPage() {
             gridTemplateColumns: '100px 1fr 80px 80px',
             gap: 0,
             padding: '8px 16px',
-            borderBottom: '1px solid var(--border, #252a2f)',
+            borderBottom: '1px solid var(--border, var(--layer-3))',
           }}>
             {['Time', 'Workflow', 'Duration', 'Status'].map(h => (
               <span key={h} style={{ ...S.label }}>{h}</span>
@@ -574,7 +574,7 @@ export default function MonitoringPage() {
             </div>
           ) : (
             executions.map((ex, i) => {
-              const col = ex.status === 'success' ? C.success : ex.status === 'running' ? '#60a5fa' : ex.status === 'error' ? C.error : C.unknown;
+              const col = ex.status === 'success' ? C.success : ex.status === 'running' ? 'var(--accent-blue)' : ex.status === 'error' ? C.error : C.unknown;
               const name = ex.workflowData?.name ?? ex.workflowId ?? 'Workflow';
               return (
                 <div
@@ -584,11 +584,11 @@ export default function MonitoringPage() {
                     gridTemplateColumns: '100px 1fr 80px 80px',
                     gap: 0,
                     padding: '9px 16px',
-                    borderBottom: i < executions.length - 1 ? '1px solid var(--border, #252a2f)' : 'none',
+                    borderBottom: i < executions.length - 1 ? '1px solid var(--border, var(--layer-3))' : 'none',
                     transition: 'background 0.1s',
                     cursor: 'default',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-1, #151719)'}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--layer-1, var(--layer-1))'}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
                 >
                   <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>

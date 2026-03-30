@@ -34,7 +34,7 @@ export default function PromptLibraryPage() {
           <p className="text-xs text-slate-500 line-clamp-2">{injected.content.slice(0, 200)}…</p>
           <a
             href={`/agentic-os/engine-room/agents?prompt=${encodeURIComponent(injected.entry.path)}`}
-            className="inline-block text-xs text-[#1d6ef5] hover:text-[#1d6ef5]/80 mt-1"
+            className="inline-block text-xs text-[var(--accent-blue)] hover:text-[var(--accent-blue)]/80 mt-1"
           >
             → Crew mit diesem Prompt starten
           </a>

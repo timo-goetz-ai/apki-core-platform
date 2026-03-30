@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  FileText, Image, Youtube, Mail, Send, Plus, Copy, Check,
+  FileText, Image as ImageIcon, Youtube, Mail, Send, Plus, Copy, Check,
   ExternalLink, BookOpen, Megaphone, Download, MessageSquare,
   Palette, Package, ChevronDown, ChevronUp, Hash,
 } from 'lucide-react';
@@ -38,7 +38,7 @@ interface BrandItem {
 
 // ── Category config ────────────────────────────────────────────────────────────
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'Infografik':   <Image size={13} />,
+  'Infografik':   <ImageIcon size={13} />,
   'Blogartikel':  <FileText size={13} />,
   'YouTube':      <Youtube size={13} />,
   'Social Media': <Megaphone size={13} />,
@@ -179,7 +179,7 @@ function TemplateEditor({
                       <span style={{
                         fontSize: 8, padding: '1px 5px', borderRadius: 4,
                         background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)',
-                        color: '#38bdf8',
+                        color: 'var(--accent-blue)',
                       }}>
                         AUTO
                       </span>
@@ -233,7 +233,7 @@ function TemplateEditor({
             flex: 1, padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
             background: copied ? 'rgba(52,211,153,0.1)' : 'rgba(56,189,248,0.08)',
             border: copied ? '1px solid rgba(52,211,153,0.28)' : '1px solid rgba(56,189,248,0.2)',
-            color: copied ? '#34d399' : '#38bdf8',
+            color: copied ? 'var(--accent-green)' : 'var(--accent-blue)',
             fontSize: 12, fontWeight: 500,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}
@@ -248,7 +248,7 @@ function TemplateEditor({
           style={{
             padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
             background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)',
-            color: '#a78bfa', fontSize: 12, fontWeight: 500,
+            color: 'var(--accent-purple)', fontSize: 12, fontWeight: 500,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}
         >
@@ -360,7 +360,7 @@ export default function TemplatesPage() {
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 12px', borderRadius: 7,
                 background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)',
-                color: '#38bdf8', fontSize: 12, fontWeight: 500, textDecoration: 'none',
+                color: 'var(--accent-blue)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
               }}
             >
               <Plus size={12} /> Neu in NocoDB <ExternalLink size={10} style={{ opacity: 0.6 }} />
@@ -381,7 +381,7 @@ export default function TemplatesPage() {
                   padding: '4px 10px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
                   background: isActive ? 'rgba(56,189,248,0.1)' : 'transparent',
                   border: isActive ? '1px solid rgba(56,189,248,0.28)' : '1px solid transparent',
-                  color: isActive ? '#38bdf8' : 'var(--text-muted)',
+                  color: isActive ? 'var(--accent-blue)' : 'var(--text-muted)',
                   fontWeight: isActive ? 600 : 400, transition: 'all 0.1s',
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                 }}
@@ -392,7 +392,7 @@ export default function TemplatesPage() {
                   <span style={{
                     fontSize: 9, padding: '1px 5px', borderRadius: 999,
                     background: isActive ? 'rgba(56,189,248,0.18)' : 'rgba(148,163,184,0.08)',
-                    color: isActive ? '#38bdf8' : '#475569',
+                    color: isActive ? 'var(--accent-blue)' : 'var(--text-muted)',
                     fontFamily: 'var(--font-mono)',
                   }}>
                     {count}
@@ -436,7 +436,7 @@ export default function TemplatesPage() {
                   style={{
                     padding: '11px 16px',
                     borderBottom: '1px solid var(--border)',
-                    borderLeft: `2px solid ${isSelected ? '#38bdf8' : 'transparent'}`,
+                    borderLeft: `2px solid ${isSelected ? 'var(--accent-blue)' : 'transparent'}`,
                     background: isSelected ? 'rgba(56,189,248,0.05)' : 'transparent',
                     cursor: 'pointer', transition: 'all 0.1s',
                   }}
@@ -449,7 +449,7 @@ export default function TemplatesPage() {
                     </span>
                     <span style={{
                       fontSize: 12, fontWeight: isSelected ? 600 : 500,
-                      color: isSelected ? '#f1f5f9' : 'var(--text-primary)',
+                      color: isSelected ? 'var(--text-primary)' : 'var(--text-primary)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
                     }}>
                       {tpl.Name}
@@ -459,13 +459,13 @@ export default function TemplatesPage() {
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {tpl.Kategorie}
                     </span>
-                    <span style={{ fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {varCount} Var.
                     </span>
                   </div>
                   {tpl.Beschreibung && (
                     <p style={{
-                      margin: '5px 0 0 19px', fontSize: 11, color: '#475569',
+                      margin: '5px 0 0 19px', fontSize: 11, color: 'var(--text-muted)',
                       lineHeight: 1.4, overflow: 'hidden',
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     }}>
@@ -489,7 +489,7 @@ export default function TemplatesPage() {
                   color: 'var(--text-muted)', fontSize: 11, textAlign: 'left',
                 }}
               >
-                <Palette size={12} style={{ color: '#fbbf24' }} />
+                <Palette size={12} style={{ color: 'var(--accent-amber)' }} />
                 Brand Identity ({brandItems.length})
                 {brandOpen ? <ChevronUp size={11} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={11} style={{ marginLeft: 'auto' }} />}
               </button>

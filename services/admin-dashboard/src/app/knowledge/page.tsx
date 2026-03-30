@@ -37,12 +37,12 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
 
 // ─── Quick links & API addresses ──────────────────────────────────────────────
 const QUICK_LINKS = [
-  { label: 'n8n Workflows',  url: 'http://10.0.1.29:5678',                         color: '#fbbf24', desc: 'Workflow-Editor' },
-  { label: 'NocoDB',         url: 'https://nocodb.automation-plus-ki.de',           color: '#34d399', desc: 'Datenbank-UI' },
-  { label: 'Grafana',        url: 'https://grafana.automation-plus-ki.de',          color: '#f97316', desc: 'Monitoring' },
-  { label: 'Prometheus',     url: 'https://prometheus.automation-plus-ki.de',       color: '#a78bfa', desc: 'Metriken' },
-  { label: 'Coolify',        url: 'https://coolify.automation-plus-ki.de',          color: '#38bdf8', desc: 'Deployment' },
-  { label: 'Authentik',      url: 'https://auth.automation-plus-ki.de',             color: '#fb923c', desc: 'Identity Provider' },
+  { label: 'n8n Workflows',  url: 'http://10.0.1.29:5678',                         color: 'var(--accent-amber)', desc: 'Workflow-Editor' },
+  { label: 'NocoDB',         url: 'https://nocodb.automation-plus-ki.de',           color: 'var(--accent-green)', desc: 'Datenbank-UI' },
+  { label: 'Grafana',        url: 'https://grafana.automation-plus-ki.de',          color: 'var(--accent-amber)', desc: 'Monitoring' },
+  { label: 'Prometheus',     url: 'https://prometheus.automation-plus-ki.de',       color: 'var(--accent-purple)', desc: 'Metriken' },
+  { label: 'Coolify',        url: 'https://coolify.automation-plus-ki.de',          color: 'var(--accent-blue)', desc: 'Deployment' },
+  { label: 'Authentik',      url: 'https://auth.automation-plus-ki.de',             color: 'var(--accent-amber)', desc: 'Identity Provider' },
 ];
 
 const API_ENDPOINTS = [
@@ -70,12 +70,12 @@ async function fetchTable(tableId: string): Promise<Row[]> {
 function statusColor(status: string | undefined): { bg: string; text: string; dot: string } {
   const s = (status ?? '').toLowerCase();
   if (['active', 'aktiv', 'enabled', 'on'].includes(s))
-    return { bg: 'rgba(34,197,94,0.12)', text: '#22c55e', dot: '#22c55e' };
+    return { bg: 'rgba(34,197,94,0.12)', text: 'var(--accent-green)', dot: 'var(--accent-green)' };
   if (['paused', 'pausiert', 'warning'].includes(s))
-    return { bg: 'rgba(245,158,11,0.12)', text: '#f59e0b', dot: '#f59e0b' };
+    return { bg: 'rgba(245,158,11,0.12)', text: 'var(--accent-amber)', dot: 'var(--accent-amber)' };
   if (['error', 'offline', 'disabled'].includes(s))
-    return { bg: 'rgba(239,68,68,0.1)', text: '#ef4444', dot: '#ef4444' };
-  return { bg: 'rgba(100,116,139,0.12)', text: '#94a3b8', dot: '#64748b' };
+    return { bg: 'rgba(239,68,68,0.1)', text: 'var(--accent-red)', dot: 'var(--accent-red)' };
+  return { bg: 'rgba(100,116,139,0.12)', text: 'var(--text-secondary)', dot: 'var(--text-secondary)' };
 }
 
 // ─── Copy button ──────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ function CopyBtn({ text }: { text: string }) {
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
       title="Kopieren"
     >
-      {copied ? <Check size={10} style={{ color: '#34d399' }} /> : <Copy size={10} />}
+      {copied ? <Check size={10} style={{ color: 'var(--accent-green)' }} /> : <Copy size={10} />}
     </button>
   );
 }
@@ -258,7 +258,7 @@ export default function KnowledgePage() {
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <BookOpen size={22} color="var(--accent-blue, #3b82f6)" />
+            <BookOpen size={22} color="var(--accent-blue, var(--accent-blue))" />
             Knowledge Base
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -285,7 +285,7 @@ export default function KnowledgePage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: 'var(--accent-blue, #3b82f6)', color: '#fff', textDecoration: 'none',
+              background: 'var(--accent-blue, var(--accent-blue))', color: 'white', textDecoration: 'none',
             }}
           >
             NocoDB öffnen <ExternalLink size={13} />
@@ -295,10 +295,10 @@ export default function KnowledgePage() {
 
       {/* ── Stat cards ── */}
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 28 }}>
-        <StatCard label="Rules"          value={counts.rules ?? '…'}          color="#3b82f6" icon={<Layers size={18} />} />
-        <StatCard label="Plugins"        value={counts.plugins ?? '…'}        color="#a855f7" icon={<Puzzle size={18} />} />
-        <StatCard label="SubAgents"      value={counts.subagents ?? '…'}      color="#22c55e" icon={<Settings2 size={18} />} />
-        <StatCard label="Knowledge Items" value={counts.knowledge_items ?? '…'} color="#f59e0b" icon={<Brain size={18} />} />
+        <StatCard label="Rules"          value={counts.rules ?? '…'}          color="var(--accent-blue)" icon={<Layers size={18} />} />
+        <StatCard label="Plugins"        value={counts.plugins ?? '…'}        color="var(--accent-purple)" icon={<Puzzle size={18} />} />
+        <StatCard label="SubAgents"      value={counts.subagents ?? '…'}      color="var(--accent-green)" icon={<Settings2 size={18} />} />
+        <StatCard label="Knowledge Items" value={counts.knowledge_items ?? '…'} color="var(--accent-amber)" icon={<Brain size={18} />} />
       </div>
 
       {/* ── Section switcher ── */}
@@ -317,7 +317,7 @@ export default function KnowledgePage() {
               fontWeight: section === s.id ? 600 : 400,
               background: section === s.id ? 'rgba(59,130,246,0.12)' : 'var(--layer-2)',
               border: section === s.id ? '1px solid rgba(59,130,246,0.3)' : '1px solid var(--border)',
-              color: section === s.id ? '#60a5fa' : 'var(--text-secondary)',
+              color: section === s.id ? 'var(--accent-blue)' : 'var(--text-secondary)',
               transition: 'all 0.12s',
             }}
           >
@@ -346,8 +346,8 @@ export default function KnowledgePage() {
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '6px 12px', borderRadius: 8, fontSize: 13,
                     fontWeight: isActive ? 600 : 400,
-                    background: isActive ? 'var(--accent-blue, #3b82f6)' : 'transparent',
-                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    background: isActive ? 'var(--accent-blue, var(--accent-blue))' : 'transparent',
+                    color: isActive ? 'white' : 'var(--text-secondary)',
                     border: 'none', cursor: 'pointer', transition: 'all 0.12s',
                   }}
                 >
@@ -356,7 +356,7 @@ export default function KnowledgePage() {
                     <span style={{
                       padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 700,
                       background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--layer-3)',
-                      color: isActive ? '#fff' : 'var(--text-muted)',
+                      color: isActive ? 'white' : 'var(--text-muted)',
                     }}>
                       {count}
                     </span>
@@ -385,15 +385,15 @@ export default function KnowledgePage() {
                 href={`${NOCO_BASE}/dashboard`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--accent-blue, #3b82f6)', textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--accent-blue, var(--accent-blue))', textDecoration: 'none' }}
               >
                 Hinzufügen <ExternalLink size={11} />
               </a>
             </div>
             {currentError ? (
               <div style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--text-secondary)' }}>
-                <AlertTriangle size={24} color="#ef4444" />
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#ef4444' }}>Fehler beim Laden</p>
+                <AlertTriangle size={24} color="var(--accent-red)" />
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--accent-red)' }}>Fehler beim Laden</p>
                 <p style={{ margin: 0, fontSize: 13 }}>{currentError}</p>
                 <button onClick={() => loadTab(activeTab)} style={{ marginTop: 8, padding: '7px 16px', borderRadius: 8, fontSize: 13, background: 'var(--layer-3)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer' }}>
                   Erneut versuchen
@@ -440,7 +440,7 @@ export default function KnowledgePage() {
                   <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <p style={{ margin: '0 0 8px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{link.desc}</p>
-                <p style={{ margin: '0 0 0 16px', fontSize: 10, fontFamily: 'var(--font-mono)', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ margin: '0 0 0 16px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {link.url}
                 </p>
               </a>
@@ -472,7 +472,7 @@ export default function KnowledgePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <code style={{
                     flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)',
-                    color: '#38bdf8', background: 'rgba(56,189,248,0.06)',
+                    color: 'var(--accent-blue)', background: 'rgba(56,189,248,0.06)',
                     padding: '4px 8px', borderRadius: 5, border: '1px solid rgba(56,189,248,0.12)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block',
                   }}>

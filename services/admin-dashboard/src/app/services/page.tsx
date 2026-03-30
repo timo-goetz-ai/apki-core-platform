@@ -61,26 +61,26 @@ const CATEGORY_ICONS: Record<Exclude<Category, 'all'>, React.ReactNode> = {
 };
 
 const CATEGORY_COLORS: Record<Exclude<Category, 'all'>, string> = {
-  core:         '#38bdf8',
-  ai:           '#a78bfa',
-  automation:   '#fbbf24',
-  data:         '#34d399',
-  monitoring:   '#f472b6',
-  security:     '#f87171',
-  infra:        '#fb923c',
+  core:         'var(--accent-blue)',
+  ai:           'var(--accent-purple)',
+  automation:   'var(--accent-amber)',
+  data:         'var(--accent-green)',
+  monitoring:   'var(--accent-purple)',
+  security:     'var(--accent-red)',
+  infra:        'var(--accent-amber)',
 };
 
 function getLatencyColor(ms: number): string {
-  if (ms < 20)  return '#34d399';
-  if (ms < 100) return '#fbbf24';
-  return '#f87171';
+  if (ms < 20)  return 'var(--accent-green)';
+  if (ms < 100) return 'var(--accent-amber)';
+  return 'var(--accent-red)';
 }
 
 function StatusBadge({ status }: { status: ServiceStatus }) {
   const cfg = {
-    online:   { bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.2)',  color: '#34d399', label: 'Online'   },
-    degraded: { bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.2)',  color: '#fbbf24', label: 'Degraded' },
-    offline:  { bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', color: '#f87171', label: 'Offline'  },
+    online:   { bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.2)',  color: 'var(--accent-green)', label: 'Online'   },
+    degraded: { bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.2)',  color: 'var(--accent-amber)', label: 'Degraded' },
+    offline:  { bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)', color: 'var(--accent-red)', label: 'Offline'  },
   }[status];
 
   return (
@@ -127,13 +127,13 @@ export default function ServicesPage() {
             border: '1px solid rgba(56,189,248,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Server size={17} style={{ color: '#38bdf8' }} />
+            <Server size={17} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
               Service Catalog
             </h1>
-            <p style={{ margin: 0, fontSize: 12, color: '#475569', fontFamily: 'var(--font-mono)' }}>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
               automation-plus-ki.de · {onlineCount}/{SERVICES.length} online
             </p>
           </div>
@@ -143,16 +143,16 @@ export default function ServicesPage() {
       {/* Stats bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {[
-          { label: 'Online',   value: onlineCount,                                               color: '#34d399' },
-          { label: 'Services', value: SERVICES.length,                                           color: '#38bdf8' },
-          { label: 'Intern',   value: SERVICES.filter(s => s.internal).length,                   color: '#a78bfa' },
-          { label: 'Uptime',   value: '99.8%',                                                   color: '#34d399' },
+          { label: 'Online',   value: onlineCount,                                               color: 'var(--accent-green)' },
+          { label: 'Services', value: SERVICES.length,                                           color: 'var(--accent-blue)' },
+          { label: 'Intern',   value: SERVICES.filter(s => s.internal).length,                   color: 'var(--accent-purple)' },
+          { label: 'Uptime',   value: '99.8%',                                                   color: 'var(--accent-green)' },
         ].map(stat => (
           <div key={stat.label} style={{
             flex: 1, background: 'rgba(22,27,34,0.8)', border: '1px solid rgba(148,163,184,0.08)',
             borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</span>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</span>
             <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: stat.color }}>{stat.value}</span>
           </div>
         ))}
@@ -170,12 +170,12 @@ export default function ServicesPage() {
                 padding: '5px 14px', borderRadius: 999, cursor: 'pointer',
                 border: isActive ? '1px solid rgba(56,189,248,0.35)' : '1px solid rgba(148,163,184,0.1)',
                 background: isActive ? 'rgba(56,189,248,0.1)' : 'rgba(22,27,34,0.6)',
-                color: isActive ? '#38bdf8' : '#94a3b8',
+                color: isActive ? 'var(--accent-blue)' : 'var(--text-secondary)',
                 fontSize: 12, fontWeight: isActive ? 600 : 400,
                 transition: 'all 0.12s',
               }}
-              onMouseEnter={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.2)'; el.style.color = '#f1f5f9'; } }}
-              onMouseLeave={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = '#94a3b8'; } }}
+              onMouseEnter={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.2)'; el.style.color = 'var(--text-primary)'; } }}
+              onMouseLeave={e => { if (!isActive) { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = 'rgba(148,163,184,0.1)'; el.style.color = 'var(--text-secondary)'; } }}
             >
               {cat.label}
             </button>
@@ -224,8 +224,8 @@ export default function ServicesPage() {
                     {catIcon}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>{svc.name}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{svc.desc}</p>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{svc.name}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>{svc.desc}</p>
                   </div>
                 </div>
                 <StatusBadge status={svc.status} />
@@ -235,7 +235,7 @@ export default function ServicesPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <span style={{
                   flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)',
-                  color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {svc.internal ? svc.url : `https://${svc.url}`}
                 </span>
@@ -248,7 +248,7 @@ export default function ServicesPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: 26, height: 26, borderRadius: 7,
                       background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.15)',
-                      color: '#38bdf8', flexShrink: 0, transition: 'all 0.12s',
+                      color: 'var(--accent-blue)', flexShrink: 0, transition: 'all 0.12s',
                       textDecoration: 'none',
                     }}
                     onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(56,189,248,0.16)'; el.style.borderColor = 'rgba(56,189,248,0.3)'; }}
@@ -285,7 +285,7 @@ export default function ServicesPage() {
                   <span style={{
                     padding: '2px 8px', borderRadius: 999,
                     background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)',
-                    fontSize: 10, color: '#475569',
+                    fontSize: 10, color: 'var(--text-muted)',
                   }}>
                     {svc.note}
                   </span>
@@ -297,7 +297,7 @@ export default function ServicesPage() {
       </motion.div>
 
       {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#475569', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
           Keine Services in dieser Kategorie.
         </div>
       )}

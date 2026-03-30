@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <BarChart2 size={20} style={{ color: '#a78bfa' }} />
+          <BarChart2 size={20} style={{ color: 'var(--accent-purple)' }} />
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Analytics</h1>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
           <a href={GRAFANA_URL} target="_blank" rel="noopener noreferrer" style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
             background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)',
-            color: '#f97316', fontSize: 12, fontWeight: 600, textDecoration: 'none',
+            color: 'var(--accent-amber)', fontSize: 12, fontWeight: 600, textDecoration: 'none',
           }}>
             Grafana öffnen <ExternalLink size={11} />
           </a>
@@ -114,10 +114,10 @@ export default function AnalyticsPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Dashboards',   value: grafana?.dashboards.length ?? '…', color: '#f97316',              icon: <LayoutDashboard size={14} /> },
-          { label: 'Targets UP',   value: upTargets || '…',                  color: '#34d399',              icon: <CheckCircle size={14} /> },
-          { label: 'Targets DOWN', value: downTargets,                        color: downTargets > 0 ? '#f87171' : 'var(--text-muted)', icon: <AlertCircle size={14} /> },
-          { label: 'Jobs',         value: jobs || '…',                        color: '#a78bfa',              icon: <Activity size={14} /> },
+          { label: 'Dashboards',   value: grafana?.dashboards.length ?? '…', color: 'var(--accent-amber)',              icon: <LayoutDashboard size={14} /> },
+          { label: 'Targets UP',   value: upTargets || '…',                  color: 'var(--accent-green)',              icon: <CheckCircle size={14} /> },
+          { label: 'Targets DOWN', value: downTargets,                        color: downTargets > 0 ? 'var(--accent-red)' : 'var(--text-muted)', icon: <AlertCircle size={14} /> },
+          { label: 'Jobs',         value: jobs || '…',                        color: 'var(--accent-purple)',              icon: <Activity size={14} /> },
         ].map(stat => (
           <div key={stat.label} style={{
             background: 'var(--layer-2)', border: '1px solid var(--border)',
@@ -143,8 +143,8 @@ export default function AnalyticsPage() {
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '8px 16px', fontSize: 12, fontWeight: 500, cursor: 'pointer',
             background: 'none', border: 'none',
-            borderBottom: `2px solid ${tab === t.id ? '#a78bfa' : 'transparent'}`,
-            color: tab === t.id ? '#a78bfa' : 'var(--text-muted)',
+            borderBottom: `2px solid ${tab === t.id ? 'var(--accent-purple)' : 'transparent'}`,
+            color: tab === t.id ? 'var(--accent-purple)' : 'var(--text-muted)',
             transition: 'all 0.12s', marginBottom: -1,
           }}>
             {t.label}
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
                 background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <BarChart2 size={16} style={{ color: '#f97316' }} />
+                <BarChart2 size={16} style={{ color: 'var(--accent-amber)' }} />
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Grafana</p>
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
                   marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
                   padding: '6px 12px', borderRadius: 7,
                   background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)',
-                  color: '#f97316', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+                  color: 'var(--accent-amber)', fontSize: 11, fontWeight: 600, textDecoration: 'none',
                 }}
               >
                 Öffnen <ExternalLink size={10} />
@@ -221,7 +221,7 @@ export default function AnalyticsPage() {
           {/* Prometheus jobs */}
           <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <Activity size={14} style={{ color: '#a78bfa' }} />
+              <Activity size={14} style={{ color: 'var(--accent-purple)' }} />
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
                 Prometheus Jobs
               </p>
@@ -253,8 +253,8 @@ export default function AnalyticsPage() {
                     }}>
                       <span style={{
                         width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                        background: allUp ? '#34d399' : '#f87171',
-                        boxShadow: allUp ? '0 0 4px #34d39980' : 'none',
+                        background: allUp ? 'var(--accent-green)' : 'var(--accent-red)',
+                        boxShadow: allUp ? '0 0 4px var(--accent-green)80' : 'none',
                       }} />
                       <span style={{
                         flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)',
@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
                       </span>
                       <span style={{
                         fontSize: 10, fontFamily: 'var(--font-mono)',
-                        color: allUp ? '#34d399' : '#f87171', flexShrink: 0,
+                        color: allUp ? 'var(--accent-green)' : 'var(--accent-red)', flexShrink: 0,
                       }}>
                         {up}/{total}
                       </span>
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
                     {db.tags.slice(0, 4).map(tag => (
-                      <span key={tag} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.18)' }}>{tag}</span>
+                      <span key={tag} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(249,115,22,0.1)', color: 'var(--accent-amber)', border: '1px solid rgba(249,115,22,0.18)' }}>{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -339,12 +339,12 @@ export default function AnalyticsPage() {
                     padding: '8px 12px', borderRadius: 8,
                     background: 'var(--layer-2)', border: '1px solid var(--border)',
                   }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isUp ? '#34d399' : '#f87171', boxShadow: isUp ? '0 0 4px #34d39980' : 'none' }} />
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isUp ? 'var(--accent-green)' : 'var(--accent-red)', boxShadow: isUp ? '0 0 4px var(--accent-green)80' : 'none' }} />
                     <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', flex: 1 }}>{target.labels.job}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flex: 2 }}>{target.labels.instance}</span>
-                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: isUp ? '#34d399' : '#f87171' }}>{target.health}</span>
+                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: isUp ? 'var(--accent-green)' : 'var(--accent-red)' }}>{target.health}</span>
                     {target.lastError && (
-                      <span style={{ fontSize: 9, color: '#f87171', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target.lastError}</span>
+                      <span style={{ fontSize: 9, color: 'var(--accent-red)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target.lastError}</span>
                     )}
                   </div>
                 );
@@ -364,9 +364,9 @@ export default function AnalyticsPage() {
           ) : grafana?.datasources?.map(ds => (
             <div key={ds.id} style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Database size={13} style={{ color: '#a78bfa', flexShrink: 0 }} />
+                <Database size={13} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{ds.name}</span>
-                {ds.isDefault && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>DEFAULT</span>}
+                {ds.isDefault && <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 3, background: 'rgba(167,139,250,0.15)', color: 'var(--accent-purple)' }}>DEFAULT</span>}
               </div>
               <p style={{ margin: '6px 0 0', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{ds.type}</p>
               {ds.url && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ds.url}</p>}
@@ -385,9 +385,9 @@ export default function AnalyticsPage() {
             Weitere Monitoring-Tools
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            <QuickLink href="https://prometheus.automation-plus-ki.de/targets" label="Prometheus Targets" desc="Health-Status aller Scrape-Ziele" color="#f97316" />
-            <QuickLink href="https://alertmanager.automation-plus-ki.de" label="Alertmanager" desc="Alert Routing & Silences" color="#f87171" />
-            <QuickLink href={`${GRAFANA_URL}/explore`} label="Grafana Explore" desc="PromQL & Loki Log-Abfragen" color="#a78bfa" />
+            <QuickLink href="https://prometheus.automation-plus-ki.de/targets" label="Prometheus Targets" desc="Health-Status aller Scrape-Ziele" color="var(--accent-amber)" />
+            <QuickLink href="https://alertmanager.automation-plus-ki.de" label="Alertmanager" desc="Alert Routing & Silences" color="var(--accent-red)" />
+            <QuickLink href={`${GRAFANA_URL}/explore`} label="Grafana Explore" desc="PromQL & Loki Log-Abfragen" color="var(--accent-purple)" />
           </div>
         </div>
       )}

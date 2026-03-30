@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText, AlertCircle, AlertTriangle, Info, X, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from '@/components/CommandPalette';
 import { getRecentTemplates, type RecentTemplate } from '@/lib/template-engine';
@@ -23,12 +23,12 @@ const ALERT_ICON = {
 };
 
 const ALERT_COLOR = {
-  critical: '#f87171',
-  warning:  '#fbbf24',
-  info:     '#38bdf8',
-};
+  critical: 'var(--accent-red)',
+  warning:  'var(--accent-amber)',
+  info:     'var(--accent-blue)',
+} as const;
 
-export function AppHeader() {
+export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } = {}) {
   const router = useRouter();
   const [isDark, setIsDark] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -119,17 +119,22 @@ export function AppHeader() {
   return (
     <>
       <header
-        className="fixed top-0 right-0 z-30 flex h-[60px] items-center gap-3 px-4"
-        style={{
-          left: '240px',
-          background: 'var(--layer-1)',
-          borderBottom: '1px solid var(--border)',
-        }}
+        className="fixed top-0 right-0 z-30 flex h-[60px] items-center gap-2 border-b border-[--border] bg-[--layer-1] px-2 pl-2 lg:left-[240px] lg:pl-4 left-0"
       >
+        {onOpenMobileNav ? (
+          <button
+            type="button"
+            onClick={onOpenMobileNav}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[--text-secondary] transition-colors hover:bg-[--layer-3] hover:text-[--text-primary] lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-1)]"
+            aria-label="Menü öffnen"
+          >
+            <Menu size={20} strokeWidth={2} />
+          </button>
+        ) : null}
         {/* Command palette search trigger */}
         <button
           onClick={() => setCommandOpen(true)}
-          className="flex flex-1 max-w-sm items-center gap-2 rounded-md border border-[--border] bg-[--layer-2] px-3 py-2 text-sm text-[--text-muted] transition-colors hover:border-[--border-bright] hover:text-[--text-secondary]"
+          className="flex min-h-[44px] flex-1 max-w-sm items-center gap-2 rounded-md border border-[--border] bg-[--layer-2] px-3 py-2 text-sm text-[--text-muted] transition-colors hover:border-[--border-bright] hover:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-1)]"
         >
           <Search size={13} className="shrink-0" />
           <span className="flex-1 text-left">Suchen oder navigieren...</span>
@@ -183,7 +188,7 @@ export function AppHeader() {
               {alerts.length > 0 && (
                 <span
                   className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-                  style={{ background: alerts.some(a => a.severity === 'critical') ? 'var(--accent-red)' : '#fbbf24' }}
+                  style={{ background: alerts.some(a => a.severity === 'critical') ? 'var(--accent-red)' : 'var(--accent-amber)' }}
                 />
               )}
             </Button>

@@ -22,21 +22,21 @@ interface ContentItem {
 
 // Kanban columns — order matters
 const COLUMNS: { id: string; label: string; color: string; bg: string }[] = [
-  { id: 'Idee',           label: 'Idee',          color: '#94a3b8', bg: 'rgba(148,163,184,0.06)' },
-  { id: 'In Arbeit',      label: 'In Arbeit',     color: '#38bdf8', bg: 'rgba(56,189,248,0.06)'  },
-  { id: 'Review',         label: 'Review',        color: '#fbbf24', bg: 'rgba(251,191,36,0.06)'  },
-  { id: 'Veröffentlicht', label: 'Veröffentlicht',color: '#34d399', bg: 'rgba(52,211,153,0.06)'  },
+  { id: 'Idee',           label: 'Idee',          color: 'var(--text-secondary)', bg: 'rgba(148,163,184,0.06)' },
+  { id: 'In Arbeit',      label: 'In Arbeit',     color: 'var(--accent-blue)', bg: 'rgba(56,189,248,0.06)'  },
+  { id: 'Review',         label: 'Review',        color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.06)'  },
+  { id: 'Veröffentlicht', label: 'Veröffentlicht',color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.06)'  },
 ];
 
 const PRIO_COLOR: Record<string, string> = {
-  hoch:   '#f87171', high:   '#f87171',
-  mittel: '#fbbf24', medium: '#fbbf24',
-  niedrig:'#34d399', low:    '#34d399',
+  hoch:   'var(--accent-red)', high:   'var(--accent-red)',
+  mittel: 'var(--accent-amber)', medium: 'var(--accent-amber)',
+  niedrig:'var(--accent-green)', low:    'var(--accent-green)',
 };
 
 const KAT_COLOR: Record<string, string> = {
-  'Content':  '#fb923c', 'Blog': '#fb923c', 'Video':   '#a78bfa',
-  'Social':   '#38bdf8', 'Email':'#60a5fa', 'Website': '#34d399',
+  'Content':  'var(--accent-amber)', 'Blog': 'var(--accent-amber)', 'Video':   'var(--accent-purple)',
+  'Social':   'var(--accent-blue)', 'Email':'var(--accent-blue)', 'Website': 'var(--accent-green)',
 };
 
 function timeShort(iso?: string): string {
@@ -93,7 +93,7 @@ function KanbanCard({ item }: { item: ContentItem }) {
           <span style={{
             fontSize: 8, fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
             color: PRIO_COLOR[prio] ?? 'var(--text-muted)',
-            background: `${PRIO_COLOR[prio] ?? '#475569'}18`,
+            background: `${PRIO_COLOR[prio] ?? 'var(--text-muted)'}18`,
             padding: '1px 5px', borderRadius: 3,
           }}>
             {item.Priorität}
@@ -102,8 +102,8 @@ function KanbanCard({ item }: { item: ContentItem }) {
         {kat && (
           <span style={{
             fontSize: 8, fontFamily: 'var(--font-mono)',
-            color: KAT_COLOR[kat] ?? '#94a3b8',
-            background: `${KAT_COLOR[kat] ?? '#94a3b8'}18`,
+            color: KAT_COLOR[kat] ?? 'var(--text-secondary)',
+            background: `${KAT_COLOR[kat] ?? 'var(--text-secondary)'}18`,
             padding: '1px 5px', borderRadius: 3,
           }}>
             {kat}
@@ -163,7 +163,7 @@ export default function KanbanPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Kanban size={18} style={{ color: '#fb923c' }} />
+          <Kanban size={18} style={{ color: 'var(--accent-amber)' }} />
           <div>
             <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
               Content Pipeline
