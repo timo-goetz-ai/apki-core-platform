@@ -1,0 +1,101 @@
+Name,Kategorie,Phase,Beschreibung,Register_Layer
+Commit Agent,Entwicklung & Code-Management,10,"Dokumentiert jeden deiner Fortschritte. Er sorgt dafür, dass kein Zwischenstand jemals verloren geht.",10_FOUNDATION
+Branch Agent,Entwicklung & Code-Management,10,"Eröffnet neue Denk- und Arbeitswege. Er hilft dir, Ideen parallel zu testen, ohne das Hauptprojekt zu gefährden.",10_FOUNDATION
+Merge Agent,Entwicklung & Code-Management,10,Führt verschiedene Arbeitsstränge zusammen. Er bringt Ordnung in das Chaos aus mehreren Teilaufgaben.,10_FOUNDATION
+Diff Agent,Entwicklung & Code-Management,10,"Vergleicht zwei Zustände miteinander. Er zeigt dir präzise, was sich geändert hat und wo Fehler liegen könnten.",10_FOUNDATION
+Push Agent,Entwicklung & Code-Management,10,"Veröffentlicht deine fertigen Ergebnisse. Er sorgt dafür, dass deine Arbeit dort ankommt, wo sie gebraucht wird.",10_FOUNDATION
+Pull Agent,Entwicklung & Code-Management,10,Holt externe Informationen in dein System. Er hält dich mit dem Wissen von außen immer auf dem Laufenden.,10_FOUNDATION
+Fetch Agent,Entwicklung & Code-Management,10,"Prüft im Hintergrund auf Aktualisierungen. Er bereitet Informationen vor, bevor du sie aktiv abrufst.",10_FOUNDATION
+Reset Agent,Entwicklung & Code-Management,10,Setzt Aufgaben auf einen stabilen Ausgangspunkt zurück. Er ermöglicht dir einen sauberen Neustart bei Sackgassen.,10_FOUNDATION
+Stash Agent,Entwicklung & Code-Management,10,"Parkt angefangene Arbeiten kurzzeitig. Er schafft Platz im Kopf für dringendere Aufgaben, ohne Fortschritt zu löschen.",10_FOUNDATION
+Rebase Agent,Entwicklung & Code-Management,10,Ordnet deine Historie neu. Er macht deine Arbeitsabläufe sauberer und für andere leichter nachvollziehbar.,10_FOUNDATION
+Patch Agent,Entwicklung & Code-Management,10,"Repariert kleine Fehler sofort. Er verhindert, dass aus kleinen Lücken große Probleme entstehen.",10_FOUNDATION
+Fork Agent,Entwicklung & Code-Management,10,"Erstellt eine Kopie eines Projekts für Experimente. Er gibt dir die Freiheit, radikale Änderungen völlig sicher zu testen.",10_FOUNDATION
+Script Agent,Entwicklung & Code-Management,10,Automatisiert repetitive Handgriffe. Er spart dir wertvolle Zeit bei Routineaufgaben.,10_FOUNDATION
+Snippet Agent,Entwicklung & Code-Management,10,"Verwaltet deine Bausteine. Er stellt sicher, dass du bewährte Lösungen sofort wieder griffbereit hast.",10_FOUNDATION
+Repository Agent,Struktur & Archivierung,10,Verwaltet den gesamten Speicherort. Er strukturiert alle deine Daten in einer logischen Hierarchie.,10_FOUNDATION
+Archive Agent,Struktur & Archivierung,10,Archiviert abgeschlossene Projekte. Er hält deinen aktiven Arbeitsbereich frei von Altlasten.,10_FOUNDATION
+Index Agent,Struktur & Archivierung,10,"Katalogisiert deine Inhalte. Er sorgt dafür, dass du jede Information innerhalb von Sekunden wiederfindest.",10_FOUNDATION
+Library Agent,Struktur & Archivierung,10,Sortiert dein gesammeltes Wissen. Er macht aus losen Notizen ein professionelles Nachschlagewerk.,10_FOUNDATION
+Vault Agent,Struktur & Archivierung,10,"Schützt deine sensiblen Daten. Er garantiert, dass Geheimnisse und Passwörter absolut sicher verwahrt bleiben.",10_FOUNDATION
+Schema Agent,Struktur & Archivierung,10,"Definiert den Bauplan deiner Daten. Er verhindert, dass Informationen ungeordnet oder unbrauchbar gespeichert werden.",10_FOUNDATION
+Asset Agent,Struktur & Archivierung,10,"Verwaltet deine digitalen Werte. Er behält den Überblick über Bilder, Dateien und Lizenzen.",10_FOUNDATION
+Backup Agent,Struktur & Archivierung,10,Erstellt regelmäßige Sicherheitskopien. Er schützt dich vor Datenverlust durch technische Defekte.,10_FOUNDATION
+Mirror Agent,Struktur & Archivierung,10,Spiegelt deine Arbeit an einen zweiten Ort. Er sorgt für maximale Ausfallsicherheit.,10_FOUNDATION
+Label Agent,Struktur & Archivierung,10,Kategorisiert Aufgaben durch Tags. Er macht deine Projekte durch einfache Schlagworte filterbar.,10_FOUNDATION
+Cache Agent,Struktur & Archivierung,10,Speichert oft genutzte Daten griffbereit. Er beschleunigt deine täglichen Abläufe massiv.,10_FOUNDATION
+Base Agent,Struktur & Archivierung,10,"Überwacht das Fundament deiner Arbeit. Er stellt sicher, dass die Grundvoraussetzungen immer erfüllt sind.",10_FOUNDATION
+Query Agent,Analyse & Logik,20,Durchsucht komplexe Datenbanken für dich. Er findet die Nadel im Heuhaufen deiner Informationen.,20_INTELLIGENCE
+Metric Agent,Analyse & Logik,20,Misst deine Leistung und Fortschritte. Er liefert dir Zahlen statt Bauchgefühlen für bessere Entscheidungen.,20_INTELLIGENCE
+Audit Agent,Analyse & Logik,20,"Prüft deine Einhaltung von Regeln. Er stellt sicher, dass alles korrekt und transparent abläuft.",20_INTELLIGENCE
+Trace Agent,Analyse & Logik,20,"Verfolgt den Pfad einer Entscheidung zurück. Er hilft dir zu verstehen, wie ein bestimmtes Ergebnis zustande kam.",20_INTELLIGENCE
+Logic Agent,Analyse & Logik,20,Prüft Argumentationsketten auf Fehler. Er bewahrt dich vor logischen Fehlschlüssen in deiner Planung.,20_INTELLIGENCE
+Filter Agent,Analyse & Logik,20,Sortiert unwichtige Informationen aus. Er schützt dich vor Informationsüberflutung und Ablenkung.,20_INTELLIGENCE
+Pivot Agent,Analyse & Logik,20,"Ändert die Perspektive auf deine Daten. Er hilft dir, völlig neue Zusammenhänge zu erkennen.",20_INTELLIGENCE
+Status Agent,Analyse & Logik,20,Meldet den aktuellen Zustand deiner Projekte. Er gibt dir jederzeit ein schnelles Update über den Stand der Dinge.,20_INTELLIGENCE
+Signal Agent,Analyse & Logik,20,"Warnt dich bei Abweichungen. Er erkennt Probleme, bevor sie kritisch werden.",20_INTELLIGENCE
+Matrix Agent,Analyse & Logik,20,"Organisiert komplexe Abhängigkeiten. Er behält den Überblick, wenn viele Dinge gleichzeitig passieren.",20_INTELLIGENCE
+Trend Agent,Analyse & Logik,20,"Erkennt Muster über Zeiträume hinweg. Er sagt dir, wohin sich eine Entwicklung langfristig bewegt.",20_INTELLIGENCE
+Impact Agent,Analyse & Logik,20,Berechnet die Auswirkung einer Änderung. Er warnt dich vor negativen Dominoeffekten.,20_INTELLIGENCE
+Protocol Agent,Kommunikation & Netzwerk,20,"Achtet auf die Einhaltung von Formvorschriften. Er sorgt dafür, dass deine Kommunikation professionell bleibt.",50_HUMAN
+Proxy Agent,Kommunikation & Netzwerk,20,"Agiert als dein Stellvertreter. Er filtert Anfragen vor, bevor sie dich direkt erreichen.",50_HUMAN
+Bridge Agent,Kommunikation & Netzwerk,20,"Verbindet zwei unterschiedliche Systeme. Er sorgt dafür, dass verschiedene Teams oder Tools zusammenarbeiten können.",50_HUMAN
+Route Agent,Kommunikation & Netzwerk,20,Findet den effizientesten Weg für Informationen. Er verkürzt Kommunikationswege und spart Zeit.,50_HUMAN
+Interface Agent,Kommunikation & Netzwerk,20,Gestaltet die Schnittstelle zum Nutzer. Er macht deine Ergebnisse für andere leicht zugänglich.,50_HUMAN
+Relay Agent,Kommunikation & Netzwerk,20,"Leitet Nachrichten zuverlässig weiter. Er stellt sicher, dass Informationen den richtigen Empfänger erreichen.",50_HUMAN
+Sync Agent,Kommunikation & Netzwerk,20,"Hält alle Geräte auf demselben Stand. Er verhindert Versionskonflikte zwischen Laptop, Handy und Büro.",50_HUMAN
+Link Agent,Kommunikation & Netzwerk,20,Verknüpft zusammenhängende Dokumente. Er baut ein Netz aus Querverweisen für besseres Verständnis.,50_HUMAN
+Hub Agent,Kommunikation & Netzwerk,20,Dient als zentraler Sammelpunkt. Er bündelt alle eingehenden Kanäle an einem Ort.,50_HUMAN
+Node Agent,Kommunikation & Netzwerk,20,Verwaltet einzelne Kontaktpunkte. Er gibt jedem Teilbereich deines Netzwerks eine klare Identität.,50_HUMAN
+Gateway Agent,Kommunikation & Netzwerk,20,"Kontrolliert den Zugang von außen. Er entscheidet, welche Informationen rein dürfen und welche nicht.",50_HUMAN
+Diplo Agent,Kommunikation & Netzwerk,20,Vermittelt bei Konflikten oder Verhandlungen. Er findet den Kompromiss zwischen zwei harten Positionen.,50_HUMAN
+Batch Agent,Management & Betrieb,10,Verarbeitet große Stapel von Aufgaben. Er erledigt Massenarbeit in einem Rutsch.,10_FOUNDATION
+Queue Agent,Management & Betrieb,10,"Reiht Aufgaben in der richtigen Priorität auf. Er sorgt dafür, dass du eins nach dem anderen abarbeitest.",10_FOUNDATION
+Sprint Agent,Management & Betrieb,10,"Fokussiert auf kurzfristige, intensive Ziele. Er hilft dir, in kurzer Zeit maximale Ergebnisse zu erzielen.",10_FOUNDATION
+Backlog Agent,Management & Betrieb,10,"Verwaltet die Liste der noch offenen Punkte. Er sorgt dafür, dass keine gute Idee vergessen wird.",10_FOUNDATION
+Milestone Agent,Management & Betrieb,10,Setzt und überwacht Etappenziele. Er feiert mit dir Teilerfolge und hält die Motivation hoch.,10_FOUNDATION
+Resource Agent,Management & Betrieb,10,"Behält dein Budget und Material im Blick. Er warnt dich, wenn deine Mittel knapp werden.",10_FOUNDATION
+Schedule Agent,Management & Betrieb,10,Plant deine Termine und Deadlines. Er strukturiert deinen Tag für maximale Effizienz.,10_FOUNDATION
+Ticket Agent,Management & Betrieb,10,Erfasst konkrete Probleme als Aufgaben. Er macht aus vagen Beschwerden lösbare Aufträge.,10_FOUNDATION
+Flow Agent,Management & Betrieb,10,"Optimiert den Arbeitsfluss. Er eliminiert Engpässe, die dich bei der Arbeit ausbremsen.",10_FOUNDATION
+Admin Agent,Management & Betrieb,10,Erledigt die notwendige Bürokratie. Er hält dir den Rücken für die eigentliche Arbeit frei.,10_FOUNDATION
+Compliance Agent,Management & Betrieb,10,Achtet auf gesetzliche Vorgaben. Er schützt dich vor rechtlichen Risiken und Abmahnungen.,10_FOUNDATION
+Deployment Agent,Management & Betrieb,10,Rollt fertige Lösungen aus. Er begleitet den Schritt von der Planung in die Realität.,10_FOUNDATION
+Maintenance Agent,Management & Betrieb,10,"Wartet bestehende Systeme. Er sorgt dafür, dass bereits Erreichtes stabil und funktionsfähig bleibt.",10_FOUNDATION
+Supply Agent,Management & Betrieb,10,"Beschafft notwendige Arbeitsmittel. Er stellt sicher, dass du immer alles hast, was du brauchst.",10_FOUNDATION
+Source Agent,Inhalt & Gestaltung,20,"Prüft die Glaubwürdigkeit von Quellen. Er bewahrt dich davor, mit falschen Informationen zu arbeiten.",40_CONTENT
+Draft Agent,Inhalt & Gestaltung,20,"Erstellt erste grobe Entwürfe. Er hilft dir, die Angst vor dem leeren Blatt zu besiegen.",40_CONTENT
+Review Agent,Inhalt & Gestaltung,20,"Gibt konstruktives Feedback zu Entwürfen. Er findet Schwachstellen, bevor andere sie sehen.",40_CONTENT
+Proof Agent,Inhalt & Gestaltung,20,Prüft Texte auf Fehler in Rechtschreibung und Grammatik. Er sichert dein professionelles Auftreten.,40_CONTENT
+Style Agent,Inhalt & Gestaltung,20,"Achtet auf ein einheitliches Erscheinungsbild. Er sorgt dafür, dass alles „aus einem Guss“ wirkt.",40_CONTENT
+Layout Agent,Inhalt & Gestaltung,20,Bringt Inhalte in eine ansprechende Form. Er verbessert die Lesbarkeit deiner Dokumente.,40_CONTENT
+Summary Agent,Inhalt & Gestaltung,20,Fasst lange Texte prägnant zusammen. Er spart dir Zeit beim Erfassen von komplexen Inhalten.,40_CONTENT
+Glossary Agent,Inhalt & Gestaltung,20,"Erklärt Fachbegriffe und Abkürzungen. Er sorgt dafür, dass alle Beteiligten dieselbe Sprache sprechen.",40_CONTENT
+Citation Agent,Inhalt & Gestaltung,20,Verwaltet deine Belege und Quellen. Er macht deine Arbeit wissenschaftlich fundiert und nachprüfbar.,40_CONTENT
+Media Agent,Inhalt & Gestaltung,20,Optimiert Bilder und Videos für den Einsatz. Er sorgt für die richtige Qualität und Dateigröße.,40_CONTENT
+Export Agent,Inhalt & Gestaltung,20,Wandelt Ergebnisse in das richtige Format um. Er macht deine Arbeit mit jeder Software kompatibel.,40_CONTENT
+Drafting Agent,Inhalt & Gestaltung,20,Formuliert präzise Anweisungen oder Verträge. Er sorgt für rechtssichere und klare Formulierungen.,40_CONTENT
+Firewall Agent,Systemsicherheit & Performance,10,Blockiert unerwünschte Störungen von außen. Er schützt deinen Fokus vor unnötigem Lärm.,20_BRAIN
+Recovery Agent,Systemsicherheit & Performance,10,"Stellt Daten nach Fehlern wieder her. Er ist dein Rettungsanker, wenn mal etwas schiefgeht.",20_BRAIN
+Debug Agent,Systemsicherheit & Performance,10,"Sucht gezielt nach Fehlern im Prozess. Er findet die Ursache für Probleme, die dich aufhalten.",20_BRAIN
+Kernel Agent,Systemsicherheit & Performance,10,"Überwacht die wichtigsten Kernprozesse. Er sorgt dafür, dass dein Basissystem niemals abstürzt.",20_BRAIN
+Sudo Agent,Systemsicherheit & Performance,10,"Erteilt dir erweiterte Rechte für kritische Aufgaben. Er hilft dir, Hürden zu überspringen, die andere blockieren.",20_BRAIN
+Log Agent,Systemsicherheit & Performance,10,"Schreibt alles mit, was passiert. Er liefert dir eine lückenlose Historie deiner Aktivitäten.",20_BRAIN
+Shell Agent,Systemsicherheit & Performance,10,Ermöglicht die direkte Steuerung komplexer Befehle. Er gibt dir die volle Kontrolle über deine Tools.,20_BRAIN
+Optimizer Agent,Systemsicherheit & Performance,10,"Verbessert die Geschwindigkeit deiner Abläufe. Er findet Wege, wie du Aufgaben noch schneller erledigen kannst.",20_BRAIN
+Health Agent,Systemsicherheit & Performance,10,Prüft deinen Zustand und dein Wohlbefinden. Er warnt dich vor Überarbeitung und Burnout.,20_BRAIN
+Access Agent,Systemsicherheit & Performance,10,"Regelt, wer welche Informationen sehen darf. Er schützt deine Privatsphäre und dein geistiges Eigentum.",20_BRAIN
+Benchmark Agent,Strategie & Forschung,30,"Vergleicht dich mit dem Marktdurchschnitt. Er zeigt dir, wo du im Wettbewerb stehst.",30_RESEARCH
+Forecast Agent,Strategie & Forschung,30,"Erstellt Prognosen für die Zukunft. Er hilft dir, dich auf kommende Trends vorzubereiten.",30_RESEARCH
+Vision Agent,Strategie & Forschung,30,"Hält das langfristige Ziel im Auge. Er erinnert dich an das „Warum“, wenn der Alltag stressig wird.",30_RESEARCH
+Strategy Agent,Strategie & Forschung,30,Plant die nächsten großen Schritte. Er verwandelt vage Träume in konkrete Handlungspläne.,30_RESEARCH
+Concept Agent,Strategie & Forschung,30,Entwickelt die theoretische Basis für Projekte. Er gibt deinen Ideen ein logisches Gerüst.,30_RESEARCH
+Competence Agent,Strategie & Forschung,30,"Identifiziert Wissenslücken. Er sagt dir genau, was du noch lernen musst, um voranzukommen.",30_RESEARCH
+Task Agent,Strategie & Forschung,30,Zerlegt große Brocken in kleine Aufgaben. Er macht Unmögliches durch kleine Schritte machbar.,30_RESEARCH
+Goal Agent,Strategie & Forschung,30,"Überwacht die Zielerreichung. Er sorgt dafür, dass du nicht vom Weg abkommst.",30_RESEARCH
+Insight Agent,Strategie & Forschung,30,"Liefert tiefe Erkenntnisse aus Rohdaten. Er erklärt dir, was die Zahlen wirklich bedeuten.",30_RESEARCH
+Global Agent,Strategie & Forschung,30,"Behält das Gesamtbild im Blick. Er verhindert, dass du dich zu sehr im Detail verlierst.",30_RESEARCH
+Quality Agent,Strategie & Forschung,30,Prüft das Endergebnis auf Perfektion. Er ist dein letzter Kontrollpunkt vor der Abgabe.,30_RESEARCH
+Feedback Agent,Strategie & Forschung,30,"Sammelt externe Meinungen ein. Er hilft dir, deine Arbeit aus der Sicht anderer zu verbessern.",30_RESEARCH
+Innovation Agent,Strategie & Forschung,30,"Sucht nach neuen Werkzeugen und Methoden. Er sorgt dafür, dass deine Arbeitsweise modern bleibt.",30_RESEARCH
+Core Agent,Strategie & Forschung,30,"Schützt deine Identität und deine Werte. Er ist der Kern von allem, was du tust.",30_RESEARCH
