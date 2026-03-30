@@ -172,6 +172,15 @@ POST /api/n8n/trigger/[workflowId]
 - Picsart: max Bildgröße 1024×1024 (nicht 1920×1080)
 - Stale `.next` Cache: `rm -rf .next` → neu bauen
 
+## Git: SSH-Commit-Signatur (1Password)
+
+- Global: `gpg.format=ssh`, `gpg.ssh.program` → `op-ssh-sign`, `commit.gpgsign=true`, `gpg.ssh.allowedSignersFile` → `~/.ssh/git_allowed_signers`.
+- **Wichtig:** Existiert `~/.config/1Password/ssh/agent.toml` nur mit Vault `Persönlich`, werden Keys in anderen Vaults **nicht** angeboten → Agent wirkt „leer“. Vaults `01_PERSONAL` (u. a. „I Mac Home“) und ggf. `05_INFRASTRUCTURE` in `[[ssh-keys]]` eintragen (siehe [Agent-Config](https://developer.1password.com/docs/ssh/agent/config)).
+- Shell: `SSH_AUTH_SOCK` zeigt auf den 1Password-Socket (in `~/.zshrc` gesetzt, wenn der Socket existiert).
+- Check: `~/projects/ai-os/scripts/verify-1password-ssh-agent.sh` oder `ssh-add -l` mit demselben `SSH_AUTH_SOCK`.
+- Signatur prüfen: `git show --show-signature -s HEAD`.
+- **Hinweis:** `op-ssh-sign` kann in nicht-interaktiven Umgebungen scheitern, bis 1Password/Freigabe (Touch ID) einmal bestätigt wurde — Commits ggf. im Terminal ausführen.
+
 ## Verfügbare Slash-Commands
 
 Folgende Commands sind unter `~/.claude/commands/` definiert:
