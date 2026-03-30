@@ -37,6 +37,13 @@ Definiert in `src/app/globals.css`, an Tailwind angebunden in `tailwind.config.t
 - **`main`:** `pl-0 lg:pl-[240px]`, `pt-[60px]`; Header `left-0 lg:left-[240px]`.
 - Primäre Nav- und Shell-Interaktionen: Mindesthöhe ~**44px** für Touch-Ziele wo sinnvoll.
 
+
+## Komponenten (`src/components`)
+
+Inline-Hex und feste Chart-/Panel-Farben sind auf **dieselben CSS-Variablen** wie in `src/app` umgestellt. **Tailwind `slate-*`/`zinc-*`** kann in Einzelfällen noch vorkommen — bei Refactors nach und nach durch `text-[--text-muted]` bzw. Layer-Klassen ersetzen.
+
+**Hinweis:** Cloudflare-Logo-Pfade im SVG nutzen theme-kompatible Akzentfarben statt exakter Marken-Hex (Lesbarkeit im Dark/Light-Wechsel).
+
 ## Migration Bestand
 
 - Bestehende „Neural Ops“-Seiten mit vielen Inline-`#hex`: schrittweise auf Tokens umstellen (gleiche Semantik: Grün=Erfolg, Gelb/Amber=Warnung, Rot=Fehler, Blau=Primär).

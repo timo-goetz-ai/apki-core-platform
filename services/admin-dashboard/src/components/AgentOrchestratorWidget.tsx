@@ -8,7 +8,7 @@ const AGENTS = [
     id: "claude",
     name: "Claude",
     vendor: "Anthropic",
-    color: "#c97539",
+    color: "var(--accent-amber)",
     glow: "rgba(201,117,57,0.18)",
     border: "rgba(201,117,57,0.35)",
     specialty: "Code · Analyse · Struktur",
@@ -27,7 +27,7 @@ const AGENTS = [
     id: "grok",
     name: "Grok",
     vendor: "xAI",
-    color: "#e8e8e8",
+    color: "var(--border-bright)",
     glow: "rgba(232,232,232,0.10)",
     border: "rgba(232,232,232,0.25)",
     specialty: "Echtzeit · Web · Reasoning",
@@ -46,7 +46,7 @@ const AGENTS = [
     id: "gemini",
     name: "Gemini",
     vendor: "Google",
-    color: "#4f9cf9",
+    color: "var(--accent-blue)",
     glow: "rgba(79,156,249,0.15)",
     border: "rgba(79,156,249,0.30)",
     specialty: "Multimodal · Search · Vision",
@@ -65,7 +65,7 @@ const AGENTS = [
     id: "sauerkraut",
     name: "SauerkrautLM",
     vendor: "Ollama",
-    color: "#a78bfa",
+    color: "var(--accent-purple)",
     glow: "rgba(167,139,250,0.15)",
     border: "rgba(167,139,250,0.35)",
     specialty: "Deutsch · Lokal · Kostenlos",
@@ -134,7 +134,7 @@ function SpeechBubble({ text, color, visible }: { text: string; color: string; v
       padding: "8px 11px",
       fontSize: 11,
       lineHeight: 1.5,
-      color: "#c8d0e0",
+      color: "var(--text-secondary)",
       minHeight: 38,
       transition: "opacity 0.3s",
     }}>
@@ -167,10 +167,10 @@ function StateDot({ state, color }: { state: AgentState; color: string }) {
   };
   const { label, pulse } = cfg[state];
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: "var(--text-secondary)" }}>
       <span style={{
         width: 5, height: 5, borderRadius: "50%",
-        background: state === "idle" ? "#334155" : color,
+        background: state === "idle" ? "var(--text-secondary)" : color,
         flexShrink: 0,
         animation: pulse ? "livePulse 1.4s ease-in-out infinite" : "none",
       }} />
@@ -204,7 +204,7 @@ function AgentCard({ agent, status, active }: {
       />
       {(status.state === "idle" || status.state === "done") && (
         <div style={{ minHeight: 38, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: 10, color: "#334155" }}>
+          <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
             {status.state === "done" ? "✓ Aufgabe abgeschlossen" : "Wartet auf Task…"}
           </span>
         </div>
@@ -225,9 +225,9 @@ function AgentCard({ agent, status, active }: {
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{agent.name}</span>
-            <span style={{ fontSize: 10, color: "#475569", fontWeight: 500 }}>by {agent.vendor}</span>
+            <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 500 }}>by {agent.vendor}</span>
           </div>
-          <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{agent.specialty}</div>
+          <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{agent.specialty}</div>
         </div>
         <div style={{ marginLeft: "auto", flexShrink: 0 }}>
           <StateDot state={status.state} color={agent.color} />
@@ -239,7 +239,7 @@ function AgentCard({ agent, status, active }: {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         paddingTop: 8, borderTop: "1px solid var(--border)", marginTop: 2,
       }}>
-        <span style={{ fontSize: 10, color: "#475569" }}>Tasks ausgeführt</span>
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Tasks ausgeführt</span>
         <span style={{ fontSize: 12, fontWeight: 700, color: agent.color, fontFamily: "monospace" }}>
           {status.taskCount}
         </span>
@@ -324,7 +324,7 @@ export function AgentOrchestratorWidget() {
           onClick={dispatch}
           style={{
             padding: "4px 11px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-            background: "var(--accent)", color: "#fff",
+            background: "var(--accent)", color: "white",
             border: "none", cursor: "pointer",
             letterSpacing: "0.02em",
           }}
@@ -345,7 +345,7 @@ export function AgentOrchestratorWidget() {
       }}>
         {activeTask ? (
           <>
-            <span style={{ fontSize: 10, color: "#4f9cf9", fontWeight: 600, flexShrink: 0 }}>▶ ROUTING</span>
+            <span style={{ fontSize: 10, color: "var(--accent-blue)", fontWeight: 600, flexShrink: 0 }}>▶ ROUTING</span>
             <span style={{ fontSize: 11, color: "var(--text2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {activeTask.task}
             </span>
@@ -359,7 +359,7 @@ export function AgentOrchestratorWidget() {
             </span>
           </>
         ) : (
-          <span style={{ fontSize: 11, color: "#334155" }}>Warte auf nächste Aufgabe…</span>
+          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Warte auf nächste Aufgabe…</span>
         )}
       </div>
 

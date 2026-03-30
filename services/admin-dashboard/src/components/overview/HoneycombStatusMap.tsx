@@ -5,10 +5,10 @@ import { useMemo } from 'react';
 export type ServiceStatus = 'online' | 'degraded' | 'offline' | 'unknown';
 
 const STATUS_COLOR: Record<ServiceStatus, string> = {
-  online: '#34d399',
-  degraded: '#fbbf24',
-  offline: '#f87171',
-  unknown: '#475569',
+  online: 'var(--accent-green)',
+  degraded: 'var(--accent-amber)',
+  offline: 'var(--accent-red)',
+  unknown: 'var(--text-muted)',
 };
 
 export interface HoneyService {
@@ -152,7 +152,7 @@ export function HoneycombStatusMap({
         }}
       >
         <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>UPTIME</span>
-        <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: onlinePct >= 90 ? '#34d399' : '#fbbf24' }}>
+        <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: onlinePct >= 90 ? 'var(--accent-green)' : 'var(--accent-amber)' }}>
           {onlineCount}/{totalCount} · {onlinePct}%
         </span>
       </div>

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 // Neumorphism + Giftiges Rot (#e63946) + Grün (#00C853)
-const TOXIC_RED = "#e63946";
-const HEALTHY_GREEN = "#00C853";
-const WARNING_AMBER = "#ffab00";
+const TOXIC_RED = "var(--accent-red)";
+const HEALTHY_GREEN = "var(--accent-green)";
+const WARNING_AMBER = "var(--accent-amber)";
 
 type S3Metrics = {
   used_storage_gb?: number;
@@ -152,8 +152,8 @@ export function S3StorageWidget() {
       <div
         className="rounded-2xl p-5 dark:bg-zinc-900/80"
         style={{
-          background: "linear-gradient(145deg, #f0f0f0, #e8e8e8)",
-          boxShadow: "inset 4px 4px 8px #d1d1d1, inset -4px -4px 8px #ffffff",
+          background: "linear-gradient(145deg, var(--layer-2), var(--border-bright))",
+          boxShadow: "inset 4px 4px 8px var(--text-muted), inset -4px -4px 8px white",
         }}
       >
         <h2 className="mb-4 text-lg font-semibold text-zinc-700 dark:text-zinc-200">
@@ -179,9 +179,9 @@ export function S3StorageWidget() {
     <div
       className="rounded-2xl p-5"
       style={{
-        background: "linear-gradient(145deg, #f5f5f5, #ebebeb)",
+        background: "linear-gradient(145deg, var(--layer-2), var(--layer-3))",
         boxShadow:
-          "8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff, inset 1px 1px 0 rgba(255,255,255,0.5)",
+          "8px 8px 16px var(--text-muted), -8px -8px 16px white, inset 1px 1px 0 rgba(255,255,255,0.5)",
       }}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -213,8 +213,8 @@ export function S3StorageWidget() {
       <section
         className="mb-4 rounded-xl p-3"
         style={{
-          background: "linear-gradient(145deg, #e8e8e8, #f2f2f2)",
-          boxShadow: "inset 3px 3px 6px #d0d0d0, inset -3px -3px 6px #ffffff",
+          background: "linear-gradient(145deg, var(--border-bright), var(--layer-2))",
+          boxShadow: "inset 3px 3px 6px var(--text-muted), inset -3px -3px 6px white",
         }}
       >
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -230,7 +230,7 @@ export function S3StorageWidget() {
           <div
             className="h-3 overflow-hidden rounded-full"
             style={{
-              background: "linear-gradient(145deg, #d8d8d8, #e8e8e8)",
+              background: "linear-gradient(145deg, var(--layer-3), var(--border-bright))",
               boxShadow: "inset 2px 2px 4px rgba(0,0,0,0.1)",
             }}
           >
@@ -269,8 +269,8 @@ export function S3StorageWidget() {
       <section
         className="mb-4 rounded-xl p-3"
         style={{
-          background: "linear-gradient(145deg, #e8e8e8, #f2f2f2)",
-          boxShadow: "inset 3px 3px 6px #d0d0d0, inset -3px -3px 6px #ffffff",
+          background: "linear-gradient(145deg, var(--border-bright), var(--layer-2))",
+          boxShadow: "inset 3px 3px 6px var(--text-muted), inset -3px -3px 6px white",
         }}
       >
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -296,8 +296,8 @@ export function S3StorageWidget() {
       <section
         className="rounded-xl p-3"
         style={{
-          background: "linear-gradient(145deg, #e8e8e8, #f2f2f2)",
-          boxShadow: "inset 3px 3px 6px #d0d0d0, inset -3px -3px 6px #ffffff",
+          background: "linear-gradient(145deg, var(--border-bright), var(--layer-2))",
+          boxShadow: "inset 3px 3px 6px var(--text-muted), inset -3px -3px 6px white",
         }}
       >
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">

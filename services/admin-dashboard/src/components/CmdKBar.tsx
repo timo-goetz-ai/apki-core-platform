@@ -25,16 +25,16 @@ const NAV_ITEMS: SearchResult[] = [
   { id: 'nav-analytics',   label: 'Analytics',         href: '/analytics',                 icon: <BarChart2       size={12} />,  badge: 'nav' },
   { id: 'nav-templates',   label: 'Templates',         href: '/templates',                 icon: <FileText        size={12} />,  badge: 'nav' },
   { id: 'nav-content',     label: 'Content Factory',   href: '/content-factory',           icon: <Factory         size={12} />,  badge: 'nav' },
-  { id: 'ext-n8n',         label: 'n8n öffnen',        href: 'https://n8n.automation-plus-ki.de',      icon: <Zap             size={12} />,  badge: 'ext', badgeColor: '#38bdf8', external: true },
-  { id: 'ext-nocodb',      label: 'NocoDB öffnen',     href: 'https://nocodb.automation-plus-ki.de',  icon: <Settings size={12} />, badge: 'ext', badgeColor: '#fb923c', external: true },
-  { id: 'ext-grafana',     label: 'Grafana öffnen',    href: 'https://grafana.automation-plus-ki.de', icon: <BarChart2 size={12} />, badge: 'ext', badgeColor: '#fbbf24', external: true },
+  { id: 'ext-n8n',         label: 'n8n öffnen',        href: 'https://n8n.automation-plus-ki.de',      icon: <Zap             size={12} />,  badge: 'ext', badgeColor: 'var(--accent-blue)', external: true },
+  { id: 'ext-nocodb',      label: 'NocoDB öffnen',     href: 'https://nocodb.automation-plus-ki.de',  icon: <Settings size={12} />, badge: 'ext', badgeColor: 'var(--accent-amber)', external: true },
+  { id: 'ext-grafana',     label: 'Grafana öffnen',    href: 'https://grafana.automation-plus-ki.de', icon: <BarChart2 size={12} />, badge: 'ext', badgeColor: 'var(--accent-amber)', external: true },
 ];
 
 // Quick triggers
 const TRIGGERS: SearchResult[] = [
-  { id: 'trig-trend',     label: 'Trigger: 11_TREND_MONITOR',        sub: 'n8n Workflow ausführen', href: '#trigger:fEYWN4pWhRcG2tLg',     icon: <Zap size={12} style={{ color: '#a78bfa' }} />, badge: 'run', badgeColor: '#a78bfa' },
-  { id: 'trig-sentiment', label: 'Trigger: 12_SENTIMENT_TRACKER',    sub: 'n8n Workflow ausführen', href: '#trigger:Vx1Aea5glbogJxg6',     icon: <Zap size={12} style={{ color: '#38bdf8' }} />, badge: 'run', badgeColor: '#38bdf8' },
-  { id: 'trig-content',   label: 'Trigger: 13_CONTENT_OPPORTUNITY',  sub: 'n8n Workflow ausführen', href: '#trigger:I6LcxlyMM8TU7A7V',     icon: <Zap size={12} style={{ color: '#34d399' }} />, badge: 'run', badgeColor: '#34d399' },
+  { id: 'trig-trend',     label: 'Trigger: 11_TREND_MONITOR',        sub: 'n8n Workflow ausführen', href: '#trigger:fEYWN4pWhRcG2tLg',     icon: <Zap size={12} style={{ color: 'var(--accent-purple)' }} />, badge: 'run', badgeColor: 'var(--accent-purple)' },
+  { id: 'trig-sentiment', label: 'Trigger: 12_SENTIMENT_TRACKER',    sub: 'n8n Workflow ausführen', href: '#trigger:Vx1Aea5glbogJxg6',     icon: <Zap size={12} style={{ color: 'var(--accent-blue)' }} />, badge: 'run', badgeColor: 'var(--accent-blue)' },
+  { id: 'trig-content',   label: 'Trigger: 13_CONTENT_OPPORTUNITY',  sub: 'n8n Workflow ausführen', href: '#trigger:I6LcxlyMM8TU7A7V',     icon: <Zap size={12} style={{ color: 'var(--accent-green)' }} />, badge: 'run', badgeColor: 'var(--accent-green)' },
 ];
 
 const ALL_STATIC = [...NAV_ITEMS, ...TRIGGERS];
@@ -93,7 +93,7 @@ export function CmdKBar() {
           sub:   `Workflow · ${String(w.Kategorie ?? '')} · ${String(w.Status ?? '')}`,
           href:  '/workflows',
           icon:  <Workflow size={12} />,
-          badge: 'workflow', badgeColor: '#38bdf8',
+          badge: 'workflow', badgeColor: 'var(--accent-blue)',
         }));
       setResults([...staticMatches, ...wfMatches]);
     } catch {
@@ -172,7 +172,7 @@ export function CmdKBar() {
               flex: 1, border: 'none', outline: 'none',
               background: 'transparent', fontSize: 14,
               color: 'var(--text-primary)', fontFamily: 'var(--font-ui)',
-              caretColor: '#38bdf8',
+              caretColor: 'var(--accent-blue)',
             }}
           />
           <kbd style={{

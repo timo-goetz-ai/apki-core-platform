@@ -12,7 +12,7 @@ export function GrafanaEmbedPanel() {
     <div className="overview-glass-panel overview-glitch-wrap" style={{ padding: 12, borderRadius: 12, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BarChart3 size={12} style={{ color: '#fbbf24' }} />
+          <BarChart3 size={12} style={{ color: 'var(--accent-amber)' }} />
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>Grafana Panel</span>
         </div>
         <a

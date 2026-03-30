@@ -60,10 +60,10 @@ export function CloudflareWidget() {
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 flex items-center justify-center">
             <svg viewBox="0 0 32 32" className="w-5 h-5" fill="none">
-              <path d="M20.5 21.8H8.2l-.3-1.1 1.8-3.3H26c.4 1.9-.7 4.4-5.5 4.4z" fill="#F6821F"/>
-              <path d="M21.3 17.4l-1.8 3.3H9.7l.3 1.1H20.5c4.8 0 5.9-2.5 5.5-4.4H21.3z" fill="#FBAD41"/>
-              <path d="M13.2 24.2H7.1l-.2-.8 1.2-2.3h7.6c.3 1.4-.4 3.1-2.5 3.1z" fill="#F6821F"/>
-              <path d="M13.7 21.1l-1.2 2.3H7.3l.2.8h5.7c2.1 0 2.8-1.7 2.5-3.1H13.7z" fill="#FBAD41"/>
+              <path d="M20.5 21.8H8.2l-.3-1.1 1.8-3.3H26c.4 1.9-.7 4.4-5.5 4.4z" fill="var(--accent-amber)"/>
+              <path d="M21.3 17.4l-1.8 3.3H9.7l.3 1.1H20.5c4.8 0 5.9-2.5 5.5-4.4H21.3z" fill="color-mix(in srgb, var(--accent-amber) 85%, white)"/>
+              <path d="M13.2 24.2H7.1l-.2-.8 1.2-2.3h7.6c.3 1.4-.4 3.1-2.5 3.1z" fill="var(--accent-amber)"/>
+              <path d="M13.7 21.1l-1.2 2.3H7.3l.2.8h5.7c2.1 0 2.8-1.7 2.5-3.1H13.7z" fill="color-mix(in srgb, var(--accent-amber) 85%, white)"/>
             </svg>
           </div>
           <h2 className="font-semibold text-white">Cloudflare</h2>

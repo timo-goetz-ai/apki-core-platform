@@ -54,7 +54,7 @@ export function AuditTimeline() {
       {loading ? (
         <div className="p-6 text-center text-slate-600 text-sm">Lädt…</div>
       ) : (
-        <div className="divide-y divide-[#0f1a2e] max-h-[420px] overflow-y-auto">
+        <div className="divide-y divide-[var(--border)] max-h-[420px] overflow-y-auto">
           {eintraege.map((e) => (
             <div key={e.id} className="px-4 py-3 hover:bg-white/[0.01] transition-colors">
               <div className="flex items-start justify-between gap-3">

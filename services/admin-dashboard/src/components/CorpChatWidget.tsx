@@ -40,12 +40,12 @@ function MessageBubble({ msg }: { msg: Message }) {
       <div style={{
         width: 28, height: 28, borderRadius: 8, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: isUser ? "var(--accent)" : "#1e293b",
+        background: isUser ? "var(--accent)" : "var(--layer-2)",
         border: "1px solid " + (isUser ? "transparent" : "var(--border)"),
       }}>
         {isUser
-          ? <User size={13} color="#fff" />
-          : <Bot size={13} color="#94a3b8" />
+          ? <User size={13} color="white" />
+          : <Bot size={13} color="var(--text-secondary)" />
         }
       </div>
 
@@ -58,7 +58,7 @@ function MessageBubble({ msg }: { msg: Message }) {
         border: isUser ? "none" : "1px solid var(--border)",
         fontSize: 12.5,
         lineHeight: 1.65,
-        color: isUser ? "#fff" : "var(--text)",
+        color: isUser ? "white" : "var(--text)",
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
       }}>
@@ -68,10 +68,10 @@ function MessageBubble({ msg }: { msg: Message }) {
             return (
               <div key={i} style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
-                fontSize: 11, color: "#64748b", fontStyle: "italic",
+                fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic",
                 marginBottom: 4,
               }}>
-                <Zap size={10} color="#4f9cf9" />
+                <Zap size={10} color="var(--accent-blue)" />
                 {line.replace(/🔧 \*|\*…/g, "")}
               </div>
             );
@@ -89,9 +89,9 @@ function TypingIndicator() {
       <div style={{
         width: 28, height: 28, borderRadius: 8, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: "#1e293b", border: "1px solid var(--border)",
+        background: "var(--layer-2)", border: "1px solid var(--border)",
       }}>
-        <Bot size={13} color="#94a3b8" />
+        <Bot size={13} color="var(--text-secondary)" />
       </div>
       <div style={{
         padding: "10px 14px", borderRadius: "4px 12px 12px 12px",
@@ -100,7 +100,7 @@ function TypingIndicator() {
       }}>
         {[0, 1, 2].map(i => (
           <span key={i} style={{
-            width: 5, height: 5, borderRadius: "50%", background: "#475569",
+            width: 5, height: 5, borderRadius: "50%", background: "var(--text-muted)",
             display: "inline-block",
             animation: `typingDot 1.2s ease-in-out ${i * 0.2}s infinite`,
           }} />
@@ -227,7 +227,7 @@ export function CorpChatWidget() {
             background: "var(--surface2)", color: "var(--text2)",
             border: "1px solid var(--border)", whiteSpace: "nowrap",
           }}>
-            {models[selectedModel]?.free && <span style={{ color: "#22c55e", fontSize: 9, fontWeight: 700 }}>FREE</span>}
+            {models[selectedModel]?.free && <span style={{ color: "var(--accent-green)", fontSize: 9, fontWeight: 700 }}>FREE</span>}
             {models[selectedModel]?.label ?? selectedModel}
             <ChevronDown size={10} />
           </button>
@@ -249,8 +249,8 @@ export function CorpChatWidget() {
                   }}>
                   <span>{m.label}</span>
                   <span style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                    {m.free && <span style={{ fontSize: 9, color: "#22c55e", fontWeight: 700, background: "rgba(34,197,94,0.1)", padding: "1px 4px", borderRadius: 3 }}>FREE</span>}
-                    {m.tools && <span style={{ fontSize: 9, color: "#4f9cf9", background: "rgba(79,156,249,0.1)", padding: "1px 4px", borderRadius: 3 }}>TOOLS</span>}
+                    {m.free && <span style={{ fontSize: 9, color: "var(--accent-green)", fontWeight: 700, background: "rgba(34,197,94,0.1)", padding: "1px 4px", borderRadius: 3 }}>FREE</span>}
+                    {m.tools && <span style={{ fontSize: 9, color: "var(--accent-blue)", background: "rgba(79,156,249,0.1)", padding: "1px 4px", borderRadius: 3 }}>TOOLS</span>}
                   </span>
                 </button>
               ))}
@@ -327,7 +327,7 @@ export function CorpChatWidget() {
           style={{
             padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
             background: loading || !input.trim() ? "var(--surface2)" : "var(--accent)",
-            color: loading || !input.trim() ? "var(--muted)" : "#fff",
+            color: loading || !input.trim() ? "var(--muted)" : "white",
             transition: "background 0.2s",
             display: "flex", alignItems: "center", justifyContent: "center",
             alignSelf: "stretch",

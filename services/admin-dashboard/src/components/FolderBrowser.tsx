@@ -75,7 +75,7 @@ export function FolderBrowser({ category, title, icon, onSelectFile, selectable 
           <div className="flex items-center gap-2">
             <span>{icon}</span>
             <span className="text-sm font-semibold">{title}</span>
-            <span className="text-xs text-slate-600 bg-[#0a0f1a] px-2 py-0.5 rounded-full">
+            <span className="text-xs text-slate-600 bg-[var(--layer-0)] px-2 py-0.5 rounded-full">
               {entries.length} Einträge
             </span>
           </div>
@@ -84,7 +84,7 @@ export function FolderBrowser({ category, title, icon, onSelectFile, selectable 
         {entries.length === 0 ? (
           <div className="p-6 text-center text-slate-600 text-xs">Ordner ist leer</div>
         ) : (
-          <div className="divide-y divide-[#0f1a2e]">
+          <div className="divide-y divide-[var(--border)]">
             {entries.map((entry) => {
               const extIcon = entry.type === "directory"
                 ? "📁"
@@ -119,7 +119,7 @@ export function FolderBrowser({ category, title, icon, onSelectFile, selectable 
                         {isSelectable && (
                           <button
                             onClick={() => openFile(entry)}
-                            className="text-[10px] text-[#1d6ef5] hover:text-[#1d6ef5]/80 transition-colors px-2 py-1 rounded hover:bg-[#1d6ef5]/10 font-medium"
+                            className="text-[10px] text-[var(--accent-blue)] hover:text-[var(--accent-blue)]/80 transition-colors px-2 py-1 rounded hover:bg-[var(--accent-blue)]/10 font-medium"
                           >
                             Verwenden
                           </button>

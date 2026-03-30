@@ -128,7 +128,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
           <select
             value={selectedCrew}
             onChange={(e) => setSelectedCrew(e.target.value)}
-            className="w-full bg-[#070b14] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#1d6ef5]/60"
+            className="w-full bg-[var(--layer-0)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[var(--accent-blue)]/60"
           >
             <option value="">— Auswählen —</option>
             {crews.map((c) => (
@@ -147,7 +147,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
             placeholder="z.B. KI-Management, Lead-Generierung…"
             value={inputs.topic ?? ""}
             onChange={(e) => setInputs((p) => ({ ...p, topic: e.target.value }))}
-            className="w-full bg-[#070b14] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#1d6ef5]/60"
+            className="w-full bg-[var(--layer-0)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[var(--accent-blue)]/60"
           />
         </div>
 
@@ -163,7 +163,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
           <select
             value={selectedPrompt}
             onChange={(e) => setSelectedPrompt(e.target.value)}
-            className="w-full bg-[#070b14] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#1d6ef5]/60"
+            className="w-full bg-[var(--layer-0)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[var(--accent-blue)]/60"
           >
             <option value="">— Kein Prompt —</option>
             {prompts.map((p) => (
@@ -171,7 +171,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
             ))}
           </select>
           {promptContent && (
-            <div className="bg-[#070b14] border border-emerald-500/20 rounded-lg p-3">
+            <div className="bg-[var(--layer-0)] border border-emerald-500/20 rounded-lg p-3">
               <p className="text-[10px] text-emerald-400 font-semibold mb-1">✅ Injiziert</p>
               <p className="text-[10px] text-slate-500 line-clamp-3 font-mono leading-relaxed">
                 {promptContent.slice(0, 280)}{promptContent.length > 280 ? "…" : ""}
@@ -190,7 +190,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
             <select
               value={selectedTemplate}
               onChange={(e) => setSelectedTemplate(e.target.value)}
-              className="w-full bg-[#070b14] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#1d6ef5]/60"
+              className="w-full bg-[var(--layer-0)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[var(--accent-blue)]/60"
             >
               <option value="">— Kein Template —</option>
               {templates.map((t) => (

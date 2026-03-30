@@ -37,7 +37,7 @@ export function WorkflowPulseGraph({
         >
           Workflow Pulse · live
         </span>
-        <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#60a5fa' }}>
+        <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--accent-blue)' }}>
           {activeWf} aktiv / {totalWf} gesamt
         </span>
       </div>
@@ -53,8 +53,8 @@ export function WorkflowPulseGraph({
             <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(96,165,250,0.07)" strokeWidth="0.5" />
           </pattern>
           <linearGradient id="edge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.95" />
+            <stop offset="0%" stopColor="var(--accent-purple)" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="var(--accent-blue)" stopOpacity="0.95" />
           </linearGradient>
           <filter id="pulse-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="1.8" result="blur" />
@@ -82,11 +82,11 @@ export function WorkflowPulseGraph({
         ))}
 
         {paths.slice(1).map((d, i) => (
-          <circle key={`p-${i}`} r={3} fill="#a78bfa" filter="url(#pulse-glow)" opacity={0.85}>
+          <circle key={`p-${i}`} r={3} fill="var(--accent-purple)" filter="url(#pulse-glow)" opacity={0.85}>
             <animateMotion dur={`${dur + i * 0.25}s`} repeatCount="indefinite" path={d} />
           </circle>
         ))}
-        <circle r={4} fill="#38bdf8" filter="url(#pulse-glow)" opacity={0.95}>
+        <circle r={4} fill="var(--accent-blue)" filter="url(#pulse-glow)" opacity={0.95}>
           <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={mainPath} />
         </circle>
         <circle r={2.5} fill="#e879f9" filter="url(#pulse-glow)" opacity={0.75}>
@@ -94,8 +94,8 @@ export function WorkflowPulseGraph({
         </circle>
 
         <g>
-          <circle cx={95} cy={110} r={28} fill="rgba(167,139,250,0.12)" stroke="#a78bfa" strokeWidth={1.5} />
-          <text x={95} y={106} textAnchor="middle" style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, fill: '#c4b5fd' }}>
+          <circle cx={95} cy={110} r={28} fill="rgba(167,139,250,0.12)" stroke="var(--accent-purple)" strokeWidth={1.5} />
+          <text x={95} y={106} textAnchor="middle" style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, fill: 'var(--accent-purple)' }}>
             AI_BRAIN
           </text>
           <text x={95} y={118} textAnchor="middle" style={{ fontSize: 7, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' }}>
@@ -103,8 +103,8 @@ export function WorkflowPulseGraph({
           </text>
         </g>
         <g>
-          <circle cx={305} cy={110} r={28} fill="rgba(56,189,248,0.12)" stroke="#38bdf8" strokeWidth={1.5} />
-          <text x={305} y={106} textAnchor="middle" style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, fill: '#7dd3fc' }}>
+          <circle cx={305} cy={110} r={28} fill="rgba(56,189,248,0.12)" stroke="var(--accent-blue)" strokeWidth={1.5} />
+          <text x={305} y={106} textAnchor="middle" style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, fill: 'var(--accent-blue)' }}>
             SYSTEM
           </text>
           <text x={305} y={118} textAnchor="middle" style={{ fontSize: 7, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' }}>
@@ -113,26 +113,26 @@ export function WorkflowPulseGraph({
         </g>
 
         <g>
-          <circle cx={200} cy={52} r={22} fill="rgba(52,211,153,0.1)" stroke="#34d399" strokeWidth={1} />
-          <text x={200} y={55} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: '#6ee7b7' }}>
+          <circle cx={200} cy={52} r={22} fill="rgba(52,211,153,0.1)" stroke="var(--accent-green)" strokeWidth={1} />
+          <text x={200} y={55} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: 'var(--accent-green)' }}>
             Lead Scout
           </text>
         </g>
         <g>
-          <circle cx={140} cy={172} r={20} fill="rgba(251,146,60,0.1)" stroke="#fb923c" strokeWidth={1} />
-          <text x={140} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: '#fdba74' }}>
+          <circle cx={140} cy={172} r={20} fill="rgba(251,146,60,0.1)" stroke="var(--accent-amber)" strokeWidth={1} />
+          <text x={140} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: 'var(--accent-amber)' }}>
             Content
           </text>
         </g>
         <g>
-          <circle cx={200} cy={172} r={20} fill="rgba(244,114,182,0.1)" stroke="#f472b6" strokeWidth={1} />
-          <text x={200} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: '#f9a8d4' }}>
+          <circle cx={200} cy={172} r={20} fill="rgba(244,114,182,0.1)" stroke="var(--accent-purple)" strokeWidth={1} />
+          <text x={200} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: 'var(--accent-purple)' }}>
             Voice
           </text>
         </g>
         <g>
-          <circle cx={280} cy={172} r={20} fill="rgba(148,163,184,0.12)" stroke="#94a3b8" strokeWidth={1} />
-          <text x={280} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: '#cbd5e1' }}>
+          <circle cx={280} cy={172} r={20} fill="rgba(148,163,184,0.12)" stroke="var(--text-secondary)" strokeWidth={1} />
+          <text x={280} y={175} textAnchor="middle" style={{ fontSize: 7.5, fontFamily: 'var(--font-mono)', fill: 'var(--text-secondary)' }}>
             DevOps
           </text>
         </g>

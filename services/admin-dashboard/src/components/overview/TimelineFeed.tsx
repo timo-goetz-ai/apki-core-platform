@@ -36,17 +36,17 @@ function groupByDay(events: TimelineEvent[]): { label: string; events: TimelineE
 }
 
 const STATUS_CONFIG: Record<TimelineEvent['status'], { color: string; bg: string; icon: React.ReactNode }> = {
-  success: { color: '#34d399', bg: 'rgba(52,211,153,0.1)', icon: <CheckCircle2 size={14} /> },
-  error:   { color: '#f87171', bg: 'rgba(248,113,113,0.1)', icon: <AlertTriangle size={14} /> },
-  warning: { color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', icon: <AlertTriangle size={14} /> },
-  info:    { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', icon: <Zap size={14} /> },
-  pending: { color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', icon: <Clock size={14} /> },
+  success: { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.1)', icon: <CheckCircle2 size={14} /> },
+  error:   { color: 'var(--accent-red)', bg: 'rgba(248,113,113,0.1)', icon: <AlertTriangle size={14} /> },
+  warning: { color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.1)', icon: <AlertTriangle size={14} /> },
+  info:    { color: 'var(--accent-blue)', bg: 'rgba(96,165,250,0.1)', icon: <Zap size={14} /> },
+  pending: { color: 'var(--accent-purple)', bg: 'rgba(167,139,250,0.1)', icon: <Clock size={14} /> },
 };
 
 const SOURCE_COLOR: Record<string, string> = {
-  'n8n':              '#fb923c',
-  'Content Pipeline': '#a78bfa',
-  'System':           '#60a5fa',
+  'n8n':              'var(--accent-amber)',
+  'Content Pipeline': 'var(--accent-purple)',
+  'System':           'var(--accent-blue)',
 };
 
 function confidenceAmpel(score?: number): string {
@@ -60,7 +60,7 @@ function confidenceAmpel(score?: number): string {
 
 function EventCard({ event, onAction }: { event: TimelineEvent; onAction: () => void }) {
   const cfg      = STATUS_CONFIG[event.status];
-  const srcColor = SOURCE_COLOR[event.source] ?? '#475569';
+  const srcColor = SOURCE_COLOR[event.source] ?? 'var(--text-muted)';
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleAction(action: NonNullable<TimelineEvent['actions']>[0]) {
@@ -157,8 +157,8 @@ function EventCard({ event, onAction }: { event: TimelineEvent; onAction: () => 
                 disabled={loading === action.label}
                 style={{
                   fontSize: 11, padding: '3px 10px', borderRadius: 5, border: 'none', cursor: 'pointer', fontWeight: 600,
-                  background: action.variant === 'primary' ? '#34d399' : action.variant === 'danger' ? '#f87171' : 'var(--layer-2)',
-                  color:      action.variant === 'primary' ? '#052e16' : action.variant === 'danger' ? '#1f0909' : 'var(--text-secondary)',
+                  background: action.variant === 'primary' ? 'var(--accent-green)' : action.variant === 'danger' ? 'var(--accent-red)' : 'var(--layer-2)',
+                  color:      action.variant === 'primary' ? 'var(--layer-0)' : action.variant === 'danger' ? 'var(--layer-0)' : 'var(--text-secondary)',
                   opacity: loading === action.label ? 0.6 : 1,
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
@@ -228,7 +228,7 @@ export function TimelineFeed() {
               style={{
                 fontSize: 11, padding: '3px 10px', borderRadius: 5, border: 'none', cursor: 'pointer', fontWeight: 600,
                 background: filter === f ? 'var(--accent-blue)' : 'var(--layer-2)',
-                color:      filter === f ? '#fff' : 'var(--text-muted)',
+                color:      filter === f ? 'white' : 'var(--text-muted)',
               }}
             >
               {f === 'all' ? 'Alle' : f === 'pending' ? `Ausstehend ${pending > 0 ? `(${pending})` : ''}` : `Fehler ${errors > 0 ? `(${errors})` : ''}`}
