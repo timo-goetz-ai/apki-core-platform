@@ -67,3 +67,13 @@ Nach Korrektur: Workflow **Deploy – Production** erneut per `workflow_dispatch
 ### Deploy ohne GitHub-Deploy-Workflow
 
 Images werden bei Push auf `main` durch **Build & Push – Docker Images** nach **ghcr.io** gepusht. Wenn Coolify auf neue Images lauscht, kann ein Rollout **ohne** diesen Deploy-Workflow erfolgen — dann ist der fehlgeschlagene Run nur für SSH-Migration/Rollback-Pfad relevant.
+
+### `403 Forbidden` / „You aren't authorized to access this resource“
+
+Das **Service-Account-Token** ist gültig, hat aber **keinen Lesezugriff** auf den Tresor bzw. die Items (z. B. `Hetzner/ssh_private_key`).
+
+1. [1Password.com](https://start.1password.com) → **Developer** → **Service Accounts** → passendes Konto wählen.
+2. **Vaults** / **Berechtigungen:** Tresor **`05_INFRASTRUCTURE`** (ID `fwl7qdu7q3nvqqjbrljzcdhita`) mit mindestens **Read** für dieses Service-Konto freigeben.
+3. Token ggf. neu erzeugen, in GitHub `OP_SERVICE_ACCOUNT_TOKEN` und optional im 1Password-Item speichern.
+
+Referenzen in den Workflows nutzen `op://<vault-uuid>/…` (siehe Workflows), damit der Name `05_INFRASTRUCTURE` nicht aufgelöst werden muss.
