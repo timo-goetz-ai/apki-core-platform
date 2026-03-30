@@ -52,3 +52,18 @@ Diese Pfade werden in `.github/workflows/*.yml` genutzt; sie müssen im Tresor e
 | Secret | Rolle |
 |--------|--------|
 | `OP_SERVICE_ACCOUNT_TOKEN` | Token des Service-Kontos **`1PASSWORT_300326_INFRA_HETZNER`** für `load-secrets-action@v2` |
+
+## Fehlerbehebung Deploy (`load-secrets-action`)
+
+### `failed to parseToken, format is invalid` / `DecodeSACredentials`
+
+- GitHub-Secret **`OP_SERVICE_ACCOUNT_TOKEN`** enthält oft **kein** gültiges Service-Account-Token (Tippfehler, Zeilenumbruch, Anführungszeichen, alter User-Token statt SA).
+- Korrekt: In 1Password **Service Account** → Token **einmalig** kopieren → in GitHub **roh** einfügen (eine Zeile, keine Spaces am Anfang/Ende).
+- Service Account muss **Leserechte** auf Tresor **`05_INFRASTRUCTURE`** haben.
+- Prüfen: [Service Accounts – 1Password](https://developer.1password.com/docs/service-accounts/)
+
+Nach Korrektur: Workflow **Deploy – Production** erneut per `workflow_dispatch` ausführen.
+
+### Deploy ohne GitHub-Deploy-Workflow
+
+Images werden bei Push auf `main` durch **Build & Push – Docker Images** nach **ghcr.io** gepusht. Wenn Coolify auf neue Images lauscht, kann ein Rollout **ohne** diesen Deploy-Workflow erfolgen — dann ist der fehlgeschlagene Run nur für SSH-Migration/Rollback-Pfad relevant.
