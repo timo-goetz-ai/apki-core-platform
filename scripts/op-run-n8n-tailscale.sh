@@ -4,7 +4,7 @@
 # Override: N8N_TAILSCALE_HOST_MODE=magicdns|ip|auto (default auto)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-NOTE=$(op read "op://05_INFRASTRUCTURE/TAILSCALE_HETZNER_CPX-42/notesPlain")
+NOTE=$(op read "op://fwl7qdu7q3nvqqjbrljzcdhita/TAILSCALE_HETZNER_CPX-42/notesPlain")
 MODE="${N8N_TAILSCALE_HOST_MODE:-auto}"
 TS_IP=$(printf '%s\n' "$NOTE" | grep -Eo '100\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
 MAGIC=$(printf '%s\n' "$NOTE" | grep -Eo '[a-z0-9][a-z0-9.-]+\.ts\.net' | head -1)

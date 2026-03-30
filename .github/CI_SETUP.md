@@ -8,7 +8,7 @@ Kanonisches Service-Konto: **`1PASSWORT_300326_INFRA_HETZNER`** (Hetzner/Infra, 
    **`Service Account Auth Token: 1PASSWORT_300326_INFRA_HETZNER`** — dort ist das **Token** im Feld **`Anmeldedaten`** (Concealed) abgelegt.
 2. **Nur** diesen Wert in GitHub eintragen: **Settings → Secrets and variables → Actions → `OP_SERVICE_ACCOUNT_TOKEN`**.  
    Niemals ins Repo committen; die Workflows nutzen ausschließlich den GitHub-Secret-Namen.
-3. Das Service-Konto braucht im 1Password-Admin **Lesezugriff** auf Tresor **`05_INFRASTRUCTURE`** (alle `op://05_INFRASTRUCTURE/…`-Referenzen in `.github/workflows/`).
+3. Das Service-Konto braucht im 1Password-Admin **Lesezugriff** auf Tresor **`05_INFRASTRUCTURE`** (alle `op://fwl7qdu7q3nvqqjbrljzcdhita/…`-Referenzen in `.github/workflows/`).
 
 Ältere Referenz: Item **`1PASSWORT_Service Account Auth Token: AIOS`** — nur noch relevant, falls du ein Legacy-Konto parallel führst; CI ist auf **`05_INFRASTRUCTURE`** ausgerichtet.
 
