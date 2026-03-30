@@ -1,5 +1,5 @@
 {
-  "name": "550_JARVIS_APPROVAL_FLOW",
+  "name": "50_550_JARVIS_APPROVAL_FLOW",
   "nodes": [
     {
       "id": "550-webhook-intent",
@@ -187,7 +187,7 @@
     }
   ],
   "meta": {
-    "templateId": "550_JARVIS_APPROVAL_FLOW",
+    "templateId": "50_550_JARVIS_APPROVAL_FLOW",
     "description": "Jarvis HITL — Intent → LLM Plan → Telegram Approval Request"
   }
 }

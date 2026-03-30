@@ -1,5 +1,5 @@
 {
-  "name": "540_TELEGRAM_ASSISTANT",
+  "name": "50_540_TELEGRAM_ASSISTANT",
   "nodes": [
     {
       "id": "tg-webhook",

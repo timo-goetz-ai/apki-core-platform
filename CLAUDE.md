@@ -53,7 +53,7 @@ Workflows nach Layer gruppiert:
 
 So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
-**Strategische Phasen (10 / 20 / 30):** Roadmap- und Management-Ebene **zusätzlich** zu den 100er-Layern — Workflow-**Namen** in n8n bleiben dreistellig (`310_…`, nicht `10_…`). Kanonische Zuordnung: `docs/architecture/N8N_STRATEGISCHE_PHASEN.md`. In NocoDB kann `agents` optional ein Feld **Phase** (`10`|`20`|`30`) neben **Layer** führen.
+**Strategische Phasen (10 / 20 / 30):** Roadmap- und Management-Ebene **zusätzlich** zu den 100er-Layern. **n8n-Workflow-Namen** sind kanonisch **`{ZehnerLayer}_{NNN}_…`** (z. B. `30_310_TREND_MONITOR`, `40_450_CONTENT_MASTER_FLOW_v2`) — Mapping und Regeln: `docs/operations/N8N_WORKFLOW_RENAME_MAP.md`, Architektur: `docs/architecture/N8N_STRATEGISCHE_PHASEN.md`. In NocoDB kann `agents` optional **Phase** (`10`|`20`|`30`) neben **Layer** führen.
 
 
 ## Claude Code / Workspace
@@ -110,9 +110,9 @@ Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider akti
 | Tabelle | ID | Beschreibung |
 |---------|-----|--------------|
 | workflows | `mfz43ghxesvn1yy` | n8n-Workflow-Register |
-| trends | `mrdi13quucpnps4` | Output: `310_TREND_MONITOR` |
-| sentiment | `mvb46y3ncw21m1g` | Output: `320_SENTIMENT_TRACKER` |
-| content_opportunities | `m5abfrtfyr2j912` | Output: `330_CONTENT_OPPORTUNITY` |
+| trends | `mrdi13quucpnps4` | Output: `30_310_TREND_MONITOR` |
+| sentiment | `mvb46y3ncw21m1g` | Output: `30_320_SENTIMENT_TRACKER` |
+| content_opportunities | `m5abfrtfyr2j912` | Output: `30_330_CONTENT_OPPORTUNITY` |
 | content_pipeline | `mgjsuwl4jwlyhdc` | Content-Produktion |
 | prompts | `mlw20rrihtkbmew` | Prompt-Bibliothek |
 | agents | `m8c0rpjwx5d4bu2` | KI-Agenten-Register |
@@ -130,13 +130,13 @@ Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider akti
 
 | Workflow | ID | Zeitplan |
 |----------|-----|---------|
-| `310_TREND_MONITOR` | `QXMKnvar7vGceevY` | tägl. 08:00 — **AKTIV** |
-| `320_SENTIMENT_TRACKER` | `bycPphxXy3Crhx4h` | Mo. 08:00 — **AKTIV** |
-| `330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
-| `430_DAILY_DIGEST` | `b1uFH47VF0RcahVS` | tägl. 08:00 — **AKTIV** |
-| `435_WEEKLY_SUMMARY` | `DQWIR7s5zaGRqNX2` | Mo. 09:00 — **AKTIV** |
-| `540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand — webhook: `/webhook/tg-assistant` |
-| `450_CONTENT_MASTER_FLOW_v2` | `j4DqKVd9N2U1AEGy` | on_demand — webhook: `/webhook/content-master` — **AKTIV** |
+| `30_310_TREND_MONITOR` | `QXMKnvar7vGceevY` | tägl. 08:00 — **AKTIV** |
+| `30_320_SENTIMENT_TRACKER` | `bycPphxXy3Crhx4h` | Mo. 08:00 — **AKTIV** |
+| `30_330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
+| `40_430_DAILY_DIGEST` | `b1uFH47VF0RcahVS` | tägl. 08:00 — **AKTIV** |
+| `40_435_WEEKLY_SUMMARY` | `DQWIR7s5zaGRqNX2` | Mo. 09:00 — **AKTIV** |
+| `50_540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand — webhook: `/webhook/tg-assistant` |
+| `40_450_CONTENT_MASTER_FLOW_v2` | `j4DqKVd9N2U1AEGy` | on_demand — webhook: `/webhook/content-master` — **AKTIV** |
 
 **AI-Modell in Research-Workflows:** `gemini-2.0-flash` (direkt via Gemini API, KEIN OpenRouter)
 **Gemini API Key:** in n8n Container-Env als `GEMINI_API_KEY`
@@ -219,7 +219,7 @@ Subagenten-Definitionen in `.claude/agents/`:
 
 ## Offene Aufgaben (Stand März 2026)
 
-- `agents`-Tabelle leer → manuell befüllen oder `240_AIOS_DISCOVERY` aktivieren
+- `agents`-Tabelle leer → manuell befüllen oder `20_240_AIOS_DISCOVERY` aktivieren
 - Publishing Layer (`440_*` / `41_*` Workflows) wartet auf Blogify-Credentials (`BLOGIFY_CLIENT_ID`, `BLOGIFY_CLIENT_SECRET`, `BLOGIFY_INTEGRATION_ID`)
 - Research-Tabellen füllen sich täglich ab 08:00 / 09:30 Uhr (Schedules aktiv)
 - n8n interne IP: `10.0.1.16:5678` (Container: `homestack-n8n`)

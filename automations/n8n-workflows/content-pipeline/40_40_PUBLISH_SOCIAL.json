@@ -1,5 +1,5 @@
 {
-  "name": "40_PUBLISH_SOCIAL",
+  "name": "40_40_PUBLISH_SOCIAL",
   "nodes": [
     {
       "parameters": {
@@ -12,7 +12,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -22,7 +25,10 @@
       "name": "Post vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -31,27 +37,50 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization",  "value": "=Bearer {{ $env.POSTIZ_API_TOKEN }}" },
-            { "name": "Content-Type",   "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.POSTIZ_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
         "bodyParameters": {
           "parameters": [
-            { "name": "content",    "value": "={{ $json.content_text }}" },
-            { "name": "platforms",  "value": "={{ $json.platforms }}" },
-            { "name": "mediaUrls",  "value": "={{ $json.image_url ? [$json.image_url] : [] }}" },
-            { "name": "publishNow", "value": true }
+            {
+              "name": "content",
+              "value": "={{ $json.content_text }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ $json.platforms }}"
+            },
+            {
+              "name": "mediaUrls",
+              "value": "={{ $json.image_url ? [$json.image_url] : [] }}"
+            },
+            {
+              "name": "publishNow",
+              "value": true
+            }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "postiz-publish",
       "name": "Postiz: Post veröffentlichen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -61,7 +90,10 @@
       "name": "Ergebnisse mappen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -70,20 +102,44 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
         "bodyParameters": {
           "parameters": [
-            { "name": "pipeline_job_id", "value": "={{ $json.pipeline_job_id }}" },
-            { "name": "platform",        "value": "={{ $json.platform }}" },
-            { "name": "post_url",        "value": "={{ $json.post_url }}" },
-            { "name": "postiz_post_id",  "value": "={{ $json.postiz_post_id }}" },
-            { "name": "status",          "value": "={{ $json.status }}" },
-            { "name": "published_at",    "value": "={{ $json.published_at }}" },
-            { "name": "created_at",      "value": "={{ $now.toISO() }}" }
+            {
+              "name": "pipeline_job_id",
+              "value": "={{ $json.pipeline_job_id }}"
+            },
+            {
+              "name": "platform",
+              "value": "={{ $json.platform }}"
+            },
+            {
+              "name": "post_url",
+              "value": "={{ $json.post_url }}"
+            },
+            {
+              "name": "postiz_post_id",
+              "value": "={{ $json.postiz_post_id }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "published_at",
+              "value": "={{ $json.published_at }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
           ]
         }
       },
@@ -91,7 +147,10 @@
       "name": "NocoDB: publish_log schreiben",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -100,17 +159,32 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
         "bodyParameters": {
           "parameters": [
-            { "name": "Id",         "value": "={{ $('Post vorbereiten').item.json.pipeline_job_id }}" },
-            { "name": "stage",      "value": "done" },
-            { "name": "status",     "value": "done" },
-            { "name": "updated_at", "value": "={{ $now.toISO() }}" }
+            {
+              "name": "Id",
+              "value": "={{ $('Post vorbereiten').item.json.pipeline_job_id }}"
+            },
+            {
+              "name": "stage",
+              "value": "done"
+            },
+            {
+              "name": "status",
+              "value": "done"
+            },
+            {
+              "name": "updated_at",
+              "value": "={{ $now.toISO() }}"
+            }
           ]
         }
       },
@@ -118,7 +192,10 @@
       "name": "Pipeline: done setzen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -129,16 +206,79 @@
       "name": "Response OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     }
   ],
   "connections": {
-    "Webhook Trigger":               { "main": [[{ "node": "Post vorbereiten",               "type": "main", "index": 0 }]] },
-    "Post vorbereiten":              { "main": [[{ "node": "Postiz: Post veröffentlichen",    "type": "main", "index": 0 }]] },
-    "Postiz: Post veröffentlichen":  { "main": [[{ "node": "Ergebnisse mappen",              "type": "main", "index": 0 }]] },
-    "Ergebnisse mappen":             { "main": [[{ "node": "NocoDB: publish_log schreiben",  "type": "main", "index": 0 }]] },
-    "NocoDB: publish_log schreiben": { "main": [[{ "node": "Pipeline: done setzen",          "type": "main", "index": 0 }]] },
-    "Pipeline: done setzen":         { "main": [[{ "node": "Response OK",                    "type": "main", "index": 0 }]] }
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Post vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Postiz: Post veröffentlichen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postiz: Post veröffentlichen": {
+      "main": [
+        [
+          {
+            "node": "Ergebnisse mappen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ergebnisse mappen": {
+      "main": [
+        [
+          {
+            "node": "NocoDB: publish_log schreiben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NocoDB: publish_log schreiben": {
+      "main": [
+        [
+          {
+            "node": "Pipeline: done setzen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pipeline: done setzen": {
+      "main": [
+        [
+          {
+            "node": "Response OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -146,8 +286,14 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
-  "meta": { "templateCredsSetupCompleted": true },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "pinData": {},
-  "versionId": "40_PUBLISH_SOCIAL_v1",
-  "tags": [{ "name": "publishing" }]
+  "versionId": "40_40_PUBLISH_SOCIAL_v1",
+  "tags": [
+    {
+      "name": "publishing"
+    }
+  ]
 }

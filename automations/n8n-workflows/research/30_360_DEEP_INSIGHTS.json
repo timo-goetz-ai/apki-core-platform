@@ -1,16 +1,26 @@
 {
-  "name": "360_DEEP_INSIGHTS",
+  "name": "30_360_DEEP_INSIGHTS",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "triggerAtHour": 11, "triggerAtMinute": 0 }] },
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
         "cronExpression": "0 11 * * 3"
       },
       "id": "schedule-trigger",
       "name": "Mittwoch 11:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -18,7 +28,10 @@
       "name": "Manuell starten",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 480]
+      "position": [
+        240,
+        480
+      ]
     },
     {
       "parameters": {
@@ -27,7 +40,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -35,7 +51,10 @@
       "name": "Beste Opportunity laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 380]
+      "position": [
+        460,
+        380
+      ]
     },
     {
       "parameters": {
@@ -45,7 +64,10 @@
       "name": "Topic extrahieren",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 380]
+      "position": [
+        680,
+        380
+      ]
     },
     {
       "parameters": {
@@ -55,7 +77,10 @@
       "name": "Research-Prompt bauen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 380]
+      "position": [
+        900,
+        380
+      ]
     },
     {
       "parameters": {
@@ -64,7 +89,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -75,7 +103,10 @@
       "name": "Gemini: Tiefenrecherche",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 380]
+      "position": [
+        1120,
+        380
+      ]
     },
     {
       "parameters": {
@@ -85,7 +116,10 @@
       "name": "Brief parsen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 380]
+      "position": [
+        1340,
+        380
+      ]
     },
     {
       "parameters": {
@@ -94,7 +128,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
@@ -105,7 +142,10 @@
       "name": "Research Piece anlegen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 380]
+      "position": [
+        1560,
+        380
+      ]
     },
     {
       "parameters": {
@@ -114,49 +154,124 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"360_DEEP_INSIGHTS\", \"action\": \"research.brief_created\", \"resource_type\": \"content_pieces\", \"resource_id\": \"{{ $('Brief parsen').item.json.piece_id }}\", \"result\": \"ok\" }"
+        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"30_360_DEEP_INSIGHTS\", \"action\": \"research.brief_created\", \"resource_type\": \"content_pieces\", \"resource_id\": \"{{ $('Brief parsen').item.json.piece_id }}\", \"result\": \"ok\" }"
       },
       "id": "audit-log",
       "name": "Audit Log",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 380]
+      "position": [
+        1780,
+        380
+      ]
     }
   ],
   "connections": {
     "Mittwoch 11:00": {
-      "main": [[{ "node": "Beste Opportunity laden", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Beste Opportunity laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Manuell starten": {
-      "main": [[{ "node": "Beste Opportunity laden", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Beste Opportunity laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Beste Opportunity laden": {
-      "main": [[{ "node": "Topic extrahieren", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Topic extrahieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Topic extrahieren": {
-      "main": [[{ "node": "Research-Prompt bauen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Research-Prompt bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Research-Prompt bauen": {
-      "main": [[{ "node": "Gemini: Tiefenrecherche", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gemini: Tiefenrecherche",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Gemini: Tiefenrecherche": {
-      "main": [[{ "node": "Brief parsen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Brief parsen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Brief parsen": {
-      "main": [[{ "node": "Research Piece anlegen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Research Piece anlegen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Research Piece anlegen": {
-      "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": ["research", "insights", "forecast", "briefing"]
+  "tags": [
+    "research",
+    "insights",
+    "forecast",
+    "briefing"
+  ]
 }

@@ -1,12 +1,15 @@
 {
-  "name": "542_STATUS_REPORT",
+  "name": "50_542_STATUS_REPORT",
   "nodes": [
     {
       "id": "542-trigger",
       "name": "When Called by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [250, 400],
+      "position": [
+        250,
+        400
+      ],
       "parameters": {}
     },
     {
@@ -14,20 +17,35 @@
       "name": "Fetch n8n Workflows",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 160],
+      "position": [
+        480,
+        160
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.16:5678/api/v1/workflows",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "limit", "value": "100" }]
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -36,20 +54,35 @@
       "name": "Fetch n8n Executions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 300],
+      "position": [
+        480,
+        300
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.16:5678/api/v1/executions",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $env.N8N_API_KEY }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "limit", "value": "50" }]
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -58,12 +91,17 @@
       "name": "Fetch Prometheus Alerts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 440],
+      "position": [
+        480,
+        440
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://10.0.1.15:9090/api/v1/alerts",
         "authentication": "none",
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -72,12 +110,17 @@
       "name": "Fetch Crew API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 580],
+      "position": [
+        480,
+        580
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io/crews/",
         "authentication": "none",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -86,23 +129,39 @@
       "name": "Fetch Content Pieces",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 720],
+      "position": [
+        480,
+        720
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://homestack-nocodb:8080/api/v2/tables/mm1ssn0luruhzyx/records",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
+          ]
         },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "limit", "value": "20" },
-            { "name": "sort", "value": "-created_at" }
+            {
+              "name": "limit",
+              "value": "20"
+            },
+            {
+              "name": "sort",
+              "value": "-created_at"
+            }
           ]
         },
-        "options": { "timeout": 8000 }
+        "options": {
+          "timeout": 8000
+        }
       },
       "onError": "continueRegularOutput"
     },
@@ -111,7 +170,10 @@
       "name": "Format Status Report",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [820, 440],
+      "position": [
+        820,
+        440
+      ],
       "parameters": {
         "jsCode": "const chatId = $('When Called by Another Workflow').first().json.chatId;\n\n// ── n8n Workflows ──\nlet workflows = [];\ntry {\n  const wfData = $('Fetch n8n Workflows').first().json;\n  workflows = wfData?.data ?? wfData?.workflows ?? [];\n} catch(e) {}\nconst totalWF = workflows.length;\nconst activeWF = workflows.filter(w => w.active).length;\n\n// ── n8n Executions ──\nlet executions = [];\ntry {\n  const exData = $('Fetch n8n Executions').first().json;\n  executions = exData?.data ?? exData?.executions ?? [];\n} catch(e) {}\nconst now = Date.now();\nconst recent24h = executions.filter(e => (now - new Date(e.startedAt ?? e.created_at ?? 0).getTime()) < 86400000).length;\nconst failedCount = executions.filter(e => e.status === 'error' || e.status === 'failed').length;\nconst successCount = executions.filter(e => e.status === 'success').length;\n\n// ── Prometheus Alerts ──\nlet firingAlerts = 0;\nlet alertNames = [];\ntry {\n  const alertData = $('Fetch Prometheus Alerts').first().json;\n  const alerts = alertData?.data?.alerts ?? [];\n  const firing = alerts.filter(a => a.state === 'firing');\n  firingAlerts = firing.length;\n  alertNames = firing.map(a => a.labels?.alertname ?? 'Unknown').slice(0, 3);\n} catch(e) {}\n\n// ── Crew API ──\nlet crews = [];\ntry {\n  const crewData = $('Fetch Crew API').first().json;\n  crews = Array.isArray(crewData) ? crewData : [];\n} catch(e) {}\nconst totalAgents = crews.reduce((s, c) => s + (c.agents ?? 0), 0);\n\n// ── Content Pieces ──\nlet pieces = [];\ntry {\n  const pData = $('Fetch Content Pieces').first().json;\n  pieces = pData?.list ?? [];\n} catch(e) {}\nconst draftCount = pieces.filter(p => p.status === 'draft').length;\nconst publishedCount = pieces.filter(p => p.status === 'published').length;\n\n// ── Status Icon ──\nconst statusIcon = firingAlerts > 0 ? '🔴' : failedCount > 3 ? '🟡' : '🟢';\nconst statusText = firingAlerts > 0 ? 'Alarm' : failedCount > 3 ? 'Warnung' : 'OK';\n\nconst ts = new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });\n\nlet report = `${statusIcon} *AIOS System Status* — ${statusText}\\n`;\nreport += `_Stand: ${ts} Uhr_\\n\\n`;\n\nreport += `*n8n Workflows:*\\n`;\nreport += `• ${activeWF} aktiv | ${totalWF - activeWF} pausiert | ${totalWF} gesamt\\n\\n`;\n\nreport += `*Ausführungen (letzte 50):*\\n`;\nreport += `• 24h: ${recent24h} | ✅ ${successCount} | ❌ ${failedCount}\\n\\n`;\n\nreport += `*Crew AI:*\\n`;\nif (crews.length > 0) {\n  report += `• ${crews.length} Crews | ${totalAgents} Agents | ${pieces.length} Pieces\\n`;\n  report += `• Drafts: ${draftCount} | Published: ${publishedCount}\\n`;\n} else {\n  report += `• Crew API nicht erreichbar\\n`;\n}\nreport += `\\n`;\n\nreport += `*Prometheus:*\\n`;\nif (firingAlerts === 0) {\n  report += `• ✅ Keine feuernden Alerts\\n`;\n} else {\n  report += `• 🔴 ${firingAlerts} Alert(s):\\n`;\n  alertNames.forEach(name => { report += `  - ${name}\\n`; });\n}\n\nreturn [{ json: { chatId, response: report } }];"
       }
@@ -119,19 +181,91 @@
   ],
   "connections": {
     "When Called by Another Workflow": {
-      "main": [[
-        { "node": "Fetch n8n Workflows",   "type": "main", "index": 0 },
-        { "node": "Fetch n8n Executions",  "type": "main", "index": 0 },
-        { "node": "Fetch Prometheus Alerts","type": "main", "index": 0 },
-        { "node": "Fetch Crew API",         "type": "main", "index": 0 },
-        { "node": "Fetch Content Pieces",   "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Fetch n8n Workflows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch n8n Executions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Prometheus Alerts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Crew API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Content Pieces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Fetch n8n Workflows":    { "main": [[{ "node": "Format Status Report", "type": "main", "index": 0 }]] },
-    "Fetch n8n Executions":   { "main": [[{ "node": "Format Status Report", "type": "main", "index": 0 }]] },
-    "Fetch Prometheus Alerts":{ "main": [[{ "node": "Format Status Report", "type": "main", "index": 0 }]] },
-    "Fetch Crew API":         { "main": [[{ "node": "Format Status Report", "type": "main", "index": 0 }]] },
-    "Fetch Content Pieces":   { "main": [[{ "node": "Format Status Report", "type": "main", "index": 0 }]] }
+    "Fetch n8n Workflows": {
+      "main": [
+        [
+          {
+            "node": "Format Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch n8n Executions": {
+      "main": [
+        [
+          {
+            "node": "Format Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prometheus Alerts": {
+      "main": [
+        [
+          {
+            "node": "Format Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Crew API": {
+      "main": [
+        [
+          {
+            "node": "Format Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Content Pieces": {
+      "main": [
+        [
+          {
+            "node": "Format Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -139,7 +273,10 @@
     "saveDataSuccessExecution": "none"
   },
   "staticData": null,
-  "tags": ["telegram", "monitoring"],
+  "tags": [
+    "telegram",
+    "monitoring"
+  ],
   "meta": {
     "description": "542 — Sub-Workflow: System-Status-Report für Telegram (n8n + Crew API + Content Pieces + Prometheus)"
   }

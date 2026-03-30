@@ -1,16 +1,26 @@
 {
-  "name": "350_CONTENT_FORECAST",
+  "name": "30_350_CONTENT_FORECAST",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "triggerAtHour": 14, "triggerAtMinute": 0 }] },
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 14,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
         "cronExpression": "0 14 * * 5"
       },
       "id": "schedule-trigger",
       "name": "Freitag 14:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -18,7 +28,10 @@
       "name": "Manuell starten",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 480]
+      "position": [
+        240,
+        480
+      ]
     },
     {
       "parameters": {
@@ -27,7 +40,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -35,7 +51,10 @@
       "name": "Trends der letzten 30 Tage",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 260]
+      "position": [
+        460,
+        260
+      ]
     },
     {
       "parameters": {
@@ -44,7 +63,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -52,7 +74,10 @@
       "name": "Sentiment-Daten laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 440]
+      "position": [
+        460,
+        440
+      ]
     },
     {
       "parameters": {
@@ -61,7 +86,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       },
@@ -69,19 +97,27 @@
       "name": "Top Opportunities laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 620]
+      "position": [
+        460,
+        620
+      ]
     },
     {
       "parameters": {
         "mode": "combine",
-        "mergeByFields": { "values": [] },
+        "mergeByFields": {
+          "values": []
+        },
         "options": {}
       },
       "id": "merge-all",
       "name": "Daten zusammenführen",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [680, 440]
+      "position": [
+        680,
+        440
+      ]
     },
     {
       "parameters": {
@@ -91,7 +127,10 @@
       "name": "Forecast-Prompt bauen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 440]
+      "position": [
+        900,
+        440
+      ]
     },
     {
       "parameters": {
@@ -100,7 +139,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -111,7 +153,10 @@
       "name": "Gemini: Forecast generieren",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 440]
+      "position": [
+        1120,
+        440
+      ]
     },
     {
       "parameters": {
@@ -121,7 +166,10 @@
       "name": "Forecast parsen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 440]
+      "position": [
+        1340,
+        440
+      ]
     },
     {
       "parameters": {
@@ -130,7 +178,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
@@ -141,7 +192,10 @@
       "name": "Content-Pieces anlegen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 440]
+      "position": [
+        1560,
+        440
+      ]
     },
     {
       "parameters": {
@@ -150,67 +204,165 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "xc-token", "value": "={{ $vars.NOCODB_API_TOKEN }}" }
+            {
+              "name": "xc-token",
+              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"350_CONTENT_FORECAST\", \"action\": \"forecast.generated\", \"resource_type\": \"content_pieces\", \"result\": \"ok\" }"
+        "body": "={ \"ts\": \"{{ new Date().toISOString() }}\", \"actor\": \"30_350_CONTENT_FORECAST\", \"action\": \"forecast.generated\", \"resource_type\": \"content_pieces\", \"result\": \"ok\" }"
       },
       "id": "audit-log",
       "name": "Audit Log",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 440]
+      "position": [
+        1780,
+        440
+      ]
     }
   ],
   "connections": {
     "Freitag 14:00": {
       "main": [
         [
-          { "node": "Trends der letzten 30 Tage", "type": "main", "index": 0 },
-          { "node": "Sentiment-Daten laden", "type": "main", "index": 0 },
-          { "node": "Top Opportunities laden", "type": "main", "index": 0 }
+          {
+            "node": "Trends der letzten 30 Tage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sentiment-Daten laden",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Top Opportunities laden",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Manuell starten": {
       "main": [
         [
-          { "node": "Trends der letzten 30 Tage", "type": "main", "index": 0 },
-          { "node": "Sentiment-Daten laden", "type": "main", "index": 0 },
-          { "node": "Top Opportunities laden", "type": "main", "index": 0 }
+          {
+            "node": "Trends der letzten 30 Tage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sentiment-Daten laden",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Top Opportunities laden",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Trends der letzten 30 Tage": {
-      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Daten zusammenführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Sentiment-Daten laden": {
-      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 1 }]]
+      "main": [
+        [
+          {
+            "node": "Daten zusammenführen",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     },
     "Top Opportunities laden": {
-      "main": [[{ "node": "Daten zusammenführen", "type": "main", "index": 2 }]]
+      "main": [
+        [
+          {
+            "node": "Daten zusammenführen",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
     },
     "Daten zusammenführen": {
-      "main": [[{ "node": "Forecast-Prompt bauen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Forecast-Prompt bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Forecast-Prompt bauen": {
-      "main": [[{ "node": "Gemini: Forecast generieren", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gemini: Forecast generieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Gemini: Forecast generieren": {
-      "main": [[{ "node": "Forecast parsen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Forecast parsen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Forecast parsen": {
-      "main": [[{ "node": "Content-Pieces anlegen", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Content-Pieces anlegen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Content-Pieces anlegen": {
-      "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": ["research", "forecast", "content-planning"]
+  "tags": [
+    "research",
+    "forecast",
+    "content-planning"
+  ]
 }

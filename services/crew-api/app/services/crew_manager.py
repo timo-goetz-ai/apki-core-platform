@@ -1,4 +1,6 @@
 import asyncio
+import json
+import logging
 import threading
 import uuid
 from collections.abc import AsyncGenerator
@@ -19,6 +21,13 @@ from app.models.events import (
     TaskStartedEvent,
 )
 from app.services.event_stream import EventBroadcaster
+
+_logger = logging.getLogger(__name__)
+
+
+def _crew_json_log(event_type: str, **fields: object) -> None:
+    payload = {"event_type": event_type, **fields}
+    _logger.info(json.dumps(payload, ensure_ascii=False))
 
 
 class CrewManager:
@@ -100,6 +109,11 @@ class CrewManager:
 
         execution_id = execution_id or str(uuid.uuid4())
         webhooks = crew_cfg.webhooks or {}
+        _crew_json_log(
+            "crew_execution_begin",
+            execution_id=execution_id,
+            crew_id=crew_id,
+        )
 
         # n8n on_start webhook (fire-and-forget)
         if webhooks.get("on_start"):
@@ -195,6 +209,12 @@ class CrewManager:
             # Persist to NocoDB content_pieces (best-effort)
             await self._save_content_piece(inputs, str(final_result), execution_id)
 
+            _crew_json_log(
+                "crew_execution_completed",
+                execution_id=execution_id,
+                crew_id=crew_id,
+            )
+
             ev_done = ExecutionCompletedEvent(
                 execution_id=execution_id,
                 result=str(final_result)[:5000],
@@ -219,6 +239,12 @@ class CrewManager:
                     pass
 
         except Exception as e:
+            _crew_json_log(
+                "crew_execution_error",
+                execution_id=execution_id,
+                crew_id=crew_id,
+                error=str(e),
+            )
             ev_err = ExecutionErrorEvent(execution_id=execution_id, error=str(e))
             await self.broadcaster.publish(execution_id, ev_err)
             yield ev_err.model_dump()

@@ -1,17 +1,29 @@
 {
   "id": "vkaSv6LyosTreiWL",
-  "name": "560_JOB_MONITOR",
+  "name": "50_560_JOB_MONITOR",
   "active": true,
-  "settings": {"executionOrder": "v1"},
+  "settings": {
+    "executionOrder": "v1"
+  },
   "nodes": [
     {
       "id": "df0bfeb1-eb76-4833-bc96-7c3d98b4a364",
       "name": "Trigger: täglich 07:30",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
-        "rule": {"interval": [{"field": "cronExpression", "expression": "30 7 * * 1-5"}]}
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 7 * * 1-5"
+            }
+          ]
+        }
       }
     },
     {
@@ -19,20 +31,46 @@
       "name": "Adzuna KI-Manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 0],
+      "position": [
+        240,
+        0
+      ],
       "parameters": {
         "method": "GET",
         "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
         "sendQuery": true,
-        "queryParameters": {"parameters": [
-          {"name": "app_id",           "value": "={{ $env.ADZUNA_APP_ID }}"},
-          {"name": "app_key",          "value": "={{ $env.ADZUNA_APP_KEY }}"},
-          {"name": "results_per_page", "value": "20"},
-          {"name": "what",             "value": "KI Manager Automatisierung"},
-          {"name": "where",            "value": "Frankfurt"},
-          {"name": "distance",         "value": "80"},
-          {"name": "sort_by",          "value": "date"}
-        ]}
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "app_id",
+              "value": "={{ $env.ADZUNA_APP_ID }}"
+            },
+            {
+              "name": "app_key",
+              "value": "={{ $env.ADZUNA_APP_KEY }}"
+            },
+            {
+              "name": "results_per_page",
+              "value": "20"
+            },
+            {
+              "name": "what",
+              "value": "KI Manager Automatisierung"
+            },
+            {
+              "name": "where",
+              "value": "Frankfurt"
+            },
+            {
+              "name": "distance",
+              "value": "80"
+            },
+            {
+              "name": "sort_by",
+              "value": "date"
+            }
+          ]
+        }
       }
     },
     {
@@ -40,19 +78,42 @@
       "name": "Adzuna AI-Automation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 200],
+      "position": [
+        240,
+        200
+      ],
       "parameters": {
         "method": "GET",
         "url": "https://api.adzuna.com/v1/api/jobs/de/search/1",
         "sendQuery": true,
-        "queryParameters": {"parameters": [
-          {"name": "app_id",           "value": "={{ $env.ADZUNA_APP_ID }}"},
-          {"name": "app_key",          "value": "={{ $env.ADZUNA_APP_KEY }}"},
-          {"name": "results_per_page", "value": "20"},
-          {"name": "what",             "value": "Head of AI Automation"},
-          {"name": "where",            "value": "Hessen"},
-          {"name": "sort_by",          "value": "date"}
-        ]}
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "app_id",
+              "value": "={{ $env.ADZUNA_APP_ID }}"
+            },
+            {
+              "name": "app_key",
+              "value": "={{ $env.ADZUNA_APP_KEY }}"
+            },
+            {
+              "name": "results_per_page",
+              "value": "20"
+            },
+            {
+              "name": "what",
+              "value": "Head of AI Automation"
+            },
+            {
+              "name": "where",
+              "value": "Hessen"
+            },
+            {
+              "name": "sort_by",
+              "value": "date"
+            }
+          ]
+        }
       }
     },
     {
@@ -60,15 +121,25 @@
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [240, 100],
-      "parameters": {"mode": "combine", "combineBy": "combineAll", "options": {}}
+      "position": [
+        240,
+        100
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      }
     },
     {
       "id": "6b333daf-be87-4d0c-a068-2a96ef2a2f3f",
       "name": "Format & Deduplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 100],
+      "position": [
+        480,
+        100
+      ],
       "parameters": {
         "jsCode": "const seen=new Set(), out=[];\nfor(const item of $input.all()){\n  for(const j of (item.json.results||[])){\n    if(!seen.has(j.id)){\n      seen.add(j.id);\n      out.push({json:{\n        job_id: j.id,\n        title:  j.title,\n        company: j.company?.display_name || '?',\n        location: j.location?.display_name || '',\n        salary_min: j.salary_min || 0,\n        salary_max: j.salary_max || 0,\n        salary: j.salary_min\n          ? Math.round(j.salary_min/1000)+'k-'+Math.round(j.salary_max/1000)+'k €'\n          : 'k.A.',\n        desc: (j.description||'').slice(0,150),\n        url:  j.redirect_url,\n        created: j.created\n      }});\n    }\n  }\n}\nreturn out.slice(0, 25);"
       }
@@ -78,7 +149,10 @@
       "name": "Batch für Gemini",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 100],
+      "position": [
+        720,
+        100
+      ],
       "parameters": {
         "jsCode": "// Alle Items einsammeln und als EINEN Batch-Prompt aufbauen\nconst jobs = $input.all().map((item, i) => ({\n  i,\n  id: item.json.job_id,\n  title: item.json.title,\n  company: item.json.company,\n  location: item.json.location,\n  salary: item.json.salary,\n  desc: item.json.desc\n}));\n\nconst prompt = `Du bist ein Job-Matching-Assistent für Timo Götz.\nProfil: KI/Automation-Manager, Standort Bad Homburg (PLZ 61279), Zielgehalt 70-85k€, Umkreis max 80km.\n\nBewerte jeden der folgenden ${jobs.length} Jobs. Antworte AUSSCHLIESSLICH mit validem JSON-Array:\n[{\"i\":0,\"score\":8,\"match\":\"hoch\",\"note\":\"...max 12 Wörter...\"},...]\n\nJobs:\n${jobs.map(j => `[${j.i}] ${j.title} | ${j.company} | ${j.location} | ${j.salary}`).join('\\n')}`;\n\n// Alle Job-Daten als Kontext weitergeben + Prompt\nreturn [{json: {\n  prompt,\n  jobs,  // für späteres Merging\n}}];"
       }
@@ -88,12 +162,22 @@
       "name": "Gemini: Batch-Bewertung",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [960, 100],
+      "position": [
+        960,
+        100
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
         "sendQuery": true,
-        "queryParameters": {"parameters": [{"name": "key", "value": "={{ $env.GEMINI_API_KEY }}"}]},
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "body": "={{ JSON.stringify({contents:[{parts:[{text: $json.prompt}]}], generationConfig:{responseMimeType:'application/json'}}) }}"
@@ -104,7 +188,10 @@
       "name": "Parse & Filter Score>=6",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 100],
+      "position": [
+        1200,
+        100
+      ],
       "parameters": {
         "jsCode": "// Gemini-Antwort parsen\nconst raw = $input.first().json;\nconst text = raw.candidates?.[0]?.content?.parts?.[0]?.text || '[]';\nconst jobs = $input.first().json.jobs || [];  // jobs aus vorherigem Schritt\n\nlet ratings = [];\ntry {\n  const clean = text.replace(/```json|```/g, '').trim();\n  ratings = JSON.parse(clean);\n} catch(e) {\n  // Fallback: versuche Array aus Text zu extrahieren\n  const match = text.match(/\\[.*\\]/s);\n  if (match) {\n    try { ratings = JSON.parse(match[0]); } catch(e2) {}\n  }\n}\n\n// Jobs mit Scores mergen und filtern\nconst out = [];\nfor (const r of ratings) {\n  if ((r.score || 0) >= 6) {\n    const job = jobs.find(j => j.i === r.i);\n    if (job) {\n      out.push({ json: {\n        ...job,\n        score: r.score,\n        match: r.match,\n        note: r.note,\n        url: `https://www.adzuna.de/jobs/details/${job.id}`,\n        source: 'adzuna'\n      }});\n    }\n  }\n}\n\nreturn out.length > 0 ? out : [];"
       }
@@ -114,7 +201,10 @@
       "name": "Telegram Digest",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 100],
+      "position": [
+        1440,
+        100
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
@@ -133,12 +223,22 @@
       "name": "NocoDB: Job speichern",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 260],
+      "position": [
+        1440,
+        260
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mvozxyyz21oaz3z",
         "sendHeaders": true,
-        "headerParameters": {"parameters": [{"name": "xc-token", "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"}]},
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xc-token",
+              "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "body": "={{ {Title: $json.title, Company: $json.company, Location: $json.location, Salary: $json.salary, Score: $json.score, Match: $json.match, Note: $json.note, URL: $json.url, Source: $json.source || 'adzuna', Job_ID: $json.job_id, Created: $json.created} }}"
@@ -146,19 +246,103 @@
     }
   ],
   "connections": {
-    "Trigger: täglich 07:30": {"main": [[
-      {"node": "Adzuna KI-Manager",    "type": "main", "index": 0},
-      {"node": "Adzuna AI-Automation", "type": "main", "index": 0}
-    ]]},
-    "Adzuna KI-Manager":    {"main": [[{"node": "Merge",                  "type": "main", "index": 0}]]},
-    "Adzuna AI-Automation": {"main": [[{"node": "Merge",                  "type": "main", "index": 1}]]},
-    "Merge":                {"main": [[{"node": "Format & Deduplicate",   "type": "main", "index": 0}]]},
-    "Format & Deduplicate": {"main": [[{"node": "Batch für Gemini",       "type": "main", "index": 0}]]},
-    "Batch für Gemini":     {"main": [[{"node": "Gemini: Batch-Bewertung","type": "main", "index": 0}]]},
-    "Gemini: Batch-Bewertung": {"main": [[{"node": "Parse & Filter Score>=6", "type": "main", "index": 0}]]},
-    "Parse & Filter Score>=6": {"main": [[
-      {"node": "Telegram Digest",       "type": "main", "index": 0},
-      {"node": "NocoDB: Job speichern", "type": "main", "index": 0}
-    ]]}
+    "Trigger: täglich 07:30": {
+      "main": [
+        [
+          {
+            "node": "Adzuna KI-Manager",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Adzuna AI-Automation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adzuna KI-Manager": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adzuna AI-Automation": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Format & Deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format & Deduplicate": {
+      "main": [
+        [
+          {
+            "node": "Batch für Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch für Gemini": {
+      "main": [
+        [
+          {
+            "node": "Gemini: Batch-Bewertung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini: Batch-Bewertung": {
+      "main": [
+        [
+          {
+            "node": "Parse & Filter Score>=6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Filter Score>=6": {
+      "main": [
+        [
+          {
+            "node": "Telegram Digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NocoDB: Job speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

@@ -1,6 +1,6 @@
 {
   "id": "rMY8O0y43F6oRGQa",
-  "name": "460_GDRIVE_SYNC",
+  "name": "40_460_GDRIVE_SYNC",
   "active": true,
   "settings": {
     "executionOrder": "v1",
@@ -13,11 +13,17 @@
       "name": "Trigger: täglich 07:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "rule": {
           "interval": [
-            {"field": "cronExpression", "expression": "0 7 * * *"}
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
           ]
         }
       }
@@ -27,14 +33,20 @@
       "name": "NocoDB media_assets laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 0],
+      "position": [
+        240,
+        0
+      ],
       "parameters": {
         "method": "GET",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records?limit=50&sort=-CreatedAt",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
           ]
         }
       }
@@ -44,7 +56,10 @@
       "name": "Stats berechnen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 0],
+      "position": [
+        480,
+        0
+      ],
       "parameters": {
         "jsCode": "const d=$input.first().json;\nconst list=d.list||[];\nconst total=d.pageInfo?.totalRows||list.length;\nconst images=list.filter(a=>a.asset_type==='image').length;\nconst audio=list.filter(a=>a.asset_type==='audio').length;\nreturn [{json:{total,images,audio,last_sync:new Date().toISOString()}}];"
       }
@@ -54,31 +69,61 @@
       "name": "Audit Trail",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 0],
+      "position": [
+        720,
+        0
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "xc-token", "value": "={{ $env.NOCODB_API_TOKEN }}"}
+            {
+              "name": "xc-token",
+              "value": "={{ $env.NOCODB_API_TOKEN }}"
+            }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({audit_id:$randomString(16),ts:new Date().toISOString(),actor:'460_GDRIVE_SYNC',action:'gdrive.sync',resource_type:'media_assets',resource_id:'all',after_json:JSON.stringify($json),result:'ok'}) }}"
+        "body": "={{ JSON.stringify({audit_id:$randomString(16),ts:new Date().toISOString(),actor:'40_460_GDRIVE_SYNC',action:'gdrive.sync',resource_type:'media_assets',resource_id:'all',after_json:JSON.stringify($json),result:'ok'}) }}"
       }
     }
   ],
   "connections": {
     "Trigger: täglich 07:00": {
-      "main": [[{"node": "NocoDB media_assets laden", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "NocoDB media_assets laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "NocoDB media_assets laden": {
-      "main": [[{"node": "Stats berechnen", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Stats berechnen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Stats berechnen": {
-      "main": [[{"node": "Audit Trail", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Audit Trail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

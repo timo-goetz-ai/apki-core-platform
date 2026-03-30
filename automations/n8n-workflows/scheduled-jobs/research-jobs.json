@@ -1,5 +1,5 @@
 {
-  "name": "01 Research Jobs",
+  "name": "research-jobs",
   "nodes": [
     {
       "parameters": {},
@@ -7,7 +7,10 @@
       "name": "Manuell starten",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -24,7 +27,10 @@
       "name": "Täglich 8:00 (Cron)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 480],
+      "position": [
+        240,
+        480
+      ],
       "disabled": true
     },
     {
@@ -37,7 +43,10 @@
       "name": "Placeholder: Job-Scraping",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [460, 180]
+      "position": [
+        460,
+        180
+      ]
     },
     {
       "parameters": {
@@ -59,7 +68,10 @@
       "name": "NocoDB: Job speichern",
       "type": "n8n-nodes-base.nocoDb",
       "typeVersion": 2,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "credentials": {
         "nocoDbApi": {
           "id": "PLACEHOLDER",
@@ -76,7 +88,10 @@
       "name": "Testdaten (ersetzen durch Apify/Scraper)",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     }
   ],
   "connections": {

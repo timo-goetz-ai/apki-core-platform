@@ -1,12 +1,15 @@
 {
-  "name": "310_TREND_MONITOR",
+  "name": "30_310_TREND_MONITOR",
   "nodes": [
     {
       "id": "cron",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -23,7 +26,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "parameters": {
         "httpMethod": "POST",
         "path": "run-trend-monitor",
@@ -37,7 +43,10 @@
       "name": "Fetch HackerNews",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [500, 200],
+      "position": [
+        500,
+        200
+      ],
       "parameters": {
         "method": "GET",
         "url": "https://hacker-news.firebaseio.com/v0/topstories.json"
@@ -48,7 +57,10 @@
       "name": "Gemini Trend Analysis",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [750, 300],
+      "position": [
+        750,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
@@ -71,7 +83,10 @@
       "name": "Save to NocoDB",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 300],
+      "position": [
+        1000,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mrdi13quucpnps4",
@@ -92,16 +107,48 @@
   ],
   "connections": {
     "Schedule Trigger": {
-      "main": [[{ "node": "Fetch HackerNews", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch HackerNews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Fetch HackerNews", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch HackerNews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch HackerNews": {
-      "main": [[{ "node": "Gemini Trend Analysis", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gemini Trend Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Gemini Trend Analysis": {
-      "main": [[{ "node": "Save to NocoDB", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Save to NocoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -110,5 +157,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "tags": ["research"]
+  "tags": [
+    "research"
+  ]
 }
