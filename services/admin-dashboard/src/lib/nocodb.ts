@@ -312,6 +312,8 @@ export interface NocoAgent {
   Status: string;
   Beschreibung?: string;
   Layer?: string;
+  /** Strategische Roadmap-Phase (NocoDB SingleSelect): 10 / 20 / 30 — siehe docs/architecture/N8N_STRATEGISCHE_PHASEN.md */
+  Phase?: string | null;
   /** n8n Workflow-ID (String, z. B. aus n8n-URL oder API) */
   n8n_workflow_id?: string | null;
 }
@@ -327,12 +329,13 @@ export type NocoAgentPatch = Partial<
     | "Beschreibung"
     | "Layer"
     | "n8n_workflow_id"
+    | "Phase"
   >
 >;
 
 export async function getAgents(): Promise<NocoAgent[]> {
   try {
-    return await nocoGetAll<NocoAgent>(TABLE_AGENTS, { sort: "Layer" });
+    return await nocoGetAll<NocoAgent>(TABLE_AGENTS, { sort: "Phase" });
   } catch (e) {
     console.warn("[NocoDB] getAgents Fehler:", e);
     return [];

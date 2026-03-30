@@ -53,6 +53,9 @@ Workflows nach Layer gruppiert:
 
 So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
+**Strategische Phasen (10 / 20 / 30):** Roadmap- und Management-Ebene **zusätzlich** zu den 100er-Layern — Workflow-**Namen** in n8n bleiben dreistellig (`310_…`, nicht `10_…`). Kanonische Zuordnung: `docs/architecture/N8N_STRATEGISCHE_PHASEN.md`. In NocoDB kann `agents` optional ein Feld **Phase** (`10`|`20`|`30`) neben **Layer** führen.
+
+
 ## Claude Code / Workspace
 
 - Globale Einstellungen: `~/.claude/settings.json` (Hooks, Permissions, Plugins)
