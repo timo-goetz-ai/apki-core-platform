@@ -171,7 +171,7 @@ export function TrendSentimentViz({
               const seed = hashSeed([t.Id, t.Thema, i]);
               const vals = series24(seed, t.Score);
               const sent = (t.Sentiment ?? '').toLowerCase();
-              const stroke = sent.includes('positiv') ? '#34d399' : sent.includes('negativ') ? '#f87171' : '#fbbf24';
+              const stroke = sent.includes('positiv') ? 'var(--accent-green)' : sent.includes('negativ') ? 'var(--accent-red)' : 'var(--accent-amber)';
               const fillId = `trend-fill-${t.Id ?? i}`;
               const glowId = `trend-glow-${t.Id ?? i}`;
               return (
@@ -209,7 +209,7 @@ export function TrendSentimentViz({
                           style={{
                             fontSize: 9,
                             fontFamily: 'var(--font-mono)',
-                            color: t.Wachstum_Prozent > 0 ? '#34d399' : '#f87171',
+                            color: t.Wachstum_Prozent > 0 ? 'var(--accent-green)' : 'var(--accent-red)',
                           }}
                         >
                           {t.Wachstum_Prozent > 0 ? '+' : ''}
@@ -244,7 +244,7 @@ export function TrendSentimentViz({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sentiments.map((s, i) => {
               const sent = (s.Sentiment ?? '').toLowerCase();
-              const color = sent.includes('positiv') ? '#34d399' : sent.includes('negativ') ? '#f87171' : '#fbbf24';
+              const color = sent.includes('positiv') ? 'var(--accent-green)' : sent.includes('negativ') ? 'var(--accent-red)' : 'var(--accent-amber)';
               const label = sent.includes('positiv') ? '↑' : sent.includes('negativ') ? '↓' : '→';
               const seed = hashSeed([s.Id, s.Thema, 'sent', i]);
               const vals = series24(seed, s.Score);

@@ -30,7 +30,7 @@ export function BezirkeGrid() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="card h-44 animate-pulse bg-[#0d1321]" />
+          <div key={i} className="card h-44 animate-pulse bg-[var(--layer-1)]" />
         ))}
       </div>
     );
@@ -39,7 +39,7 @@ export function BezirkeGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {bezirke.map((b) => (
-        <div key={b.id} className="card p-5 space-y-3 hover:border-[#1d6ef5]/40 transition-colors">
+        <div key={b.id} className="card p-5 space-y-3 hover:border-[var(--accent-blue)]/40 transition-colors">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{b.emoji}</span>
@@ -68,12 +68,12 @@ export function BezirkeGrid() {
 
           <div className="flex flex-wrap gap-1 pt-1">
             {b.tools.slice(0, 3).map((t) => (
-              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a0f1a] border border-[#1a2540] text-slate-500 font-mono">
+              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--layer-0)] border border-[var(--border-bright)] text-slate-500 font-mono">
                 {t}
               </span>
             ))}
             {b.tools.length > 3 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a0f1a] border border-[#1a2540] text-slate-600">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--layer-0)] border border-[var(--border-bright)] text-slate-600">
                 +{b.tools.length - 3}
               </span>
             )}
@@ -86,7 +86,7 @@ export function BezirkeGrid() {
 
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-[#070b14] rounded-lg p-2 text-center">
+    <div className="bg-[var(--layer-0)] rounded-lg p-2 text-center">
       <p className={`text-sm font-bold ${color}`}>{value}</p>
       <p className="text-[10px] text-slate-600 mt-0.5">{label}</p>
     </div>

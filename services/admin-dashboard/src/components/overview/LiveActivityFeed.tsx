@@ -24,12 +24,12 @@ function timeAgo(ts: number): string {
 }
 
 const TYPE_BADGE: Record<string, { label: string; color: string }> = {
-  'n8n-execution':   { label: 'n8n',    color: '#38bdf8' },
-  'n8n-trigger':     { label: 'n8n',    color: '#38bdf8' },
-  'prometheus-alert':{ label: 'prom',   color: '#f87171' },
-  'deploy':          { label: 'deploy', color: '#a78bfa' },
-  'scanner':         { label: 'scan',   color: '#fbbf24' },
-  'github-push':     { label: 'git',    color: '#94a3b8' },
+  'n8n-execution':   { label: 'n8n',    color: 'var(--accent-blue)' },
+  'n8n-trigger':     { label: 'n8n',    color: 'var(--accent-blue)' },
+  'prometheus-alert':{ label: 'prom',   color: 'var(--accent-red)' },
+  'deploy':          { label: 'deploy', color: 'var(--accent-purple)' },
+  'scanner':         { label: 'scan',   color: 'var(--accent-amber)' },
+  'github-push':     { label: 'git',    color: 'var(--text-secondary)' },
 };
 
 export function LiveActivityFeed() {
@@ -68,8 +68,8 @@ export function LiveActivityFeed() {
 
   // Placeholder items shown before first fetch
   const displayItems: FeedItem[] = items.length > 0 ? items : [
-    { id: 'boot-1', icon: '▸', text: 'Dashboard gestartet', sub: 'system', ts: Date.now() - 5000, color: '#60a5fa', type: 'info', ok: true },
-    { id: 'boot-2', icon: '▸', text: 'Services werden geprüft…', sub: 'health-check', ts: Date.now() - 3000, color: '#34d399', type: 'info', ok: true },
+    { id: 'boot-1', icon: '▸', text: 'Dashboard gestartet', sub: 'system', ts: Date.now() - 5000, color: 'var(--accent-blue)', type: 'info', ok: true },
+    { id: 'boot-2', icon: '▸', text: 'Services werden geprüft…', sub: 'health-check', ts: Date.now() - 3000, color: 'var(--accent-green)', type: 'info', ok: true },
   ];
 
   return (
@@ -77,14 +77,14 @@ export function LiveActivityFeed() {
       {/* Header row — rendered by caller via WHeader, but we add live indicator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Radio size={11} style={{ color: newFlash ? '#34d399' : 'var(--text-muted)', transition: 'color 0.3s' }} />
+          <Radio size={11} style={{ color: newFlash ? 'var(--accent-green)' : 'var(--text-muted)', transition: 'color 0.3s' }} />
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
             Activity Feed
           </span>
           {liveCount > 0 && (
             <span style={{
               fontSize: 8, fontFamily: 'var(--font-mono)',
-              background: '#38bdf822', color: '#38bdf8',
+              background: 'var(--accent-blue)22', color: 'var(--accent-blue)',
               padding: '1px 5px', borderRadius: 10,
             }}>
               {liveCount} live

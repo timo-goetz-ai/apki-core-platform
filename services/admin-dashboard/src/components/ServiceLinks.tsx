@@ -17,7 +17,7 @@ export function ServiceLinks() {
           href={s.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center justify-center px-3 py-2 rounded-lg bg-[#111827] border border-[#1f2937] hover:border-sky-500 transition-colors text-sm font-medium ${s.color}`}
+          className={`flex items-center justify-center px-3 py-2 rounded-lg bg-[var(--layer-2)] border border-[var(--border)] hover:border-sky-500 transition-colors text-sm font-medium ${s.color}`}
         >
           {s.name}
         </a>

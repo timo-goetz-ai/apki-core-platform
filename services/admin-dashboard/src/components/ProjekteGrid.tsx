@@ -30,7 +30,7 @@ export function ProjekteGrid() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="card h-52 animate-pulse bg-[#0d1321]" />
+          <div key={i} className="card h-52 animate-pulse bg-[var(--layer-1)]" />
         ))}
       </div>
     );
@@ -39,7 +39,7 @@ export function ProjekteGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {projekte.map((p) => (
-        <div key={p.id} className="card p-5 space-y-3 hover:border-[#1d6ef5]/40 transition-colors">
+        <div key={p.id} className="card p-5 space-y-3 hover:border-[var(--accent-blue)]/40 transition-colors">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{p.emoji}</span>
@@ -65,7 +65,7 @@ export function ProjekteGrid() {
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] font-mono text-[#1d6ef5]/70 hover:text-[#1d6ef5] transition-colors truncate block"
+              className="text-[10px] font-mono text-[var(--accent-blue)]/70 hover:text-[var(--accent-blue)] transition-colors truncate block"
             >
               {p.url.replace("https://", "")}
             </a>
@@ -79,12 +79,12 @@ export function ProjekteGrid() {
 
           <div className="flex flex-wrap gap-1 pt-1">
             {p.mcpServer.slice(0, 4).map((s) => (
-              <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a0f1a] border border-[#1a2540] text-slate-500 font-mono">
+              <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--layer-0)] border border-[var(--border-bright)] text-slate-500 font-mono">
                 {s}
               </span>
             ))}
             {p.mcpServer.length > 4 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a0f1a] border border-[#1a2540] text-slate-600">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--layer-0)] border border-[var(--border-bright)] text-slate-600">
                 +{p.mcpServer.length - 4}
               </span>
             )}
@@ -97,7 +97,7 @@ export function ProjekteGrid() {
 
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-[#070b14] rounded-lg p-2 text-center">
+    <div className="bg-[var(--layer-0)] rounded-lg p-2 text-center">
       <p className={`text-sm font-bold ${color}`}>{value}</p>
       <p className="text-[10px] text-slate-600 mt-0.5">{label}</p>
     </div>

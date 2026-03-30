@@ -19,10 +19,10 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: { border: 'rgba(52,211,153,0.35)', icon: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  error:   { border: 'rgba(248,113,113,0.35)', icon: '#f87171', bg: 'rgba(248,113,113,0.08)' },
-  info:    { border: 'rgba(56,189,248,0.35)',  icon: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
-  warning: { border: 'rgba(251,191,36,0.35)',  icon: '#fbbf24', bg: 'rgba(251,191,36,0.08)' },
+  success: { border: 'rgba(52,211,153,0.35)', icon: 'var(--accent-green)', bg: 'rgba(52,211,153,0.08)' },
+  error:   { border: 'rgba(248,113,113,0.35)', icon: 'var(--accent-red)', bg: 'rgba(248,113,113,0.08)' },
+  info:    { border: 'rgba(56,189,248,0.35)',  icon: 'var(--accent-blue)', bg: 'rgba(56,189,248,0.08)' },
+  warning: { border: 'rgba(251,191,36,0.35)',  icon: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.08)' },
 };
 
 export function Toaster() {

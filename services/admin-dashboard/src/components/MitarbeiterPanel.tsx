@@ -49,7 +49,7 @@ export function MitarbeiterPanel() {
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 w-2.5 rounded-sm ${i < level ? "bg-[#1d6ef5]" : "bg-[#1a2540]"}`}
+            className={`h-1.5 w-2.5 rounded-sm ${i < level ? "bg-[var(--accent-blue)]" : "bg-[var(--border-bright)]"}`}
           />
         ))}
       </div>
@@ -62,7 +62,7 @@ export function MitarbeiterPanel() {
         <div className="flex items-center gap-2">
           <span className="text-base">👥</span>
           <span className="text-sm font-semibold">Mitarbeiter</span>
-          <span className="ml-1 text-xs text-slate-500 bg-[#0a0f1a] px-2 py-0.5 rounded-full">
+          <span className="ml-1 text-xs text-slate-500 bg-[var(--layer-0)] px-2 py-0.5 rounded-full">
             {liste.filter((m) => m.status === "aktiv").length} aktiv
           </span>
         </div>
@@ -75,30 +75,30 @@ export function MitarbeiterPanel() {
       </div>
 
       {adding && (
-        <div className="p-4 border-b border-[#1a2540] bg-[#070b14] space-y-3">
+        <div className="p-4 border-b border-[var(--border-bright)] bg-[var(--layer-0)] space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <input
               placeholder="Name"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="bg-[#0d1321] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#1d6ef5]/60"
+              className="bg-[var(--layer-1)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[var(--accent-blue)]/60"
             />
             <input
               placeholder="Rolle (z.B. Entwickler)"
               value={form.rolle}
               onChange={(e) => setForm((f) => ({ ...f, rolle: e.target.value }))}
-              className="bg-[#0d1321] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#1d6ef5]/60"
+              className="bg-[var(--layer-1)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[var(--accent-blue)]/60"
             />
             <input
               placeholder="Bezirk"
               value={form.bezirk}
               onChange={(e) => setForm((f) => ({ ...f, bezirk: e.target.value }))}
-              className="bg-[#0d1321] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#1d6ef5]/60"
+              className="bg-[var(--layer-1)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[var(--accent-blue)]/60"
             />
             <select
               value={form.rolleEmoji}
               onChange={(e) => setForm((f) => ({ ...f, rolleEmoji: e.target.value }))}
-              className="bg-[#0d1321] border border-[#1a2540] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#1d6ef5]/60"
+              className="bg-[var(--layer-1)] border border-[var(--border-bright)] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[var(--accent-blue)]/60"
             >
               <option value="🏛️">🏛️ Bürgermeister</option>
               <option value="👔">👔 Projektleiter</option>
