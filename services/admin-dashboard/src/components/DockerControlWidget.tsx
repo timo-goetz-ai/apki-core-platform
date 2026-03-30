@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw, Play, Square, Container, AlertTriangle } from "lucide-react";
+import { dashboardApiAuthHeaders } from "@/lib/dashboard-auth-headers";
 
 interface DockerContainer {
   Id: string;
@@ -38,7 +39,7 @@ export function DockerControlWidget() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/docker/containers");
+      const res = await fetch("/api/docker/containers", { headers: { ...dashboardApiAuthHeaders() } });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       setContainers(data.containers ?? []);
@@ -59,7 +60,7 @@ export function DockerControlWidget() {
   async function act(id: string, action: "start" | "stop" | "restart") {
     setActing(id);
     try {
-      await fetch(`/api/docker/containers/${id}/${action}`, { method: "POST" });
+      await fetch(`/api/docker/containers/${id}/${action}`, { method: "POST", headers: { ...dashboardApiAuthHeaders() } });
       setTimeout(load, 1000);
     } finally {
       setActing(null);

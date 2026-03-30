@@ -4,6 +4,10 @@ import { NextRequest } from "next/server";
  * API-Key Authentifizierung.
  * Key wird als Bearer Token im Authorization-Header erwartet.
  * Setze DASHBOARD_API_KEY in den Coolify env vars.
+ * Hinweis: Routen, die nur per Browser-EventSource angesprochen werden, können keinen
+ * Authorization-Header mitsenden — dort Schutz über Edge-Auth (z. B. Authentik) oder
+ * dedizierte Token-Strategie, nicht über diesen API-Key allein.
+
  */
 export function verifyApiKey(request: NextRequest): boolean {
   const apiKey = process.env.DASHBOARD_API_KEY;

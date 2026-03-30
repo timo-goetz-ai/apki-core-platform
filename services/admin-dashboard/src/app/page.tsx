@@ -7,6 +7,7 @@ import {
   Play, Zap, TrendingUp, Clock, ArrowRight,
 } from 'lucide-react';
 import { TimelineFeed } from '@/components/overview/TimelineFeed';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface ServiceHealth { status: 'online' | 'degraded' | 'offline' | 'unknown'; latencyMs?: number; }
@@ -86,7 +87,7 @@ function PendingCard({ item, onAction }: { item: ContentPending; onAction: () =>
     try {
       await fetch(`/api/nocodb/table?id=m48nvpornrxuba9`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() },
         body: JSON.stringify({ Id: item.Id, status: action === 'approve' ? 'approved' : 'discarded' }),
       });
       onAction();
@@ -130,7 +131,7 @@ function QuickTrigger({ wf, onDone }: { wf: typeof QUICK_TRIGGERS[0]; onDone: ()
     if (state === 'running') return;
     setState('running');
     try {
-      const res = await fetch(`/api/n8n/trigger/${wf.id}`, { method: 'POST' });
+      const res = await fetch(`/api/n8n/trigger/${wf.id}`, { method: 'POST', headers: { ...dashboardApiAuthHeaders() } });
       setState(res.ok ? 'done' : 'error');
       if (res.ok) { setTimeout(() => { setState('idle'); onDone(); }, 3000); }
     } catch { setState('error'); }
@@ -175,7 +176,7 @@ export default function OverviewPage() {
 
   // Load pending approvals from content_pipeline
   useEffect(() => {
-    fetch('/api/nocodb/table?id=m48nvpornrxuba9&limit=20')
+    fetch('/api/nocodb/table?id=m48nvpornrxuba9&limit=20', { headers: { ...dashboardApiAuthHeaders() } })
       .then(r => r.json())
       .then(d => {
         const rows: ContentPending[] = (d?.list ?? [])
@@ -193,7 +194,7 @@ export default function OverviewPage() {
 
   // Load trend count
   useEffect(() => {
-    fetch('/api/nocodb/table?id=m91y1ifz2aop1ef&limit=1')
+    fetch('/api/nocodb/table?id=m91y1ifz2aop1ef&limit=1', { headers: { ...dashboardApiAuthHeaders() } })
       .then(r => r.json())
       .then(d => setTrendCount(d?.pageInfo?.totalRows ?? null))
       .catch(() => {});

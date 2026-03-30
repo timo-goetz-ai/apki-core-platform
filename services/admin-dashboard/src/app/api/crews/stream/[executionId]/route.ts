@@ -1,19 +1,30 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const CREW_API = process.env.CREW_API_URL ?? 'http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io';
-
-/** Proxied SSE → Crew-API `GET /crews/executions/:executionId` (kein Browser-CORS). */
+/**
+ * Proxied SSE → Crew-API `GET /crews/executions/:executionId`.
+ * Kein verifyApiKey: Browser-EventSource kann keinen Authorization-Header setzen.
+ * Schutz über Edge-Auth (z. B. Authentik) und/oder nicht-öffentliche Deployment-URL.
+ */
 export async function GET(
   _request: Request,
   { params }: { params: { executionId: string } }
 ) {
+  const CREW_API = process.env.CREW_API_URL?.trim() ?? '';
+  if (!CREW_API) {
+    return new Response(JSON.stringify({ error: 'CREW_API_URL ist nicht konfiguriert' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const executionId = params.executionId?.trim();
   if (!executionId) {
     return new Response('executionId required', { status: 400 });
   }
 
-  const upstream = await fetch(`${CREW_API}/crews/executions/${encodeURIComponent(executionId)}`, {
+  const base = CREW_API.replace(/\/$/, '');
+  const upstream = await fetch(`${base}/crews/executions/${encodeURIComponent(executionId)}`, {
     headers: { Accept: 'text/event-stream' },
     cache: 'no-store',
   });

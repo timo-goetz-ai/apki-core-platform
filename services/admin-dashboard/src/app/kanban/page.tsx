@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Kanban, RefreshCw, Plus, ChevronDown, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // NocoDB table ID for content_pipeline
 const TABLE_ID = 'm48nvpornrxuba9';
@@ -127,7 +128,7 @@ export default function KanbanPage() {
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
-      const res  = await fetch(`/api/nocodb/table?id=${TABLE_ID}&limit=200`);
+      const res  = await fetch(`/api/nocodb/table?id=${TABLE_ID}&limit=200`, { headers: { ...dashboardApiAuthHeaders() } });
       const data = await res.json() as ContentItem[] | { list?: ContentItem[] };
       const list: ContentItem[] = Array.isArray(data) ? data : (data.list ?? []);
       setItems(list);

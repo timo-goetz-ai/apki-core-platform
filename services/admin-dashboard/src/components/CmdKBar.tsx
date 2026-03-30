@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Zap, LayoutDashboard, Workflow, BookOpen, BarChart2, Factory, Kanban, FileText, Settings, ExternalLink, ChevronRight } from 'lucide-react';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 interface SearchResult {
   id:       string;
@@ -80,7 +81,7 @@ export function CmdKBar() {
 
     // Also search NocoDB workflows
     try {
-      const res  = await fetch(`/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=50`);
+      const res  = await fetch(`/api/nocodb/table?id=mnwlsxsm0q1k2d2&limit=50`, { headers: { ...dashboardApiAuthHeaders() } });
       const data = await res.json() as unknown[] | { list?: unknown[] };
       const list = (Array.isArray(data) ? data : (data.list ?? [])) as Record<string, unknown>[];
       const wfMatches: SearchResult[] = list
@@ -113,7 +114,7 @@ export function CmdKBar() {
       setRunning(result.id);
       try {
         await fetch(`/api/n8n/trigger/${wfId}`, {
-          method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() },
         });
       } catch { /* silent */ }
       setTimeout(() => setRunning(null), 1500);

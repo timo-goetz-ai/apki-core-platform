@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { dashboardApiAuthHeaders } from "@/lib/dashboard-auth-headers";
 
 type Crew = {
   id: string;
@@ -40,10 +41,14 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
 
   useEffect(() => {
     // Crews laden
-    fetch("/api/crews/")
+    fetch("/api/crews/", { headers: { ...dashboardApiAuthHeaders() } })
       .then((r) => r.json())
       .then((data) => {
-        const list = Array.isArray(data) ? data : [];
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray((data as { crews?: unknown }).crews)
+            ? (data as { crews: Crew[] }).crews
+            : [];
         setCrews(list);
         setSelectedCrew((prev) => (prev || (list[0]?.id ?? "")));
       })
@@ -89,7 +94,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
 
       const r = await fetch(`/api/crews/${selectedCrew}/start`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...dashboardApiAuthHeaders() },
         body: JSON.stringify(payload),
       });
       const data = await r.json();

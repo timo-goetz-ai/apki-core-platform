@@ -6,6 +6,7 @@ import {
   Layers, Zap, Puzzle, Anchor, Users, Settings2, Bot, FileText, Brain,
   Link, Server, Copy, Check,
 } from 'lucide-react';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ─── NocoDB config ────────────────────────────────────────────────────────────
 const NOCO_BASE = 'https://nocodb.automation-plus-ki.de';
@@ -59,6 +60,7 @@ type Row = Record<string, unknown>;
 async function fetchTable(tableId: string): Promise<Row[]> {
   const res = await fetch(`/api/nocodb/table?id=${tableId}&limit=100`, {
     signal: AbortSignal.timeout(10000),
+    headers: { ...dashboardApiAuthHeaders() },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();

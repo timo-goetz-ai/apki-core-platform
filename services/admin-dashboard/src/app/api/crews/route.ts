@@ -1,25 +1,38 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { unauthorizedResponse, verifyApiKey } from '@/lib/auth';
 
-const CREW_API = process.env.CREW_API_URL ?? 'http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io';
-const NOCODB_URL = process.env.NOCODB_API_URL ?? 'https://nocodb.automation-plus-ki.de';
-const NOCODB_TOKEN = process.env.NOCODB_API_TOKEN ?? 'WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK';
 const TABLE_CONTENT_PIECES = 'mm1ssn0luruhzyx';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!verifyApiKey(request)) return unauthorizedResponse();
+
+  const CREW_API = process.env.CREW_API_URL?.trim() ?? '';
+  const NOCODB_URL = (process.env.NOCODB_API_URL ?? 'https://nocodb.automation-plus-ki.de').replace(/\/$/, '');
+  const NOCODB_TOKEN = process.env.NOCODB_API_TOKEN?.trim() ?? '';
+
+  if (!CREW_API) {
+    return NextResponse.json(
+      {
+        error: 'CREW_API_URL ist nicht konfiguriert',
+        crews: [],
+        total_pieces: 0,
+        crew_api_reachable: false,
+      },
+      { status: 503 }
+    );
+  }
+
+  const crewBase = CREW_API.replace(/\/$/, '');
+
   try {
-    const [crewsRes, piecesRes] = await Promise.allSettled([
-      fetch(`${CREW_API}/crews/`, { next: { revalidate: 0 } }),
-      fetch(
-        `${NOCODB_URL}/api/v2/tables/${TABLE_CONTENT_PIECES}/records?limit=20&sort=-created_at`,
-        { headers: { 'xc-token': NOCODB_TOKEN }, next: { revalidate: 0 } }
-      ),
-    ]);
+    const crewsRes = await fetch(`${crewBase}/crews/`, { next: { revalidate: 0 } });
 
     let rawCrews: unknown = [];
-    if (crewsRes.status === 'fulfilled' && crewsRes.value.ok) {
-      rawCrews = await crewsRes.value.json();
+    if (crewsRes.ok) {
+      rawCrews = await crewsRes.json();
     }
+
     const crewsRaw: Array<{ id: string; name: string; agents: number; tasks: number }> = Array.isArray(rawCrews)
       ? rawCrews
       : rawCrews &&
@@ -28,10 +41,17 @@ export async function GET() {
         ? ((rawCrews as { crews: typeof crewsRaw }).crews ?? [])
         : [];
 
-    const pieces: Array<Record<string, unknown>> =
-      piecesRes.status === 'fulfilled' && piecesRes.value.ok
-        ? ((await piecesRes.value.json()).list ?? [])
-        : [];
+    let pieces: Array<Record<string, unknown>> = [];
+    if (NOCODB_TOKEN) {
+      const piecesRes = await fetch(
+        `${NOCODB_URL}/api/v2/tables/${TABLE_CONTENT_PIECES}/records?limit=20&sort=-created_at`,
+        { headers: { 'xc-token': NOCODB_TOKEN }, next: { revalidate: 0 } }
+      );
+      if (piecesRes.ok) {
+        const body = (await piecesRes.json()) as { list?: Array<Record<string, unknown>> };
+        pieces = body.list ?? [];
+      }
+    }
 
     const crewLastRun: Record<string, string> = {};
     for (const piece of pieces) {
@@ -55,7 +75,7 @@ export async function GET() {
         })),
     }));
 
-    const crewApiReachable = crewsRes.status === 'fulfilled' && crewsRes.value.ok;
+    const crewApiReachable = crewsRes.ok;
 
     return NextResponse.json({
       crews: enriched,
@@ -64,7 +84,12 @@ export async function GET() {
     });
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Fehler', crews: [], total_pieces: 0, crew_api_reachable: false },
+      {
+        error: e instanceof Error ? e.message : 'Fehler',
+        crews: [],
+        total_pieces: 0,
+        crew_api_reachable: false,
+      },
       { status: 500 }
     );
   }
