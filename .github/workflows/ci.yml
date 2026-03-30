@@ -34,10 +34,10 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          OPENROUTER_API_KEY: op://05_INFRASTRUCTURE/AI-APIs/openrouter_api_key
-          ANTHROPIC_API_KEY: op://05_INFRASTRUCTURE/AI-APIs/anthropic_api_key
-          OPENAI_API_KEY: op://05_INFRASTRUCTURE/AI-APIs/openai_api_key
-          JWT_SECRET: op://05_INFRASTRUCTURE/Core/jwt_secret
+          OPENROUTER_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/AI-APIs/openrouter_api_key
+          ANTHROPIC_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/AI-APIs/anthropic_api_key
+          OPENAI_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/AI-APIs/openai_api_key
+          JWT_SECRET: op://fwl7qdu7q3nvqqjbrljzcdhita/Core/jwt_secret
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -119,15 +119,15 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          NOCODB_URL: op://05_INFRASTRUCTURE/NocoDB/url
-          NOCODB_API_KEY: op://05_INFRASTRUCTURE/NocoDB/api_key
-          NOCODB_MCP_PROJEKTE_TABLE_ID: op://05_INFRASTRUCTURE/NocoDB/mcp_projekte_table_id
-          NOCODB_MCP_DIENSTE_TABLE_ID: op://05_INFRASTRUCTURE/NocoDB/mcp_dienste_table_id
-          COOLIFY_URL: op://05_INFRASTRUCTURE/Coolify/url
-          COOLIFY_TOKEN: op://05_INFRASTRUCTURE/Coolify/token
-          COOLIFY_API_KEY: op://05_INFRASTRUCTURE/Coolify/token
-          CLOUDFLARE_API_TOKEN: op://05_INFRASTRUCTURE/Cloudflare-API/api_token
-          DASHBOARD_API_KEY: op://05_INFRASTRUCTURE/Core/dashboard_api_key
+          NOCODB_URL: op://fwl7qdu7q3nvqqjbrljzcdhita/NocoDB/url
+          NOCODB_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/NocoDB/api_key
+          NOCODB_MCP_PROJEKTE_TABLE_ID: op://fwl7qdu7q3nvqqjbrljzcdhita/NocoDB/mcp_projekte_table_id
+          NOCODB_MCP_DIENSTE_TABLE_ID: op://fwl7qdu7q3nvqqjbrljzcdhita/NocoDB/mcp_dienste_table_id
+          COOLIFY_URL: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/url
+          COOLIFY_TOKEN: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/token
+          COOLIFY_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/token
+          CLOUDFLARE_API_TOKEN: op://fwl7qdu7q3nvqqjbrljzcdhita/Cloudflare-API/api_token
+          DASHBOARD_API_KEY: op://fwl7qdu7q3nvqqjbrljzcdhita/Core/dashboard_api_key
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
