@@ -18,6 +18,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type CommandType = 'nav' | 'action' | 'external';
@@ -194,7 +195,7 @@ function buildCommands(
       description: 'Trend-Research Workflow sofort ausführen',
       keywords: 'trigger trend monitor n8n research run',
       action: async () => {
-        await fetch('/api/n8n/trigger/fEYWN4pWhRcG2tLg', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        await fetch('/api/n8n/trigger/fEYWN4pWhRcG2tLg', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() } });
         close();
       },
       icon: Zap, group: 'Befehle', type: 'action',
@@ -204,7 +205,7 @@ function buildCommands(
       description: 'Sentiment-Analyse Workflow sofort ausführen',
       keywords: 'trigger sentiment tracker n8n research run',
       action: async () => {
-        await fetch('/api/n8n/trigger/Vx1Aea5glbogJxg6', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        await fetch('/api/n8n/trigger/Vx1Aea5glbogJxg6', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() } });
         close();
       },
       icon: Zap, group: 'Befehle', type: 'action',
@@ -214,7 +215,7 @@ function buildCommands(
       description: 'Content-Chancen Workflow sofort ausführen',
       keywords: 'trigger content opportunity n8n research run',
       action: async () => {
-        await fetch('/api/n8n/trigger/I6LcxlyMM8TU7A7V', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+        await fetch('/api/n8n/trigger/I6LcxlyMM8TU7A7V', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() } });
         close();
       },
       icon: Zap, group: 'Befehle', type: 'action',

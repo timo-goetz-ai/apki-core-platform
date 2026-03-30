@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Play, CheckCircle, ExternalLink, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 interface ApiRoute {
   method: 'GET' | 'POST';
@@ -77,7 +78,7 @@ export default function ToolsPage() {
   const run = async (path: string) => {
     setResults(r => ({ ...r, [path]: { status: 'loading' } }));
     try {
-      const res = await fetch(path);
+      const res = await fetch(path, { headers: { ...dashboardApiAuthHeaders() } });
       const text = await res.text();
       let pretty = text;
       try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch { /* keep raw */ }

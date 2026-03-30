@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { unauthorizedResponse, verifyApiKey } from '@/lib/auth';
 
-const BASE    = process.env.NOCODB_URL ?? 'https://nocodb.automation-plus-ki.de';
-const TOKEN   = process.env.NOCODB_API_TOKEN ?? '';
+const BASE = (process.env.NOCODB_URL ?? 'https://nocodb.automation-plus-ki.de').replace(/\/$/, '');
+const TOKEN = process.env.NOCODB_API_TOKEN ?? '';
 const PROJECT = process.env.NOCODB_AI_SYSTEM_BASE_ID ?? 'pfx0ca6docorj8n';
 
 /**
@@ -11,6 +12,12 @@ const PROJECT = process.env.NOCODB_AI_SYSTEM_BASE_ID ?? 'pfx0ca6docorj8n';
  * Keeps the NocoDB token server-side — never exposed to the browser.
  */
 export async function GET(req: NextRequest) {
+  if (!verifyApiKey(req)) return unauthorizedResponse();
+
+  if (!TOKEN) {
+    return NextResponse.json({ error: 'NOCODB_API_TOKEN ist nicht konfiguriert' }, { status: 503 });
+  }
+
   const tableId = req.nextUrl.searchParams.get('id');
   if (!tableId) return NextResponse.json({ error: 'Missing ?id=' }, { status: 400 });
 

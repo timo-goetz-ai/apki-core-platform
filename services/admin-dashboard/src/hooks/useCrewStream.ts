@@ -9,7 +9,7 @@ export function useCrewStream(executionId: string | null) {
   useEffect(() => {
     if (!executionId) return;
 
-    const url = `/api/crews/executions/${executionId}`;
+    const url = `/api/crews/stream/${executionId}`;
     const es = new EventSource(url);
 
     es.onopen = () => setIsConnected(true);

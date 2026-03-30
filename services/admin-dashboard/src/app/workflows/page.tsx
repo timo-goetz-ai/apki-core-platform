@@ -6,6 +6,7 @@ import {
   GitBranch, StickyNote, Hash,
 } from 'lucide-react';
 import { exportCsv } from '@/lib/csv-export';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Workflow {
@@ -208,7 +209,7 @@ export default function WorkflowsPage() {
     (async () => {
       setLoading(true);
       try {
-        const res  = await fetch(`/api/nocodb/table?id=${WORKFLOWS_TABLE}&limit=200`);
+        const res  = await fetch(`/api/nocodb/table?id=${WORKFLOWS_TABLE}&limit=200`, { headers: { ...dashboardApiAuthHeaders() } });
         const data = await res.json();
         const list: Workflow[] = Array.isArray(data) ? data : (data.list ?? []);
         setWorkflows(list);

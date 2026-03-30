@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import http from "http";
+import { unauthorizedResponse, verifyApiKey } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,17 +21,25 @@ function dockerRequest(path: string): Promise<unknown> {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
-        try { resolve(JSON.parse(data)); }
-        catch { reject(new Error("Invalid JSON from Docker")); }
+        try {
+          resolve(JSON.parse(data));
+        } catch {
+          reject(new Error("Invalid JSON from Docker"));
+        }
       });
     });
-    req.setTimeout(5000, () => { req.destroy(); reject(new Error("Docker timeout")); });
+    req.setTimeout(5000, () => {
+      req.destroy();
+      reject(new Error("Docker timeout"));
+    });
     req.on("error", reject);
     req.end();
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!verifyApiKey(request)) return unauthorizedResponse();
+
   try {
     const containers = await dockerRequest("/containers/json?all=1");
     return NextResponse.json({ containers });

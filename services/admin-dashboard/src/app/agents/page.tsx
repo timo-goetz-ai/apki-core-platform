@@ -5,6 +5,7 @@ import {
   RefreshCw, Play, Clock, FileText, Zap,
   CheckCircle2, Activity, AlertTriangle, XCircle, Radio, Bot, Wifi,
 } from 'lucide-react';
+import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
 // ── Robot Character Definitions ───────────────────────────────────────────────
 
@@ -473,7 +474,7 @@ function RunButton({ crewId, onStarted, busy }: {
     try {
       const inputs = DEFAULT_INPUTS[crewId] ?? { topic: 'Demo', category: 'Allgemein', target_platforms: 'blog' };
       const res = await fetch(`/api/crews/${encodeURIComponent(crewId)}/start`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() },
         body: JSON.stringify(inputs),
       });
       const data = await res.json().catch(() => ({})) as { execution_id?: string };
@@ -617,7 +618,7 @@ export default function AgentsPage() {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch('/api/crews');
+      const res = await fetch('/api/crews', { headers: { ...dashboardApiAuthHeaders() } });
       const data = await res.json();
       if (!res.ok) {
         setCrews(buildFallbackCrews()); setTotalPieces(0); setCrewApiOk(false);
