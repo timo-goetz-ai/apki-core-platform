@@ -180,6 +180,7 @@ POST /api/n8n/trigger/[workflowId]
 - Check: `~/projects/ai-os/scripts/verify-1password-ssh-agent.sh` oder `ssh-add -l` mit demselben `SSH_AUTH_SOCK`.
 - Signatur prüfen: `git show --show-signature -s HEAD`.
 - **Hinweis:** `op-ssh-sign` kann in nicht-interaktiven Umgebungen scheitern, bis 1Password/Freigabe (Touch ID) einmal bestätigt wurde — Commits ggf. im Terminal ausführen.
+- **GitHub-Push:** Wenn `git push` mit „agent refused operation“ scheitert, temporär Datei-Key nutzen: `GIT_SSH_COMMAND='ssh -o IdentitiesOnly=yes -o IdentityAgent=none -i ~/.ssh/id_ed25519' git push` (nur wenn der Schlüssel zu GitHub passt).
 
 ## Verfügbare Slash-Commands
 
