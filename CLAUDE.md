@@ -82,6 +82,7 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 | Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
 | Coolify | `https://coolify.automation-plus-ki.de` | Bearer in Coolify |
 | Admin-Dashboard | `https://admin.automation-plus-ki.de` | Authentik OIDC |
+| Mobile-Ingest (n8n) | `https://n8n.automation-plus-ki.de/webhook/mobile-ingest` | Header `x-aios-token` — nur Coolify/1Password; siehe `docs/operations/MOBILE_INGEST_N8N.md` |
 
 **NocoDB Base-ID (neu):** `pmox01979j55xbd`
 **NocoDB Login:** `ai_studio@timo-goetz-ai.de` / `NocoDB2026Admin`
