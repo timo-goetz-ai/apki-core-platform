@@ -18,11 +18,11 @@ const TYPE_ICON: Record<ResourceType, React.ElementType> = {
 };
 
 const TYPE_COLOR: Record<ResourceType, string> = {
-  docker:  '#38bdf8',
-  model:   '#a78bfa',
-  coolify: '#fb923c',
-  github:  '#f1f5f9',
-  mcp:     '#34d399',
+  docker:  'var(--accent-blue)',
+  model:   'var(--accent-purple)',
+  coolify: 'var(--accent-amber)',
+  github:  'var(--text-primary)',
+  mcp:     'var(--accent-green)',
 };
 
 const STATUS_VARIANT: Record<ResourceStatus, 'warning' | 'success' | 'destructive'> = {
@@ -163,10 +163,10 @@ export default function RegistryPage() {
   ];
 
   const FILTERS: { key: FilterStatus; label: string; color: string }[] = [
-    { key: 'all',        label: `Alle (${counts.all})`,               color: '#94a3b8' },
-    { key: 'discovered', label: `Neu (${counts.discovered})`,         color: '#fbbf24' },
-    { key: 'approved',   label: `Freigegeben (${counts.approved})`,   color: '#34d399' },
-    { key: 'blocked',    label: `Blockiert (${counts.blocked})`,      color: '#f87171' },
+    { key: 'all',        label: `Alle (${counts.all})`,               color: 'var(--text-secondary)' },
+    { key: 'discovered', label: `Neu (${counts.discovered})`,         color: 'var(--accent-amber)' },
+    { key: 'approved',   label: `Freigegeben (${counts.approved})`,   color: 'var(--accent-green)' },
+    { key: 'blocked',    label: `Blockiert (${counts.blocked})`,      color: 'var(--accent-red)' },
   ];
 
   return (
@@ -186,10 +186,10 @@ export default function RegistryPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Gesamt',       value: counts.all,        color: '#38bdf8' },
-          { label: 'Neu',          value: counts.discovered, color: '#fbbf24' },
-          { label: 'Freigegeben',  value: counts.approved,   color: '#34d399' },
-          { label: 'Blockiert',    value: counts.blocked,    color: '#f87171' },
+          { label: 'Gesamt',       value: counts.all,        color: 'var(--accent-blue)' },
+          { label: 'Neu',          value: counts.discovered, color: 'var(--accent-amber)' },
+          { label: 'Freigegeben',  value: counts.approved,   color: 'var(--accent-green)' },
+          { label: 'Blockiert',    value: counts.blocked,    color: 'var(--accent-red)' },
         ].map(({ label, value, color }) => (
           <Card key={label}>
             <CardContent className="p-4">

@@ -32,12 +32,12 @@ function timeAgo(iso: string | null): string {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  pending:   { bg: 'rgba(245,158,11,0.15)',  color: 'var(--accent-amber, #f59e0b)',  label: 'pending'   },
-  approved:  { bg: 'rgba(59,130,246,0.15)',  color: 'var(--accent-blue, #3b82f6)',   label: 'approved'  },
-  executing: { bg: 'rgba(6,182,212,0.15)',   color: '#06b6d4',                        label: 'executing' },
-  completed: { bg: 'rgba(52,211,153,0.15)',  color: 'var(--accent-green, #34d399)',  label: 'completed' },
-  failed:    { bg: 'rgba(239,68,68,0.15)',   color: 'var(--accent-red, #ef4444)',    label: 'failed'    },
-  aborted:   { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-muted, #94a3b8)',    label: 'aborted'   },
+  pending:   { bg: 'rgba(245,158,11,0.15)',  color: 'var(--accent-amber, var(--accent-amber))',  label: 'pending'   },
+  approved:  { bg: 'rgba(59,130,246,0.15)',  color: 'var(--accent-blue, var(--accent-blue))',   label: 'approved'  },
+  executing: { bg: 'color-mix(in srgb, var(--accent-blue) 15%, transparent)',   color: 'var(--accent-blue)',                        label: 'executing' },
+  completed: { bg: 'rgba(52,211,153,0.15)',  color: 'var(--accent-green, var(--accent-green))',  label: 'completed' },
+  failed:    { bg: 'rgba(239,68,68,0.15)',   color: 'var(--accent-red, var(--accent-red))',    label: 'failed'    },
+  aborted:   { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-muted, var(--text-secondary))',    label: 'aborted'   },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -165,7 +165,7 @@ export default function JarvisPage() {
               border: `1px solid ${filter === f ? 'var(--accent-blue)' : 'var(--border)'}`,
               borderRadius: 6,
               padding: '4px 12px',
-              color: filter === f ? '#fff' : 'var(--text-secondary)',
+              color: filter === f ? 'white' : 'var(--text-secondary)',
               cursor: 'pointer',
               fontSize: 12,
               fontFamily: 'var(--font-mono)',
@@ -254,7 +254,7 @@ export default function JarvisPage() {
                     {task.intent ?? '—'}
                   </span>
                 </td>
-                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-blue, #3b82f6)' }}>
+                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-blue, var(--accent-blue))' }}>
                   {task.mcp_server ?? '—'}
                 </td>
                 <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-muted)' }}>

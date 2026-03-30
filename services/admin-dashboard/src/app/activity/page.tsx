@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 // ── Status colors (only these, per design rules) ──────────────────────────────
 const C = {
-  success: '#34d399',
-  warning: '#f59e0b',
-  error:   '#ef4444',
-  unknown: '#94a3b8',
+  success: 'var(--accent-green)',
+  warning: 'var(--accent-amber)',
+  error:   'var(--accent-red)',
+  unknown: 'var(--text-secondary)',
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -78,9 +78,9 @@ function sourceLabel(type: string): string {
 }
 
 function statusColor(ok: boolean, color: string): string {
-  if (color === '#34d399') return C.success;
-  if (color === '#f87171' || color === '#ef4444' || color === '#e11d48') return C.error;
-  if (color === '#f59e0b' || color === '#fbbf24') return C.warning;
+  if (color === 'var(--accent-green)') return C.success;
+  if (color === 'var(--accent-red)' || color === 'var(--accent-red)' || color === 'var(--accent-red)') return C.error;
+  if (color === 'var(--accent-amber)' || color === 'var(--accent-amber)') return C.warning;
   return ok ? C.success : C.error;
 }
 
@@ -107,8 +107,8 @@ function FilterTab({ label, active, count, onClick }: {
         padding: '4px 12px',
         borderRadius: 5,
         border: active ? '1px solid rgba(148,163,184,0.35)' : '1px solid transparent',
-        background: active ? 'var(--layer-2, #1c1f23)' : 'transparent',
-        color: active ? 'var(--text-primary, #e8eaed)' : 'var(--text-secondary, #8c9196)',
+        background: active ? 'var(--layer-2, var(--layer-2))' : 'transparent',
+        color: active ? 'var(--text-primary, var(--text-primary))' : 'var(--text-secondary, var(--text-secondary))',
         fontSize: 12,
         fontWeight: active ? 600 : 400,
         fontFamily: 'var(--font-ui)',
@@ -118,8 +118,8 @@ function FilterTab({ label, active, count, onClick }: {
         gap: 6,
         transition: 'all 0.1s',
       }}
-      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary, #e8eaed)'; }}
-      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, #8c9196)'; }}
+      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary, var(--text-primary))'; }}
+      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, var(--text-secondary))'; }}
     >
       {label}
       <span style={{
@@ -127,8 +127,8 @@ function FilterTab({ label, active, count, onClick }: {
         fontFamily: 'var(--font-mono)',
         padding: '1px 5px',
         borderRadius: 3,
-        background: active ? 'var(--layer-3, #252a2f)' : 'rgba(148,163,184,0.08)',
-        color: active ? 'var(--text-secondary)' : 'var(--text-muted, #4a5058)',
+        background: active ? 'var(--layer-3, var(--layer-3))' : 'rgba(148,163,184,0.08)',
+        color: active ? 'var(--text-secondary)' : 'var(--text-muted, var(--text-muted))',
         minWidth: 18,
         textAlign: 'center',
       }}>
@@ -154,8 +154,8 @@ function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
         alignItems: 'center',
         gap: 0,
         padding: '9px 16px',
-        borderBottom: isLast ? 'none' : '1px solid var(--border, #252a2f)',
-        background: hovered ? 'var(--layer-1, #151719)' : 'transparent',
+        borderBottom: isLast ? 'none' : '1px solid var(--border, var(--layer-3))',
+        background: hovered ? 'var(--layer-1, var(--layer-1))' : 'transparent',
         transition: 'background 0.1s',
         cursor: 'default',
       }}
@@ -164,7 +164,7 @@ function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
       <span style={{
         fontSize: 11,
         fontFamily: 'var(--font-mono)',
-        color: 'var(--text-muted, #4a5058)',
+        color: 'var(--text-muted, var(--text-muted))',
         userSelect: 'none',
       }}>
         {fmtTimestamp(event.ts)}
@@ -176,11 +176,11 @@ function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
           display: 'inline-block',
           padding: '2px 7px',
           borderRadius: 4,
-          background: 'var(--layer-3, #252a2f)',
-          border: '1px solid var(--border, #252a2f)',
+          background: 'var(--layer-3, var(--layer-3))',
+          border: '1px solid var(--border, var(--layer-3))',
           fontSize: 10,
           fontFamily: 'var(--font-mono)',
-          color: 'var(--text-secondary, #8c9196)',
+          color: 'var(--text-secondary, var(--text-secondary))',
           whiteSpace: 'nowrap',
         }}>
           {src}
@@ -191,7 +191,7 @@ function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
       <div style={{ overflow: 'hidden', paddingRight: 12 }}>
         <div style={{
           fontSize: 12,
-          color: 'var(--text-primary, #e8eaed)',
+          color: 'var(--text-primary, var(--text-primary))',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -202,7 +202,7 @@ function ActivityRow({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
           <div style={{
             fontSize: 10,
             fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted, #4a5058)',
+            color: 'var(--text-muted, var(--text-muted))',
             marginTop: 1,
           }}>
             {event.sub}
@@ -292,10 +292,10 @@ export default function ActivityPage() {
   return (
     <div style={{
       padding: '24px 28px 48px',
-      background: 'var(--layer-0, #0f1011)',
+      background: 'var(--layer-0, var(--layer-0))',
       minHeight: '100vh',
       fontFamily: 'var(--font-ui, system-ui)',
-      color: 'var(--text-primary, #e8eaed)',
+      color: 'var(--text-primary, var(--text-primary))',
     }}>
 
       {/* ── Header ── */}
@@ -304,7 +304,7 @@ export default function ActivityPage() {
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
             Activity Log
           </h1>
-          <p style={{ margin: '2px 0 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, #4a5058)' }}>
+          <p style={{ margin: '2px 0 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted, var(--text-muted))' }}>
             {lastUpdated
               ? `Updated ${lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
               : 'Loading…'}
@@ -316,16 +316,16 @@ export default function ActivityPage() {
           disabled={filtered.length === 0}
           style={{
             padding: '5px 12px', borderRadius: 6, fontSize: 12,
-            background: 'var(--layer-2, #1c1f23)',
-            border: '1px solid var(--border, #252a2f)',
-            color: 'var(--text-secondary, #8c9196)',
+            background: 'var(--layer-2, var(--layer-2))',
+            border: '1px solid var(--border, var(--layer-3))',
+            color: 'var(--text-secondary, var(--text-secondary))',
             cursor: filtered.length === 0 ? 'default' : 'pointer',
             opacity: filtered.length === 0 ? 0.4 : 1,
             fontFamily: 'var(--font-ui)',
             transition: 'opacity 0.1s',
           }}
           onMouseEnter={e => { if (filtered.length > 0) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, #8c9196)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary, var(--text-secondary))'; }}
         >
           Export CSV
         </button>
@@ -345,8 +345,8 @@ export default function ActivityPage() {
           { label: 'Success Rate',  value: `${successRate}%`, color: successRate >= 90 ? C.success : successRate >= 70 ? C.warning : C.error },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: 'var(--layer-2, #1c1f23)',
-            border: '1px solid var(--border, #252a2f)',
+            background: 'var(--layer-2, var(--layer-2))',
+            border: '1px solid var(--border, var(--layer-3))',
             borderRadius: 8,
             padding: '12px 16px',
           }}>
@@ -391,16 +391,16 @@ export default function ActivityPage() {
               width: '100%',
               padding: '5px 10px',
               borderRadius: 6,
-              border: '1px solid var(--border, #252a2f)',
-              background: 'var(--layer-2, #1c1f23)',
-              color: 'var(--text-primary, #e8eaed)',
+              border: '1px solid var(--border, var(--layer-3))',
+              background: 'var(--layer-2, var(--layer-2))',
+              color: 'var(--text-primary, var(--text-primary))',
               fontSize: 12,
               fontFamily: 'var(--font-ui)',
               outline: 'none',
               boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'var(--border-bright, #353b42)'}
-            onBlur={e  => (e.target as HTMLInputElement).style.borderColor = 'var(--border, #252a2f)'}
+            onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'var(--border-bright, var(--layer-3))'}
+            onBlur={e  => (e.target as HTMLInputElement).style.borderColor = 'var(--border, var(--layer-3))'}
           />
         </div>
 
@@ -441,8 +441,8 @@ export default function ActivityPage() {
       {/* ── Log table ── */}
       {loading ? (
         <div style={{
-          background: 'var(--layer-2, #1c1f23)',
-          border: '1px solid var(--border, #252a2f)',
+          background: 'var(--layer-2, var(--layer-2))',
+          border: '1px solid var(--border, var(--layer-3))',
           borderRadius: 8,
           padding: '32px 16px',
           textAlign: 'center',
@@ -454,8 +454,8 @@ export default function ActivityPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div style={{
-          background: 'var(--layer-2, #1c1f23)',
-          border: '1px solid var(--border, #252a2f)',
+          background: 'var(--layer-2, var(--layer-2))',
+          border: '1px solid var(--border, var(--layer-3))',
           borderRadius: 8,
           padding: '40px 16px',
           textAlign: 'center',
@@ -472,7 +472,7 @@ export default function ActivityPage() {
             display: 'grid',
             gridTemplateColumns: '88px 72px 1fr 80px',
             padding: '6px 16px 6px',
-            borderBottom: '1px solid var(--border, #252a2f)',
+            borderBottom: '1px solid var(--border, var(--layer-3))',
             marginBottom: 0,
           }}>
             {['Time', 'Source', 'Event', 'Status'].map(h => (
@@ -481,7 +481,7 @@ export default function ActivityPage() {
                 fontFamily: 'var(--font-mono)',
                 textTransform: 'uppercase' as const,
                 letterSpacing: '0.1em',
-                color: 'var(--text-muted, #4a5058)',
+                color: 'var(--text-muted, var(--text-muted))',
               }}>{h}</span>
             ))}
             <span /> {/* Status right-aligned, no header text needed beyond label */}
@@ -496,18 +496,18 @@ export default function ActivityPage() {
                 fontFamily: 'var(--font-mono)',
                 textTransform: 'uppercase' as const,
                 letterSpacing: '0.1em',
-                color: 'var(--text-muted, #4a5058)',
-                background: 'var(--layer-1, #151719)',
-                borderBottom: '1px solid var(--border, #252a2f)',
-                borderTop: '1px solid var(--border, #252a2f)',
+                color: 'var(--text-muted, var(--text-muted))',
+                background: 'var(--layer-1, var(--layer-1))',
+                borderBottom: '1px solid var(--border, var(--layer-3))',
+                borderTop: '1px solid var(--border, var(--layer-3))',
               }}>
                 {group.dateLabel}
               </div>
 
               {/* Rows */}
               <div style={{
-                background: 'var(--layer-2, #1c1f23)',
-                borderBottom: '1px solid var(--border, #252a2f)',
+                background: 'var(--layer-2, var(--layer-2))',
+                borderBottom: '1px solid var(--border, var(--layer-3))',
               }}>
                 {group.entries.map((e, i) => (
                   <ActivityRow

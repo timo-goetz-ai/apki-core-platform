@@ -87,7 +87,7 @@ export default function AgenticOSCockpit() {
           <Link
             key={l.href}
             href={l.href}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#111827] border border-[#1a2540] text-xs text-slate-300 hover:border-[#1d6ef5]/40 hover:text-slate-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--layer-2)] border border-[var(--border-bright)] text-xs text-slate-300 hover:border-[var(--accent-blue)]/40 hover:text-slate-100 transition-colors"
           >
             <span>{l.icon}</span>
             {l.label}
@@ -101,7 +101,7 @@ export default function AgenticOSCockpit() {
           <Link
             key={s.category}
             href={s.href}
-            className="card p-4 text-center space-y-2 hover:border-[#1d6ef5]/40 transition-colors group"
+            className="card p-4 text-center space-y-2 hover:border-[var(--accent-blue)]/40 transition-colors group"
           >
             <span className="text-xl">{s.icon}</span>
             <p className={`text-2xl font-bold ${s.color}`}>
@@ -120,7 +120,7 @@ export default function AgenticOSCockpit() {
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
             📂 Active Context — 02_Active_Projects
           </h2>
-          <Link href="/agentic-os/management/active-projects" className="text-[10px] text-[#1d6ef5]/70 hover:text-[#1d6ef5]">
+          <Link href="/agentic-os/management/active-projects" className="text-[10px] text-[var(--accent-blue)]/70 hover:text-[var(--accent-blue)]">
             Alle anzeigen →
           </Link>
         </div>
@@ -131,7 +131,7 @@ export default function AgenticOSCockpit() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {activeProjects.slice(0, 6).map((entry) => (
-              <div key={entry.name} className="card p-4 space-y-2 hover:border-[#1d6ef5]/30 transition-colors">
+              <div key={entry.name} className="card p-4 space-y-2 hover:border-[var(--accent-blue)]/30 transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="text-base">{entry.type === "directory" ? "📁" : "📄"}</span>
                   <div className="min-w-0">

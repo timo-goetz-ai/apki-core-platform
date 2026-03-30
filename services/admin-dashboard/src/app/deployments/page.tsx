@@ -41,17 +41,17 @@ function timeAgo(iso: string | null): string {
 }
 
 function statusColor(s: string): string {
-  if (s === 'running')                         return '#34d399';
-  if (s === 'stopped' || s === 'exited')       return '#ef4444';
-  if (s === 'starting' || s === 'restarting')  return '#f59e0b';
-  return '#94a3b8';
+  if (s === 'running')                         return 'var(--accent-green)';
+  if (s === 'stopped' || s === 'exited')       return 'var(--accent-red)';
+  if (s === 'starting' || s === 'restarting')  return 'var(--accent-amber)';
+  return 'var(--text-secondary)';
 }
 
 function deployStatusColor(s: DeploymentEntry['status']): string {
-  if (s === 'success')  return '#34d399';
-  if (s === 'building') return '#f59e0b';
-  if (s === 'failed')   return '#ef4444';
-  return '#94a3b8';
+  if (s === 'success')  return 'var(--accent-green)';
+  if (s === 'building') return 'var(--accent-amber)';
+  if (s === 'failed')   return 'var(--accent-red)';
+  return 'var(--text-secondary)';
 }
 
 function deployStatusLabel(s: DeploymentEntry['status']): string {
@@ -175,7 +175,7 @@ export default function DeploymentsPage() {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '7px 14px', borderRadius: 7, fontSize: 12, fontFamily: 'var(--font-mono)',
               background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.3)',
-              color: '#34d399', textDecoration: 'none', fontWeight: 600,
+              color: 'var(--accent-green)', textDecoration: 'none', fontWeight: 600,
             }}
           >
             Deploy now ↗
@@ -187,8 +187,8 @@ export default function DeploymentsPage() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Commits',  value: loadingC ? '…' : String(commits.length), color: 'var(--text-primary)' },
-          { label: 'Running',  value: loadingS ? '…' : String(running),         color: '#34d399' },
-          { label: 'Exited',   value: loadingS ? '…' : String(exited),          color: exited > 0 ? '#ef4444' : 'var(--text-muted)' },
+          { label: 'Running',  value: loadingS ? '…' : String(running),         color: 'var(--accent-green)' },
+          { label: 'Exited',   value: loadingS ? '…' : String(exited),          color: exited > 0 ? 'var(--accent-red)' : 'var(--text-muted)' },
           { label: 'Services', value: loadingS ? '…' : String(services.length), color: 'var(--text-primary)' },
         ].map(stat => (
           <div key={stat.label} style={{
@@ -226,7 +226,7 @@ export default function DeploymentsPage() {
         {errorC && (
           <div style={{
             padding: '10px 14px', borderRadius: 7, marginBottom: 10, fontSize: 12,
-            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--accent-red)',
             fontFamily: 'var(--font-mono)',
           }}>
             {errorC}
@@ -290,12 +290,12 @@ export default function DeploymentsPage() {
                   target="_blank" rel="noopener noreferrer"
                   style={{
                     fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
-                    color: '#94a3b8', textDecoration: 'none',
+                    color: 'var(--text-secondary)', textDecoration: 'none',
                     background: 'var(--layer-3)', padding: '2px 7px', borderRadius: 4,
                     display: 'inline-block', width: 'fit-content',
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#94a3b8'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'; }}
                 >
                   {c.sha}
                 </a>
@@ -373,7 +373,7 @@ export default function DeploymentsPage() {
         {errorS && (
           <div style={{
             padding: '10px 14px', borderRadius: 7, marginBottom: 10, fontSize: 12,
-            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+            background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--accent-red)',
             fontFamily: 'var(--font-mono)',
           }}>
             {errorS}
@@ -460,9 +460,9 @@ export default function DeploymentsPage() {
                     <a
                       href={`https://${domain}`}
                       target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#94a3b8', textDecoration: 'none' }}
+                      style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', textDecoration: 'none' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#94a3b8'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'; }}
                     >
                       {domain} ↗
                     </a>
@@ -480,7 +480,7 @@ export default function DeploymentsPage() {
                       style={{
                         padding: '4px 10px', borderRadius: 5, fontSize: 11, fontFamily: 'var(--font-mono)',
                         background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-                        color: '#f59e0b', cursor: isBusy ? 'not-allowed' : 'pointer',
+                        color: 'var(--accent-amber)', cursor: isBusy ? 'not-allowed' : 'pointer',
                         opacity: isBusy ? 0.6 : 1,
                       }}
                     >

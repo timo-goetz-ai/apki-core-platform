@@ -98,7 +98,7 @@ export default function ToolsPage() {
     fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
     fontFamily: 'var(--font-mono)',
     background: method === 'GET' ? 'rgba(96,165,250,0.15)' : 'rgba(167,139,250,0.15)',
-    color: method === 'GET' ? 'var(--accent-blue)' : '#a78bfa',
+    color: method === 'GET' ? 'var(--accent-blue)' : 'var(--accent-purple)',
     flexShrink: 0,
   });
 

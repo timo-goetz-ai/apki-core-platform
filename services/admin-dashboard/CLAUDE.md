@@ -34,3 +34,9 @@ Next.js- **Admin-/Operations-Dashboard** im AIOS-Monorepo.
 ## Related
 
 - Repo-weite Architektur und Deploy: `../../CLAUDE.md`
+
+## Design & UI-Konsistenz
+
+- Ausführliche Token-Tabellen und Migrationsregeln: **`DESIGN.md`** (dieses Verzeichnis).
+- Kurz: neue UI nutzt **CSS-Variablen** aus `globals.css`, **keine freien Hex**; Interaktionen über **`@/components/ui/button`** (`variant`/`size`), sofern nicht ausnahmslos nötig.
+- Shell (Sidebar/Header/Responsive): **`AppShell`**, **`AppSidebar`**, **`AppHeader`** — siehe `DESIGN.md` Abschnitt Shell.

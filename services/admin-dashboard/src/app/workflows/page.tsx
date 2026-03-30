@@ -28,15 +28,15 @@ const N8N_BASE = 'https://n8n.automation-plus-ki.de';
 const LAYERS = ['Alle', '100_INGEST', '200_BRAIN', '300_RESEARCH', '400_CONTENT', '500_HUMAN'];
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  active:         { color: '#34d399', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
-  inactive:       { color: '#6b7280', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
-  development:    { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
-  archived:       { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
+  active:         { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
+  inactive:       { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
+  development:    { color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
+  archived:       { color: 'var(--accent-red)', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
   // legacy values
-  aktiv:          { color: '#34d399', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
-  inaktiv:        { color: '#6b7280', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
-  in_entwicklung: { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
-  archiviert:     { color: '#f87171', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
+  aktiv:          { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
+  inaktiv:        { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
+  in_entwicklung: { color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
+  archiviert:     { color: 'var(--accent-red)', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
 };
 
 // ─── Section label helper ─────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '8px 14px', borderRadius: 8, flexShrink: 0,
               background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.22)',
-              color: '#fbbf24', fontSize: 12, fontWeight: 500, textDecoration: 'none',
+              color: 'var(--accent-amber)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
               transition: 'all 0.12s',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(251,191,36,0.14)'; }}
@@ -143,9 +143,9 @@ function WorkflowDetail({ wf }: { wf: Workflow }) {
       {/* ── Stats grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Layer',      value: wf.Layer    || '—', Icon: GitBranch, color: '#38bdf8' },
-          { label: 'Schedule',   value: wf.Schedule || '—', Icon: Clock,     color: '#a78bfa' },
-          { label: 'Letzter Run', value: wf.LastRun ? new Date(wf.LastRun).toLocaleDateString('de-DE') : '—', Icon: Activity, color: '#34d399' },
+          { label: 'Layer',      value: wf.Layer    || '—', Icon: GitBranch, color: 'var(--accent-blue)' },
+          { label: 'Schedule',   value: wf.Schedule || '—', Icon: Clock,     color: 'var(--accent-purple)' },
+          { label: 'Letzter Run', value: wf.LastRun ? new Date(wf.LastRun).toLocaleDateString('de-DE') : '—', Icon: Activity, color: 'var(--accent-green)' },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} style={{
             background: 'var(--layer-2)', border: '1px solid var(--border)',
@@ -267,7 +267,7 @@ export default function WorkflowsPage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7,
                 background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.22)',
-                color: '#fbbf24', fontSize: 12, fontWeight: 500, textDecoration: 'none',
+                color: 'var(--accent-amber)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
               }}
             >
               n8n öffnen <ExternalLink size={11} />
@@ -305,7 +305,7 @@ export default function WorkflowsPage() {
                     padding: '4px 10px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
                     background: isActive ? 'rgba(56,189,248,0.1)' : 'transparent',
                     border: isActive ? '1px solid rgba(56,189,248,0.28)' : '1px solid transparent',
-                    color: isActive ? '#38bdf8' : 'var(--text-muted)',
+                    color: isActive ? 'var(--accent-blue)' : 'var(--text-muted)',
                     fontWeight: isActive ? 600 : 400, transition: 'all 0.1s',
                   }}
                 >
@@ -351,7 +351,7 @@ export default function WorkflowsPage() {
                   style={{
                     padding: '11px 16px',
                     borderBottom: '1px solid var(--border)',
-                    borderLeft: `2px solid ${isSelected ? '#38bdf8' : 'transparent'}`,
+                    borderLeft: `2px solid ${isSelected ? 'var(--accent-blue)' : 'transparent'}`,
                     background: isSelected ? 'rgba(56,189,248,0.05)' : 'transparent',
                     cursor: 'pointer', transition: 'all 0.1s',
                   }}
@@ -366,7 +366,7 @@ export default function WorkflowsPage() {
                     }} />
                     <span style={{
                       fontSize: 12, fontWeight: isSelected ? 600 : 500,
-                      color: isSelected ? '#f1f5f9' : 'var(--text-primary)',
+                      color: isSelected ? 'var(--text-primary)' : 'var(--text-primary)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
                     }}>
                       {wf.Name}
@@ -377,7 +377,7 @@ export default function WorkflowsPage() {
                       {wf.Layer}
                     </span>
                     {wf.Schedule && wf.Schedule !== 'on_demand' && (
-                      <span style={{ fontSize: 10, color: '#475569', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                         {wf.Schedule}
                       </span>
                     )}

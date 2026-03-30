@@ -14,21 +14,21 @@ import { useLLM, LLM_MODELS } from '@/lib/llm-context';
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const AI_PROVIDERS = [
-  { key: 'openrouter', label: 'OpenRouter',     envVar: 'OPENROUTER_API_KEY',   desc: 'Free-Tier + Paid Modelle', color: '#38bdf8' },
-  { key: 'anthropic',  label: 'Anthropic',      envVar: 'ANTHROPIC_API_KEY',    desc: 'Claude Abo direkt',       color: '#a78bfa' },
-  { key: 'google',     label: 'Google AI Studio', envVar: 'GOOGLE_AI_API_KEY',  desc: 'Gemini direkt',           color: '#34d399' },
+  { key: 'openrouter', label: 'OpenRouter',     envVar: 'OPENROUTER_API_KEY',   desc: 'Free-Tier + Paid Modelle', color: 'var(--accent-blue)' },
+  { key: 'anthropic',  label: 'Anthropic',      envVar: 'ANTHROPIC_API_KEY',    desc: 'Claude Abo direkt',       color: 'var(--accent-purple)' },
+  { key: 'google',     label: 'Google AI Studio', envVar: 'GOOGLE_AI_API_KEY',  desc: 'Gemini direkt',           color: 'var(--accent-green)' },
 ];
 
 const SERVICES = [
-  { id: 'n8n',        label: 'n8n Workflows',   url: 'https://n8n.automation-plus-ki.de',         desc: 'Workflow Automation',    color: '#f97316' },
-  { id: 'nocodb',     label: 'NocoDB',          url: 'https://nocodb.automation-plus-ki.de',      desc: 'Datenbank UI',           color: '#38bdf8' },
-  { id: 'grafana',    label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',     desc: 'Monitoring & Dashboards',color: '#f97316' },
-  { id: 'prometheus', label: 'Prometheus',      url: 'https://prometheus.automation-plus-ki.de',  desc: 'Metriken & Alerting',    color: '#e2574c' },
-  { id: 'coolify',    label: 'Coolify',         url: 'https://coolify.automation-plus-ki.de',     desc: 'Deployment Plattform',   color: '#7c3aed' },
-  { id: 'authentik',  label: 'Authentik SSO',   url: 'https://auth.automation-plus-ki.de',        desc: 'SSO & Identity Provider',color: '#34d399' },
-  { id: 'qdrant',     label: 'Qdrant',          url: 'https://qdrant.automation-plus-ki.de',      desc: 'Vector Database',        color: '#a78bfa' },
-  { id: 'mailpit',    label: 'Mailpit',         url: 'https://mail.automation-plus-ki.de',        desc: 'SMTP Catcher / Testing', color: '#34d399' },
-  { id: 'traefik',    label: 'Traefik',         url: 'https://traefik.automation-plus-ki.de',     desc: 'Reverse Proxy',          color: '#38bdf8' },
+  { id: 'n8n',        label: 'n8n Workflows',   url: 'https://n8n.automation-plus-ki.de',         desc: 'Workflow Automation',    color: 'var(--accent-amber)' },
+  { id: 'nocodb',     label: 'NocoDB',          url: 'https://nocodb.automation-plus-ki.de',      desc: 'Datenbank UI',           color: 'var(--accent-blue)' },
+  { id: 'grafana',    label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',     desc: 'Monitoring & Dashboards',color: 'var(--accent-amber)' },
+  { id: 'prometheus', label: 'Prometheus',      url: 'https://prometheus.automation-plus-ki.de',  desc: 'Metriken & Alerting',    color: 'var(--accent-red)' },
+  { id: 'coolify',    label: 'Coolify',         url: 'https://coolify.automation-plus-ki.de',     desc: 'Deployment Plattform',   color: 'var(--accent-purple)' },
+  { id: 'authentik',  label: 'Authentik SSO',   url: 'https://auth.automation-plus-ki.de',        desc: 'SSO & Identity Provider',color: 'var(--accent-green)' },
+  { id: 'qdrant',     label: 'Qdrant',          url: 'https://qdrant.automation-plus-ki.de',      desc: 'Vector Database',        color: 'var(--accent-purple)' },
+  { id: 'mailpit',    label: 'Mailpit',         url: 'https://mail.automation-plus-ki.de',        desc: 'SMTP Catcher / Testing', color: 'var(--accent-green)' },
+  { id: 'traefik',    label: 'Traefik',         url: 'https://traefik.automation-plus-ki.de',     desc: 'Reverse Proxy',          color: 'var(--accent-blue)' },
 ];
 
 const INTEGRATIONS = [

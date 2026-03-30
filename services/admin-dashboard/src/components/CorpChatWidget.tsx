@@ -197,7 +197,7 @@ export function CorpChatWidget() {
         content: `Fehler: ${String(e)}`, ts: new Date(),
       }]);
     }
-  }, [messages, loading]);
+  }, [messages, loading, selectedModel]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }

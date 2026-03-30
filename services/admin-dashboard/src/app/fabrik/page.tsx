@@ -419,8 +419,8 @@ function FabrikMap() {
     <svg viewBox="0 0 400 290" className="w-full max-w-md mx-auto" style={{ display: 'block' }} aria-hidden>
       <defs>
         <linearGradient id="fab-edge" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#34d399" stopOpacity="0.35" />
+          <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--accent-green)" stopOpacity="0.35" />
         </linearGradient>
       </defs>
       {edges.map(([a, b], i) => (
@@ -474,7 +474,7 @@ export default function FabrikPage() {
               justifyContent: 'center',
             }}
           >
-            <Factory size={20} style={{ color: '#f97316' }} />
+            <Factory size={20} style={{ color: 'var(--accent-amber)' }} />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>

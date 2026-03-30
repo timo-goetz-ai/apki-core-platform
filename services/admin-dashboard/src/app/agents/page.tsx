@@ -18,36 +18,36 @@ interface RobotChar {
 }
 
 const ROBOTS: Record<string, RobotChar> = {
-  'Content Researcher':  { name: 'Llama-Geist',        trait: 'Kapazität',        color: '#34d399', bgColor: 'rgba(52,211,153,0.1)',   avatar: '🦙' },
-  'Writer & SEO':        { name: 'Claude-Assistent',   trait: 'Genauigkeit',      color: '#c084fc', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
-  'Audience Analyst':    { name: 'Gemi-Schmied',       trait: 'Vielseitigkeit',   color: '#fbbf24', bgColor: 'rgba(251,191,36,0.1)',   avatar: '⚙️' },
-  'Opportunity Scorer':  { name: 'X-Agent Alpha',      trait: 'Geschwindigkeit',  color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
-  'Trend Analyst':       { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: '#22d3ee', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
-  'Content Strategist':  { name: "Mistral's Windzug",  trait: 'Effizienz',        color: '#60a5fa', bgColor: 'rgba(96,165,250,0.1)',   avatar: '💨' },
-  'Senior Researcher':   { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '🔬' },
-  'Synthesis Specialist':{ name: 'Gemini-C',           trait: 'Integration',      color: '#fb923c', bgColor: 'rgba(251,146,60,0.1)',   avatar: '🧬' },
-  'Research Analyst':    { name: 'Llama-H',            trait: 'Skalierbarkeit',   color: '#86efac', bgColor: 'rgba(134,239,172,0.1)',  avatar: '📡' },
+  'Content Researcher':  { name: 'Llama-Geist',        trait: 'Kapazität',        color: 'var(--accent-green)', bgColor: 'rgba(52,211,153,0.1)',   avatar: '🦙' },
+  'Writer & SEO':        { name: 'Claude-Assistent',   trait: 'Genauigkeit',      color: 'var(--accent-purple)', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
+  'Audience Analyst':    { name: 'Gemi-Schmied',       trait: 'Vielseitigkeit',   color: 'var(--accent-amber)', bgColor: 'rgba(251,191,36,0.1)',   avatar: '⚙️' },
+  'Opportunity Scorer':  { name: 'X-Agent Alpha',      trait: 'Geschwindigkeit',  color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
+  'Trend Analyst':       { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: 'var(--accent-blue)', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
+  'Content Strategist':  { name: "Mistral's Windzug",  trait: 'Effizienz',        color: 'var(--accent-blue)', bgColor: 'rgba(96,165,250,0.1)',   avatar: '💨' },
+  'Senior Researcher':   { name: 'Gemini-U',           trait: 'Innovation',       color: 'var(--accent-green)', bgColor: 'rgba(74,222,128,0.1)',   avatar: '🔬' },
+  'Synthesis Specialist':{ name: 'Gemini-C',           trait: 'Integration',      color: 'var(--accent-amber)', bgColor: 'rgba(251,146,60,0.1)',   avatar: '🧬' },
+  'Research Analyst':    { name: 'Llama-H',            trait: 'Skalierbarkeit',   color: 'var(--accent-green)', bgColor: 'rgba(134,239,172,0.1)',  avatar: '📡' },
   // Multichannel-Fabrik
-  'Content Writer & SEO': { name: 'Claude-Assistent',  trait: 'Genauigkeit',      color: '#c084fc', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
-  'Viral Content Scout': { name: 'Mistral-F',          trait: 'Viralität',        color: '#f472b6', bgColor: 'rgba(244,114,182,0.1)',  avatar: '🚀' },
+  'Content Writer & SEO': { name: 'Claude-Assistent',  trait: 'Genauigkeit',      color: 'var(--accent-purple)', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
+  'Viral Content Scout': { name: 'Mistral-F',          trait: 'Viralität',        color: 'var(--accent-purple)', bgColor: 'rgba(244,114,182,0.1)',  avatar: '🚀' },
   // Red Team
-  'Fact Checker':        { name: 'Llama-B',            trait: 'Präzision',        color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '🔍' },
-  'Resonance Checker':   { name: 'Mistral-L',          trait: 'Resonanz',         color: '#a78bfa', bgColor: 'rgba(167,139,250,0.1)',  avatar: '🎯' },
-  'Speed Reviewer':      { name: 'Llama-H',            trait: 'Tempo',            color: '#86efac', bgColor: 'rgba(134,239,172,0.1)',  avatar: '⚡' },
+  'Fact Checker':        { name: 'Llama-B',            trait: 'Präzision',        color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '🔍' },
+  'Resonance Checker':   { name: 'Mistral-L',          trait: 'Resonanz',         color: 'var(--accent-purple)', bgColor: 'rgba(167,139,250,0.1)',  avatar: '🎯' },
+  'Speed Reviewer':      { name: 'Llama-H',            trait: 'Tempo',            color: 'var(--accent-green)', bgColor: 'rgba(134,239,172,0.1)',  avatar: '⚡' },
   // Market Intelligence
-  'Trend Scout':         { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: '#22d3ee', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
-  'Opportunity Evaluator':{ name: 'X-Agent Alpha',     trait: 'Geschwindigkeit',  color: '#f87171', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
-  'Briefing Creator':    { name: 'Gemini-U',           trait: 'Innovation',       color: '#4ade80', bgColor: 'rgba(74,222,128,0.1)',   avatar: '📋' },
+  'Trend Scout':         { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: 'var(--accent-blue)', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
+  'Opportunity Evaluator':{ name: 'X-Agent Alpha',     trait: 'Geschwindigkeit',  color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
+  'Briefing Creator':    { name: 'Gemini-U',           trait: 'Innovation',       color: 'var(--accent-green)', bgColor: 'rgba(74,222,128,0.1)',   avatar: '📋' },
   // Director
-  'Director Agent':      { name: 'AIOS Director',      trait: 'Orchestrierung',   color: '#fbbf24', bgColor: 'rgba(251,191,36,0.1)',   avatar: '🎬' },
+  'Director Agent':      { name: 'AIOS Director',      trait: 'Orchestrierung',   color: 'var(--accent-amber)', bgColor: 'rgba(251,191,36,0.1)',   avatar: '🎬' },
   // xAI Social Crew (Grok-3)
-  'Viral Trend Analyst': { name: 'Grok-X',             trait: 'Viralität',        color: '#e2e8f0', bgColor: 'rgba(226,232,240,0.1)',  avatar: '𝕏' },
-  'Twitter/X Copywriter':{ name: 'Tweet-Master',       trait: 'Engagement',       color: '#1d9bf0', bgColor: 'rgba(29,155,240,0.1)',   avatar: '🐦' },
-  'Multi-Platform Content Adapter': { name: 'Plattform-Ninja', trait: 'Anpassung', color: '#a855f7', bgColor: 'rgba(168,85,247,0.1)',  avatar: '🔄' },
+  'Viral Trend Analyst': { name: 'Grok-X',             trait: 'Viralität',        color: 'var(--text-secondary)', bgColor: 'rgba(226,232,240,0.1)',  avatar: '𝕏' },
+  'Twitter/X Copywriter':{ name: 'Tweet-Master',       trait: 'Engagement',       color: 'var(--accent-blue)', bgColor: 'rgba(29,155,240,0.1)',   avatar: '🐦' },
+  'Multi-Platform Content Adapter': { name: 'Plattform-Ninja', trait: 'Anpassung', color: 'var(--accent-purple)', bgColor: 'rgba(168,85,247,0.1)',  avatar: '🔄' },
 };
 
 function getRobot(role: string): RobotChar {
-  return ROBOTS[role] ?? { name: role, trait: '', color: '#94a3b8', bgColor: 'rgba(148,163,184,0.1)', avatar: '🤖' };
+  return ROBOTS[role] ?? { name: role, trait: '', color: 'var(--text-secondary)', bgColor: 'rgba(148,163,184,0.1)', avatar: '🤖' };
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -84,58 +84,58 @@ type AgentLive = { status: AgentStatus; taskId?: string; output?: string };
 
 const CREW_AGENTS: Record<string, { role: string; color: string }[]> = {
   content_generation_crew: [
-    { role: 'Content Researcher', color: '#34d399' },
-    { role: 'Writer & SEO',       color: '#c084fc' },
+    { role: 'Content Researcher', color: 'var(--accent-green)' },
+    { role: 'Writer & SEO',       color: 'var(--accent-purple)' },
   ],
   niche_analysis_crew: [
-    { role: 'Audience Analyst',   color: '#fbbf24' },
-    { role: 'Opportunity Scorer', color: '#f87171' },
+    { role: 'Audience Analyst',   color: 'var(--accent-amber)' },
+    { role: 'Opportunity Scorer', color: 'var(--accent-red)' },
   ],
   content_forecast_crew: [
-    { role: 'Trend Analyst',      color: '#22d3ee' },
-    { role: 'Content Strategist', color: '#60a5fa' },
+    { role: 'Trend Analyst',      color: 'var(--accent-blue)' },
+    { role: 'Content Strategist', color: 'var(--accent-blue)' },
   ],
   deep_research_crew: [
-    { role: 'Senior Researcher',    color: '#4ade80' },
-    { role: 'Synthesis Specialist', color: '#fb923c' },
+    { role: 'Senior Researcher',    color: 'var(--accent-green)' },
+    { role: 'Synthesis Specialist', color: 'var(--accent-amber)' },
   ],
-  quick_research_crew: [{ role: 'Research Analyst', color: '#86efac' }],
+  quick_research_crew: [{ role: 'Research Analyst', color: 'var(--accent-green)' }],
   multichannel_fabrik_crew: [
-    { role: 'Content Strategist',   color: '#60a5fa' },
-    { role: 'Content Writer & SEO', color: '#c084fc' },
-    { role: 'Viral Content Scout',  color: '#f472b6' },
+    { role: 'Content Strategist',   color: 'var(--accent-blue)' },
+    { role: 'Content Writer & SEO', color: 'var(--accent-purple)' },
+    { role: 'Viral Content Scout',  color: 'var(--accent-purple)' },
   ],
   red_team_crew: [
-    { role: 'Fact Checker',      color: '#f87171' },
-    { role: 'Resonance Checker', color: '#a78bfa' },
-    { role: 'Speed Reviewer',    color: '#86efac' },
+    { role: 'Fact Checker',      color: 'var(--accent-red)' },
+    { role: 'Resonance Checker', color: 'var(--accent-purple)' },
+    { role: 'Speed Reviewer',    color: 'var(--accent-green)' },
   ],
   market_intelligence_crew: [
-    { role: 'Trend Scout',            color: '#22d3ee' },
-    { role: 'Opportunity Evaluator',  color: '#f87171' },
-    { role: 'Briefing Creator',       color: '#4ade80' },
+    { role: 'Trend Scout',            color: 'var(--accent-blue)' },
+    { role: 'Opportunity Evaluator',  color: 'var(--accent-red)' },
+    { role: 'Briefing Creator',       color: 'var(--accent-green)' },
   ],
   director_crew: [
-    { role: 'Director Agent', color: '#fbbf24' },
+    { role: 'Director Agent', color: 'var(--accent-amber)' },
   ],
   xai_social_crew: [
-    { role: 'Viral Trend Analyst',              color: '#e2e8f0' },
-    { role: 'Twitter/X Copywriter',             color: '#1d9bf0' },
-    { role: 'Multi-Platform Content Adapter',   color: '#a855f7' },
+    { role: 'Viral Trend Analyst',              color: 'var(--text-secondary)' },
+    { role: 'Twitter/X Copywriter',             color: 'var(--accent-blue)' },
+    { role: 'Multi-Platform Content Adapter',   color: 'var(--accent-purple)' },
   ],
 };
 
 const CREW_ACCENT: Record<string, string> = {
-  content_generation_crew:  '#c084fc',
-  niche_analysis_crew:      '#fbbf24',
-  content_forecast_crew:    '#22d3ee',
-  deep_research_crew:       '#4ade80',
-  quick_research_crew:      '#86efac',
-  multichannel_fabrik_crew: '#f472b6',
-  red_team_crew:            '#f87171',
-  market_intelligence_crew: '#22d3ee',
-  director_crew:            '#fbbf24',
-  xai_social_crew:          '#1d9bf0',
+  content_generation_crew:  'var(--accent-purple)',
+  niche_analysis_crew:      'var(--accent-amber)',
+  content_forecast_crew:    'var(--accent-blue)',
+  deep_research_crew:       'var(--accent-green)',
+  quick_research_crew:      'var(--accent-green)',
+  multichannel_fabrik_crew: 'var(--accent-purple)',
+  red_team_crew:            'var(--accent-red)',
+  market_intelligence_crew: 'var(--accent-blue)',
+  director_crew:            'var(--accent-amber)',
+  xai_social_crew:          'var(--accent-blue)',
 };
 
 const DEFAULT_INPUTS: Record<string, Record<string, string>> = {
@@ -182,8 +182,8 @@ function RobotAvatar({
   const r = getRobot(role);
   const pulse = status === 'working';
   const borderColor = status === 'working' ? r.color
-    : status === 'done'  ? '#34d399'
-    : status === 'error' ? '#f87171'
+    : status === 'done'  ? 'var(--accent-green)'
+    : status === 'error' ? 'var(--accent-red)'
     : 'rgba(148,163,184,0.2)';
 
   return (
@@ -217,7 +217,7 @@ function AgentCard({ role, live }: { role: string; live?: AgentLive }) {
   const r = getRobot(role);
   const st = live?.status ?? 'idle';
   const statusLabel = st === 'working' ? 'Arbeitet…' : st === 'done' ? 'Fertig' : st === 'error' ? 'Fehler' : 'Bereit';
-  const statusColor = st === 'working' ? '#fbbf24' : st === 'done' ? '#34d399' : st === 'error' ? '#f87171' : '#94a3b8';
+  const statusColor = st === 'working' ? 'var(--accent-amber)' : st === 'done' ? 'var(--accent-green)' : st === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
 
   return (
     <div style={{
@@ -295,7 +295,7 @@ function CrewFlowViz({ crewId, activeAgents }: { crewId: string; activeAgents: R
             {i < agents.length - 1 && (
               <div style={{
                 width: 20, height: 1,
-                background: `linear-gradient(90deg, ${agents[i] ? getRobot(agents[i].role).color + '60' : '#333'}, ${getRobot(agents[i + 1]?.role ?? '').color + '60'})`,
+                background: `linear-gradient(90deg, ${agents[i] ? getRobot(agents[i].role).color + '60' : 'var(--layer-3)'}, ${getRobot(agents[i + 1]?.role ?? '').color + '60'})`,
                 flexShrink: 0, margin: '0 -2px',
               }} />
             )}
@@ -325,7 +325,7 @@ function TimelinePanel({ entries }: { entries: TimelineEntry[] }) {
   }, [entries.length]);
 
   const color = (k: TimelineEntry['kind']) =>
-    k === 'ok' ? '#34d399' : k === 'err' ? '#f87171' : k === 'task' ? '#60a5fa' : '#94a3b8';
+    k === 'ok' ? 'var(--accent-green)' : k === 'err' ? 'var(--accent-red)' : k === 'task' ? 'var(--accent-blue)' : 'var(--text-secondary)';
 
   return (
     <div ref={ref} style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5, paddingRight: 2 }}>
@@ -382,14 +382,14 @@ function LivePanel({
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <Radio size={14} style={{ color: '#34d399', animation: 'pulse 1.2s ease-in-out infinite' }} />
+        <Radio size={14} style={{ color: 'var(--accent-green)', animation: 'pulse 1.2s ease-in-out infinite' }} />
         <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Live · {crewLabel}</span>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 4, fontSize: 10,
           padding: '2px 8px', borderRadius: 10,
           background: wsConnected ? 'rgba(52,211,153,0.12)' : 'rgba(251,191,36,0.12)',
-          border: `1px solid ${wsConnected ? '#34d39940' : '#fbbf2440'}`,
-          color: wsConnected ? '#34d399' : '#fbbf24',
+          border: `1px solid ${wsConnected ? 'color-mix(in srgb, var(--accent-green) 25%, transparent)' : 'color-mix(in srgb, var(--accent-amber) 25%, transparent)'}`,
+          color: wsConnected ? 'var(--accent-green)' : 'var(--accent-amber)',
         }}>
           <Wifi size={9} />
           {wsConnected ? 'WebSocket' : 'SSE'}
@@ -418,9 +418,9 @@ function LivePanel({
         <div style={{
           marginBottom: 12, padding: '10px 12px', borderRadius: 8,
           border: '1px solid rgba(248,113,113,0.4)', background: 'rgba(248,113,113,0.08)',
-          fontSize: 11, color: '#fecaca',
+          fontSize: 11, color: 'color-mix(in srgb, var(--accent-red) 25%, transparent)',
         }}>
-          <strong style={{ color: '#f87171' }}>Verbindungsfehler:</strong>
+          <strong style={{ color: 'var(--accent-red)' }}>Verbindungsfehler:</strong>
           <div style={{ marginTop: 4 }}>{streamFault}</div>
         </div>
       )}
@@ -493,7 +493,7 @@ function RunButton({ crewId, onStarted, busy }: {
   }
 
   const label = st === 'running' ? 'Start…' : st === 'done' ? '✓ Gestartet' : st === 'err' ? '✗ Fehler' : '▶ Starten';
-  const color = st === 'running' ? '#60a5fa' : st === 'done' ? '#34d399' : st === 'err' ? '#f87171' : 'var(--text-muted)';
+  const color = st === 'running' ? 'var(--accent-blue)' : st === 'done' ? 'var(--accent-green)' : st === 'err' ? 'var(--accent-red)' : 'var(--text-muted)';
 
   return (
     <button type="button" onClick={run} disabled={st === 'running' || busy} style={{
@@ -518,7 +518,7 @@ function CrewCard({ crew, onStarted, busy }: {
   busy: boolean;
 }) {
   const agents = CREW_AGENTS[crew.id] ?? [];
-  const accent = CREW_ACCENT[crew.id] ?? '#60a5fa';
+  const accent = CREW_ACCENT[crew.id] ?? 'var(--accent-blue)';
 
   return (
     <div style={{
@@ -583,7 +583,7 @@ function CrewCard({ crew, onStarted, busy }: {
               <span style={{
                 fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 4,
                 background: p.status === 'draft' ? 'rgba(251,191,36,0.12)' : 'rgba(52,211,153,0.12)',
-                color: p.status === 'draft' ? '#fbbf24' : '#34d399',
+                color: p.status === 'draft' ? 'var(--accent-amber)' : 'var(--accent-green)',
               }}>
                 {p.status}
               </span>
@@ -781,9 +781,9 @@ export default function AgentsPage() {
         {/* Stats */}
         <div style={{ display: 'flex', gap: 8 }}>
           {[
-            { icon: <Bot size={12} />, label: `${crews.length} Crews`, color: '#60a5fa' },
-            { icon: <Zap size={12} />, label: `${totalAgents} Agents`, color: '#c084fc' },
-            { icon: <Activity size={12} />, label: `${totalPieces} Outputs`, color: '#34d399' },
+            { icon: <Bot size={12} />, label: `${crews.length} Crews`, color: 'var(--accent-blue)' },
+            { icon: <Zap size={12} />, label: `${totalAgents} Agents`, color: 'var(--accent-purple)' },
+            { icon: <Activity size={12} />, label: `${totalPieces} Outputs`, color: 'var(--accent-green)' },
           ].map(s => (
             <div key={s.label} style={{
               display: 'flex', alignItems: 'center', gap: 5,
@@ -813,7 +813,7 @@ export default function AgentsPage() {
           <div style={{
             marginBottom: 16, padding: '10px 14px', borderRadius: 10,
             border: '1px solid rgba(251,191,36,0.3)', background: 'rgba(251,191,36,0.06)',
-            display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fbbf24',
+            display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--accent-amber)',
           }}>
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             {error}

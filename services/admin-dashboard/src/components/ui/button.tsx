@@ -12,6 +12,8 @@ const buttonVariants = cva(
           'bg-[--accent-blue] text-[--layer-0] shadow hover:bg-[--accent-blue]/90',
         destructive:
           'bg-[--accent-red] text-[--text-primary] shadow-sm hover:bg-[--accent-red]/90',
+        success:
+          'bg-[--accent-green] text-[--layer-0] shadow-sm hover:opacity-90',
         outline:
           'border border-[--border-bright] bg-transparent shadow-sm hover:bg-[--layer-2] hover:text-[--text-primary]',
         secondary:
