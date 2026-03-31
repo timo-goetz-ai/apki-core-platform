@@ -82,7 +82,7 @@ Vault **AIOS**, Item **`Core`** (anlegen mit `tools/op-secrets/setup-vault.sh` o
 **Lokal injizieren:**
 
 ```bash
-cd ~/projects/ai-os
+cd ~/projects/aios
 op run --env-file=tools/op-secrets/env.op.all -- <dein-befehl>
 ```
 

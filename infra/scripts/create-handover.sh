@@ -4,8 +4,8 @@
 
 DATE=$(date '+%Y-%m-%d_%H-%M')
 DATE_HUMAN=$(date '+%Y-%m-%d %H:%M')
-LOG_DIR="/Users/zuhause_mit_ideen/projects/ai-os/infra/logs"
-TEMPLATE="/Users/zuhause_mit_ideen/projects/ai-os/infra/session-template.md"
+LOG_DIR="/Users/zuhause_mit_ideen/projects/aios/infra/logs"
+TEMPLATE="/Users/zuhause_mit_ideen/projects/aios/infra/session-template.md"
 OUTPUT="$LOG_DIR/handover-$DATE.md"
 
 mkdir -p "$LOG_DIR"

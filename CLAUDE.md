@@ -59,7 +59,7 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 ## Claude Code / Workspace
 
 - Globale Einstellungen: `~/.claude/settings.json` (Hooks, Permissions, Plugins)
-- Projekt overrides: `projects/ai-os/.claude/settings.json` bzw. `.claude/settings.local.json`
+- Projekt overrides: `projects/aios/.claude/settings.json` bzw. `.claude/settings.local.json`
 - Slash-Commands: `~/.claude/commands/*.md`
 - **Service-spezifisch:** `services/admin-dashboard/CLAUDE.md` für Next.js- und UI-Konventionen
 
@@ -178,7 +178,7 @@ POST /api/n8n/trigger/[workflowId]
 - Global: `gpg.format=ssh`, `gpg.ssh.program` → `op-ssh-sign`, `commit.gpgsign=true`, `gpg.ssh.allowedSignersFile` → `~/.ssh/git_allowed_signers`.
 - **Wichtig:** Existiert `~/.config/1Password/ssh/agent.toml` nur mit Vault `Persönlich`, werden Keys in anderen Vaults **nicht** angeboten → Agent wirkt „leer“. Vaults `01_PERSONAL` (u. a. „I Mac Home“) und ggf. `05_INFRASTRUCTURE` in `[[ssh-keys]]` eintragen (siehe [Agent-Config](https://developer.1password.com/docs/ssh/agent/config)).
 - Shell: `SSH_AUTH_SOCK` zeigt auf den 1Password-Socket (in `~/.zshrc` gesetzt, wenn der Socket existiert).
-- Check: `~/projects/ai-os/scripts/verify-1password-ssh-agent.sh` oder `ssh-add -l` mit demselben `SSH_AUTH_SOCK`.
+- Check: `~/projects/aios/scripts/verify-1password-ssh-agent.sh` oder `ssh-add -l` mit demselben `SSH_AUTH_SOCK`.
 - Signatur prüfen: `git show --show-signature -s HEAD`.
 - **Hinweis:** `op-ssh-sign` kann in nicht-interaktiven Umgebungen scheitern, bis 1Password/Freigabe (Touch ID) einmal bestätigt wurde — Commits ggf. im Terminal ausführen.
 - **GitHub-Push:** Wenn `git push` mit „agent refused operation“ scheitert, temporär Datei-Key nutzen: `GIT_SSH_COMMAND='ssh -o IdentitiesOnly=yes -o IdentityAgent=none -i ~/.ssh/id_ed25519' git push` (nur wenn der Schlüssel zu GitHub passt).
