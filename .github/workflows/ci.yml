@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
-        service: [services/aios-core, services/crew-api]
+        service: [services/nexus-core, services/crew-api]
 
     steps:
       - uses: actions/checkout@v4
@@ -168,8 +168,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - context: services/aios-core
-            image: aios-core
+          - context: services/nexus-core
+            image: nexus-core
           - context: services/admin-dashboard
             image: aios-admin-dashboard
 
