@@ -11,7 +11,7 @@ on:
         required: true
         default: "all"
         type: choice
-        options: [all, aios-core, admin-dashboard, coder-agent]
+        options: [all, nexus-core, admin-dashboard, crew-api]
       confirm:
         description: "BESTÄTIGUNG: 'deploy' eingeben"
         required: true
@@ -67,9 +67,9 @@ jobs:
           key: ${{ env.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /opt/aios
+            cd /srv/automation-plus-ki/stacks/homestack
             echo "Starte Alembic Migration..."
-            docker exec aios-core alembic upgrade head
+            docker exec aios-nexus-core alembic upgrade head
             echo "Migration erfolgreich"
 
   # ──────────────────────────────────────────────
@@ -92,9 +92,9 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           COOLIFY_URL: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/url
           COOLIFY_TOKEN: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/token
-          COOLIFY_AIOS_CORE_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/aios_core_uuid
+          COOLIFY_NEXUS_CORE_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/nexus_core_uuid
           COOLIFY_DASHBOARD_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/dashboard_uuid
-          COOLIFY_CODER_AGENT_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/coder_agent_uuid
+          COOLIFY_CREW_API_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/crew_api_uuid
           AIOS_TOKEN: op://fwl7qdu7q3nvqqjbrljzcdhita/Core/aios_token
 
       - name: Setze Coolify Env-Variablen (admin-dashboard)
@@ -148,24 +148,27 @@ jobs:
           set_env "NEXT_PUBLIC_WS_URL"           "$NEXT_PUBLIC_WS_URL"
           echo "✓ Coolify Env-Variablen gesetzt (admin-dashboard)"
 
-      - name: Update Coolify Env – aios-core
-        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'aios-core' || startsWith(github.ref, 'refs/tags/') }}
+      - name: Update Coolify Env – nexus-core
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
         run: |
-          BASE="${COOLIFY_URL}/api/v1/applications/${COOLIFY_AIOS_CORE_UUID}/envs"
+          BASE="${COOLIFY_URL}/api/v1/applications/${COOLIFY_NEXUS_CORE_UUID}/envs"
           AUTH="Authorization: Bearer ${COOLIFY_TOKEN}"
           set_env() {
-            curl -s -X PATCH "$BASE"               -H "$AUTH" -H "Content-Type: application/json"               -d "{"key":"$1","value":"$2","is_shown_once":false}"               > /dev/null
+            curl -s -X PATCH "$BASE" \
+              -H "$AUTH" -H "Content-Type: application/json" \
+              -d "{\"key\":\"$1\",\"value\":\"$2\",\"is_shown_once\":false}" \
+              > /dev/null
           }
           set_env "AIOS_TOKEN" "$AIOS_TOKEN"
-          echo "✓ Coolify AIOS_TOKEN gesetzt (aios-core)"
+          echo "✓ Coolify AIOS_TOKEN gesetzt (nexus-core)"
 
-      - name: Deploy aios-core
-        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'aios-core' || startsWith(github.ref, 'refs/tags/') }}
+      - name: Deploy nexus-core
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
         run: |
           curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"uuid\": \"${COOLIFY_AIOS_CORE_UUID}\", \"force\": true}"
+            -d "{\"uuid\": \"${COOLIFY_NEXUS_CORE_UUID}\", \"force\": true}"
 
       - name: Deploy admin-dashboard
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
@@ -175,13 +178,13 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"uuid\": \"${COOLIFY_DASHBOARD_UUID}\", \"force\": true}"
 
-      - name: Deploy coder-agent
-        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'coder-agent' || startsWith(github.ref, 'refs/tags/') }}
+      - name: Deploy crew-api
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'crew-api' || startsWith(github.ref, 'refs/tags/') }}
         run: |
           curl -s -X POST "${COOLIFY_URL}/api/v1/deploy" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"uuid\": \"${COOLIFY_CODER_AGENT_UUID}\", \"force\": true}"
+            -d "{\"uuid\": \"${COOLIFY_CREW_API_UUID}\", \"force\": true}"
 
       - name: Warte auf Deploy (60s)
         run: sleep 60
@@ -213,7 +216,7 @@ jobs:
 
       - name: Check admin-dashboard
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.aios.automation-plus-ki.de)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://aios.automation-plus-ki.de)
           if [[ "$STATUS" != "200" ]]; then
             echo "Dashboard Health Check fehlgeschlagen! HTTP $STATUS"
             exit 1
@@ -249,9 +252,9 @@ jobs:
           script: |
             set -e
             echo "ROLLBACK GESTARTET..."
-            cd /opt/aios
-            docker service update --rollback aios-core 2>/dev/null || \
-              docker-compose up -d --no-deps --scale aios-core=1
+            cd /srv/automation-plus-ki/stacks/homestack
+            docker service update --rollback aios-nexus-core 2>/dev/null || \
+              docker compose up -d --no-deps aios-nexus-core
             echo "Rollback abgeschlossen"
 
   # ──────────────────────────────────────────────
@@ -282,4 +285,4 @@ jobs:
           fi
           curl -s -X POST "$DEPLOY_NOTIFY_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"content\": \"✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://app.aios.automation-plus-ki.de\"}"
+            -d "{\"content\": \"✅ AIOS Deploy erfolgreich!\nVersion: ${{ github.ref_name }}\nURL: https://aios.automation-plus-ki.de\"}"
