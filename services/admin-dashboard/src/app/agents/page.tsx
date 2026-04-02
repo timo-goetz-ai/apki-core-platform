@@ -4,50 +4,47 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   RefreshCw, Play, Clock, FileText, Zap,
   CheckCircle2, Activity, AlertTriangle, XCircle, Radio, Bot, Wifi,
+  Pencil, Search, TrendingUp, Database, Image, Shield,
+  Target, BarChart3, Megaphone, Sparkles, Eye, Globe, Cpu,
 } from 'lucide-react';
 import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 
-// ── Robot Character Definitions ───────────────────────────────────────────────
+// ── Professional Agent Profiles ──────────────────────────────────────────────
 
-interface RobotChar {
-  name: string;       // Charakter-Name
-  trait: string;      // Eigenschaft
-  color: string;      // Akzentfarbe
-  avatar: string;     // Emoji-Avatar
-  bgColor: string;    // Hintergrundton
+interface AgentProfile {
+  role: string;
+  model: string;
+  icon: React.ElementType;
+  color: string;
+  specialties: string[];
 }
 
-const ROBOTS: Record<string, RobotChar> = {
-  'Content Researcher':  { name: 'Llama-Geist',        trait: 'Kapazität',        color: 'var(--accent-green)', bgColor: 'rgba(52,211,153,0.1)',   avatar: '🦙' },
-  'Writer & SEO':        { name: 'Claude-Assistent',   trait: 'Genauigkeit',      color: 'var(--accent-purple)', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
-  'Audience Analyst':    { name: 'Gemi-Schmied',       trait: 'Vielseitigkeit',   color: 'var(--accent-amber)', bgColor: 'rgba(251,191,36,0.1)',   avatar: '⚙️' },
-  'Opportunity Scorer':  { name: 'X-Agent Alpha',      trait: 'Geschwindigkeit',  color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
-  'Trend Analyst':       { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: 'var(--accent-blue)', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
-  'Content Strategist':  { name: "Mistral's Windzug",  trait: 'Effizienz',        color: 'var(--accent-blue)', bgColor: 'rgba(96,165,250,0.1)',   avatar: '💨' },
-  'Senior Researcher':   { name: 'Gemini-U',           trait: 'Innovation',       color: 'var(--accent-green)', bgColor: 'rgba(74,222,128,0.1)',   avatar: '🔬' },
-  'Synthesis Specialist':{ name: 'Gemini-C',           trait: 'Integration',      color: 'var(--accent-amber)', bgColor: 'rgba(251,146,60,0.1)',   avatar: '🧬' },
-  'Research Analyst':    { name: 'Llama-H',            trait: 'Skalierbarkeit',   color: 'var(--accent-green)', bgColor: 'rgba(134,239,172,0.1)',  avatar: '📡' },
-  // Multichannel-Fabrik
-  'Content Writer & SEO': { name: 'Claude-Assistent',  trait: 'Genauigkeit',      color: 'var(--accent-purple)', bgColor: 'rgba(192,132,252,0.1)',  avatar: '🤖' },
-  'Viral Content Scout': { name: 'Mistral-F',          trait: 'Viralität',        color: 'var(--accent-purple)', bgColor: 'rgba(244,114,182,0.1)',  avatar: '🚀' },
-  // Red Team
-  'Fact Checker':        { name: 'Llama-B',            trait: 'Präzision',        color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '🔍' },
-  'Resonance Checker':   { name: 'Mistral-L',          trait: 'Resonanz',         color: 'var(--accent-purple)', bgColor: 'rgba(167,139,250,0.1)',  avatar: '🎯' },
-  'Speed Reviewer':      { name: 'Llama-H',            trait: 'Tempo',            color: 'var(--accent-green)', bgColor: 'rgba(134,239,172,0.1)',  avatar: '⚡' },
-  // Market Intelligence
-  'Trend Scout':         { name: 'Tiefsee-Suche',      trait: 'Robustheit',       color: 'var(--accent-blue)', bgColor: 'rgba(34,211,238,0.1)',   avatar: '🔭' },
-  'Opportunity Evaluator':{ name: 'X-Agent Alpha',     trait: 'Geschwindigkeit',  color: 'var(--accent-red)', bgColor: 'rgba(248,113,113,0.1)',  avatar: '⚡' },
-  'Briefing Creator':    { name: 'Gemini-U',           trait: 'Innovation',       color: 'var(--accent-green)', bgColor: 'rgba(74,222,128,0.1)',   avatar: '📋' },
-  // Director
-  'Director Agent':      { name: 'AIOS Director',      trait: 'Orchestrierung',   color: 'var(--accent-amber)', bgColor: 'rgba(251,191,36,0.1)',   avatar: '🎬' },
-  // xAI Social Crew (Grok-3)
-  'Viral Trend Analyst': { name: 'Grok-X',             trait: 'Viralität',        color: 'var(--text-secondary)', bgColor: 'rgba(226,232,240,0.1)',  avatar: '𝕏' },
-  'Twitter/X Copywriter':{ name: 'Tweet-Master',       trait: 'Engagement',       color: 'var(--accent-blue)', bgColor: 'rgba(29,155,240,0.1)',   avatar: '🐦' },
-  'Multi-Platform Content Adapter': { name: 'Plattform-Ninja', trait: 'Anpassung', color: 'var(--accent-purple)', bgColor: 'rgba(168,85,247,0.1)',  avatar: '🔄' },
+const AGENT_PROFILES: Record<string, AgentProfile> = {
+  'Content Researcher':        { role: 'Content Researcher',    model: 'Gemini 2.0',        icon: Search,      color: 'var(--accent-green)',  specialties: ['Recherche', 'Quellen', 'Analyse'] },
+  'Writer & SEO':              { role: 'Writer & SEO',          model: 'Claude Sonnet',      icon: Pencil,      color: 'var(--accent-purple)', specialties: ['Blog', 'SEO', 'Copywriting'] },
+  'Audience Analyst':          { role: 'Audience Analyst',      model: 'Gemini Flash',       icon: Target,      color: 'var(--accent-amber)',  specialties: ['Zielgruppen', 'Personas'] },
+  'Opportunity Scorer':        { role: 'Opportunity Scorer',    model: 'Claude Haiku',       icon: TrendingUp,  color: 'var(--accent-red)',    specialties: ['Scoring', 'Priorisierung'] },
+  'Trend Analyst':             { role: 'Trend Analyst',         model: 'Gemini 2.0',        icon: BarChart3,   color: 'var(--accent-blue)',   specialties: ['Trends', 'Forecasting'] },
+  'Content Strategist':        { role: 'Content Strategist',    model: 'Claude Sonnet',      icon: Sparkles,    color: 'var(--accent-blue)',   specialties: ['Strategie', 'Planung'] },
+  'Senior Researcher':         { role: 'Senior Researcher',     model: 'Gemini Pro',         icon: Search,      color: 'var(--accent-green)',  specialties: ['Deep Research', 'Synthese'] },
+  'Synthesis Specialist':      { role: 'Synthesis Specialist',  model: 'Gemini Pro',         icon: Database,    color: 'var(--accent-amber)',  specialties: ['Integration', 'Reports'] },
+  'Research Analyst':          { role: 'Research Analyst',      model: 'Claude Haiku',       icon: Search,      color: 'var(--accent-green)',  specialties: ['Quick Scan', 'Analyse'] },
+  'Content Writer & SEO':      { role: 'Content Writer & SEO',  model: 'Claude Sonnet',      icon: Pencil,      color: 'var(--accent-purple)', specialties: ['Multichannel', 'SEO'] },
+  'Viral Content Scout':       { role: 'Viral Content Scout',   model: 'Gemini Flash',       icon: Megaphone,   color: 'var(--accent-purple)', specialties: ['Viral', 'Social'] },
+  'Fact Checker':              { role: 'Fact Checker',          model: 'Claude Opus',        icon: Shield,      color: 'var(--accent-red)',    specialties: ['Fakten', 'Quellen'] },
+  'Resonance Checker':         { role: 'Resonance Checker',     model: 'Gemini Flash',       icon: Eye,         color: 'var(--accent-purple)', specialties: ['Resonanz', 'Engagement'] },
+  'Speed Reviewer':            { role: 'Speed Reviewer',        model: 'Claude Haiku',       icon: Zap,         color: 'var(--accent-green)',  specialties: ['Quick Review', 'QA'] },
+  'Trend Scout':               { role: 'Trend Scout',           model: 'Gemini 2.0',        icon: Globe,       color: 'var(--accent-blue)',   specialties: ['Markt', 'Wettbewerb'] },
+  'Opportunity Evaluator':     { role: 'Opportunity Evaluator', model: 'Claude Sonnet',      icon: TrendingUp,  color: 'var(--accent-red)',    specialties: ['Bewertung', 'ROI'] },
+  'Briefing Creator':          { role: 'Briefing Creator',      model: 'Gemini Pro',         icon: FileText,    color: 'var(--accent-green)',  specialties: ['Briefings', 'Summaries'] },
+  'Director Agent':            { role: 'Director',              model: 'Claude Opus',        icon: Cpu,         color: 'var(--accent-amber)',  specialties: ['Orchestrierung', 'Routing'] },
+  'Viral Trend Analyst':       { role: 'Viral Trend Analyst',   model: 'Grok-3',             icon: BarChart3,   color: 'var(--text-secondary)', specialties: ['X/Twitter', 'Viral'] },
+  'Twitter/X Copywriter':      { role: 'X Copywriter',          model: 'Grok-3',             icon: Pencil,      color: 'var(--accent-blue)',   specialties: ['Tweets', 'Threads'] },
+  'Multi-Platform Content Adapter': { role: 'Platform Adapter', model: 'Grok-3',             icon: Globe,       color: 'var(--accent-purple)', specialties: ['Multi-Platform', 'Adaption'] },
 };
 
-function getRobot(role: string): RobotChar {
-  return ROBOTS[role] ?? { name: role, trait: '', color: 'var(--text-secondary)', bgColor: 'rgba(148,163,184,0.1)', avatar: '🤖' };
+function getAgent(role: string): AgentProfile {
+  return AGENT_PROFILES[role] ?? { role, model: 'Unknown', icon: Bot, color: 'var(--text-secondary)', specialties: [] };
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -174,84 +171,95 @@ function relTime(iso: string | null) {
   return `vor ${Math.floor(h / 24)}d`;
 }
 
-// ── Robot Avatar ──────────────────────────────────────────────────────────────
+// ── Agent Avatar (Professional) ──────────────────────────────────────────────
 
-function RobotAvatar({
-  role, status = 'idle', size = 52,
+function AgentAvatar({
+  role, status = 'idle', size = 44,
 }: { role: string; status?: AgentStatus; size?: number }) {
-  const r = getRobot(role);
+  const a = getAgent(role);
+  const Icon = a.icon;
   const pulse = status === 'working';
-  const borderColor = status === 'working' ? r.color
+  const borderColor = status === 'working' ? a.color
     : status === 'done'  ? 'var(--accent-green)'
     : status === 'error' ? 'var(--accent-red)'
-    : 'rgba(148,163,184,0.2)';
+    : 'var(--border)';
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       {pulse && (
         <div style={{
-          position: 'absolute', inset: -4, borderRadius: '50%',
-          border: `2px solid ${r.color}`,
+          position: 'absolute', inset: -3, borderRadius: 12,
+          border: `2px solid ${a.color}`,
           animation: 'ping 1.2s cubic-bezier(0,0,0.2,1) infinite',
-          opacity: 0.6,
+          opacity: 0.5,
         }} />
       )}
       <div style={{
-        width: size, height: size, borderRadius: '50%',
-        background: r.bgColor,
-        border: `2px solid ${borderColor}`,
+        width: size, height: size, borderRadius: 12,
+        background: 'var(--layer-3)',
+        border: `1.5px solid ${borderColor}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.42,
         transition: 'border-color 0.3s',
         position: 'relative', zIndex: 1,
       }}>
-        {r.avatar}
+        <Icon size={size * 0.42} style={{ color: a.color }} />
       </div>
     </div>
   );
 }
 
-// ── Agent Card (live) ─────────────────────────────────────────────────────────
+// ── Agent Card (Professional) ────────────────────────────────────────────────
 
 function AgentCard({ role, live }: { role: string; live?: AgentLive }) {
-  const r = getRobot(role);
+  const a = getAgent(role);
   const st = live?.status ?? 'idle';
-  const statusLabel = st === 'working' ? 'Arbeitet…' : st === 'done' ? 'Fertig' : st === 'error' ? 'Fehler' : 'Bereit';
-  const statusColor = st === 'working' ? 'var(--accent-amber)' : st === 'done' ? 'var(--accent-green)' : st === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
+  const statusLabel = st === 'working' ? 'Aktiv' : st === 'done' ? 'Fertig' : st === 'error' ? 'Fehler' : 'Bereit';
+  const statusColor = st === 'working' ? 'var(--accent-amber)' : st === 'done' ? 'var(--accent-green)' : st === 'error' ? 'var(--accent-red)' : 'var(--text-muted)';
 
   return (
     <div style={{
       background: 'var(--layer-2)',
-      border: `1px solid ${st !== 'idle' ? r.color + '40' : 'var(--border)'}`,
-      borderRadius: 14,
-      padding: '14px 16px',
-      display: 'flex', flexDirection: 'column', gap: 10,
+      border: `1px solid ${st !== 'idle' ? a.color + '40' : 'var(--border)'}`,
+      borderRadius: 12, padding: '12px 14px',
+      display: 'flex', flexDirection: 'column', gap: 8,
       transition: 'border-color 0.3s, box-shadow 0.3s',
-      boxShadow: st === 'working' ? `0 0 16px ${r.color}20` : 'none',
+      boxShadow: st === 'working' ? `0 0 12px ${a.color}15` : 'none',
     }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <RobotAvatar role={role} status={st} size={44} />
+        <AgentAvatar role={role} status={st} size={38} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{r.name}</div>
-          <div style={{ fontSize: 10, color: r.color, fontWeight: 600, marginTop: 1 }}>{r.trait.toUpperCase()}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{role}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{a.role}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>{a.model}</div>
         </div>
         <div style={{
-          fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-          background: statusColor + '18', color: statusColor, border: `1px solid ${statusColor}40`,
+          display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
+          background: statusColor + '15', color: statusColor,
         }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
           {statusLabel}
         </div>
       </div>
 
-      {/* Task/Output */}
+      {/* Specialties */}
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {a.specialties.map(s => (
+          <span key={s} style={{
+            fontSize: 9, padding: '2px 6px', borderRadius: 4,
+            background: 'var(--layer-3)', color: 'var(--text-muted)',
+            border: '1px solid var(--border)',
+          }}>
+            {s}
+          </span>
+        ))}
+      </div>
+
       {live?.taskId && (
         <div style={{
-          background: 'var(--layer-3)', borderRadius: 8, padding: '7px 10px',
-          borderLeft: `3px solid ${r.color}`,
+          background: 'var(--layer-3)', borderRadius: 8, padding: '6px 10px',
+          borderLeft: `3px solid ${a.color}`,
         }}>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: 2 }}>
             TASK · {live.taskId}
           </div>
           {live.output && (
@@ -273,29 +281,30 @@ function CrewFlowViz({ crewId, activeAgents }: { crewId: string; activeAgents: R
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap', padding: '6px 0' }}>
-      {agents.map((a, i) => {
-        const r = getRobot(a.role);
-        const live = activeAgents[a.role];
+      {agents.map((ag, i) => {
+        const a = getAgent(ag.role);
+        const Icon = a.icon;
+        const live = activeAgents[ag.role];
         const st = live?.status ?? 'idle';
         const active = st === 'working';
         return (
-          <div key={a.role} style={{ display: 'flex', alignItems: 'center' }}>
+          <div key={ag.role} style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               padding: '6px 10px', borderRadius: 10,
-              background: active ? r.bgColor : 'transparent',
-              border: `1px solid ${active ? r.color + '60' : 'transparent'}`,
+              background: active ? a.color + '10' : 'transparent',
+              border: `1px solid ${active ? a.color + '40' : 'transparent'}`,
               transition: 'all 0.3s',
             }}>
-              <RobotAvatar role={a.role} status={st} size={32} />
-              <span style={{ fontSize: 9, color: active ? r.color : 'var(--text-muted)', fontWeight: 600, maxWidth: 64, textAlign: 'center' }}>
-                {r.name.split("'")[0].split(' ')[0]}
+              <AgentAvatar role={ag.role} status={st} size={32} />
+              <span style={{ fontSize: 9, color: active ? a.color : 'var(--text-muted)', fontWeight: 600, maxWidth: 64, textAlign: 'center', lineHeight: 1.2 }}>
+                {a.role.split(' ')[0]}
               </span>
             </div>
             {i < agents.length - 1 && (
               <div style={{
                 width: 20, height: 1,
-                background: `linear-gradient(90deg, ${agents[i] ? getRobot(agents[i].role).color + '60' : 'var(--layer-3)'}, ${getRobot(agents[i + 1]?.role ?? '').color + '60'})`,
+                background: `linear-gradient(90deg, ${a.color}40, ${getAgent(agents[i + 1]?.role ?? '').color}40)`,
                 flexShrink: 0, margin: '0 -2px',
               }} />
             )}
@@ -335,14 +344,15 @@ function TimelinePanel({ entries }: { entries: TimelineEntry[] }) {
         </div>
       )}
       {entries.map((e) => {
-        const r = e.agentId ? getRobot(e.agentId) : null;
+        const agentProfile = e.agentId ? getAgent(e.agentId) : null;
+        const AgentIcon = agentProfile?.icon;
         return (
           <div key={e.id} style={{
             fontSize: 11, padding: '7px 10px', borderRadius: 8,
             background: 'var(--layer-2)', borderLeft: `3px solid ${color(e.kind)}`,
             display: 'flex', gap: 8, alignItems: 'flex-start',
           }}>
-            {r && <span style={{ fontSize: 14, flexShrink: 0, marginTop: -1 }}>{r.avatar}</span>}
+            {AgentIcon && <AgentIcon size={13} style={{ color: agentProfile?.color, flexShrink: 0, marginTop: 1 }} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{e.title}</span>
@@ -380,7 +390,6 @@ function LivePanel({
       border: '1px solid rgba(96,165,250,0.3)',
       background: 'linear-gradient(135deg, rgba(96,165,250,0.06), rgba(15,23,42,0.5))',
     }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <Radio size={14} style={{ color: 'var(--accent-green)', animation: 'pulse 1.2s ease-in-out infinite' }} />
         <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Live · {crewLabel}</span>
@@ -388,7 +397,7 @@ function LivePanel({
           display: 'flex', alignItems: 'center', gap: 4, fontSize: 10,
           padding: '2px 8px', borderRadius: 10,
           background: wsConnected ? 'rgba(52,211,153,0.12)' : 'rgba(251,191,36,0.12)',
-          border: `1px solid ${wsConnected ? 'color-mix(in srgb, var(--accent-green) 25%, transparent)' : 'color-mix(in srgb, var(--accent-amber) 25%, transparent)'}`,
+          border: `1px solid ${wsConnected ? 'rgba(52,211,153,0.25)' : 'rgba(251,191,36,0.25)'}`,
           color: wsConnected ? 'var(--accent-green)' : 'var(--accent-amber)',
         }}>
           <Wifi size={9} />
@@ -406,10 +415,9 @@ function LivePanel({
         </button>
       </div>
 
-      {/* Crew Flow Visualization */}
       <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--layer-2)', border: '1px solid var(--border)' }}>
         <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-          Crew Flow
+          Crew Pipeline
         </div>
         <CrewFlowViz crewId={crewId} activeAgents={agents} />
       </div>
@@ -418,27 +426,24 @@ function LivePanel({
         <div style={{
           marginBottom: 12, padding: '10px 12px', borderRadius: 8,
           border: '1px solid rgba(248,113,113,0.4)', background: 'rgba(248,113,113,0.08)',
-          fontSize: 11, color: 'color-mix(in srgb, var(--accent-red) 25%, transparent)',
+          fontSize: 11, color: 'var(--text-secondary)',
         }}>
           <strong style={{ color: 'var(--accent-red)' }}>Verbindungsfehler:</strong>
           <div style={{ marginTop: 4 }}>{streamFault}</div>
         </div>
       )}
 
-      {/* Split: Agent Cards + Timeline */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 12 }}>
-        {/* Agent Cards */}
         <div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Agenten ({crewAgents.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {crewAgents.map(a => (
-              <AgentCard key={a.role} role={a.role} live={agents[a.role]} />
+            {crewAgents.map(ag => (
+              <AgentCard key={ag.role} role={ag.role} live={agents[ag.role]} />
             ))}
-            {/* Also show agents from live data not in static roster */}
             {Object.keys(agents)
-              .filter(aid => !crewAgents.find(a => a.role === aid))
+              .filter(aid => !crewAgents.find(ag => ag.role === aid))
               .map(aid => <AgentCard key={aid} role={aid} live={agents[aid]} />)
             }
             {crewAgents.length === 0 && Object.keys(agents).length === 0 && (
@@ -447,7 +452,6 @@ function LivePanel({
           </div>
         </div>
 
-        {/* Timeline */}
         <div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Echtzeit-Log ({timeline.length})
@@ -492,7 +496,7 @@ function RunButton({ crewId, onStarted, busy }: {
     }
   }
 
-  const label = st === 'running' ? 'Start…' : st === 'done' ? '✓ Gestartet' : st === 'err' ? '✗ Fehler' : '▶ Starten';
+  const label = st === 'running' ? 'Start…' : st === 'done' ? 'Gestartet' : st === 'err' ? 'Fehler' : 'Starten';
   const color = st === 'running' ? 'var(--accent-blue)' : st === 'done' ? 'var(--accent-green)' : st === 'err' ? 'var(--accent-red)' : 'var(--text-muted)';
 
   return (
@@ -522,22 +526,20 @@ function CrewCard({ crew, onStarted, busy }: {
 
   return (
     <div style={{
-      background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 14,
-      padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12,
+      background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 12,
+      padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10,
       transition: 'border-color 0.2s',
     }}
     onMouseEnter={e => (e.currentTarget.style.borderColor = accent + '50')}
     onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
     >
-      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <div style={{
-          width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-          background: accent + '18', border: `1px solid ${accent}35`,
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: accent + '12', border: `1px solid ${accent}25`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18,
         }}>
-          {agents[0] ? getRobot(agents[0].role).avatar : '🤖'}
+          {agents[0] ? (() => { const Icon = getAgent(agents[0].role).icon; return <Icon size={16} style={{ color: accent }} />; })() : <Bot size={16} style={{ color: accent }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{crew.name}</div>
@@ -548,29 +550,26 @@ function CrewCard({ crew, onStarted, busy }: {
         <RunButton crewId={crew.id} onStarted={onStarted} busy={busy} />
       </div>
 
-      {/* Agent roster with robot names */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {agents.map(a => {
-          const r = getRobot(a.role);
+      {/* Agent roster with roles + models */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        {agents.map(ag => {
+          const a = getAgent(ag.role);
           return (
-            <div key={a.role} style={{
+            <div key={ag.role} style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              padding: '4px 9px', borderRadius: 20,
-              background: r.bgColor, border: `1px solid ${r.color}35`,
+              padding: '3px 8px', borderRadius: 6,
+              background: 'var(--layer-3)', border: '1px solid var(--border)',
             }}>
-              <span style={{ fontSize: 12 }}>{r.avatar}</span>
-              <div>
-                <span style={{ fontSize: 11, color: r.color, fontWeight: 600 }}>{r.name}</span>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }}>({r.trait})</span>
-              </div>
+              {(() => { const Icon = a.icon; return <Icon size={10} style={{ color: a.color }} />; })()}
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>{a.role}</span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{a.model}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Recent outputs */}
       {crew.recent_pieces.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
             Letzte Outputs
           </span>
@@ -604,7 +603,6 @@ export default function AgentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [crewApiOk, setCrewApiOk] = useState(true);
 
-  // Live stream state
   const [execId, setExecId]       = useState<string | null>(null);
   const [execCrewId, setExecCrewId] = useState('');
   const [execLabel, setExecLabel] = useState('');
@@ -669,37 +667,34 @@ export default function AgentsPage() {
         }
         if (t === 'task_started') {
           setAgentLive(p => ({ ...p, [agentId]: { ...p[agentId], status: 'working', taskId: String(msg.task_id ?? '') } }));
-          setTimeline(p => [...p, { id, at: ts, kind: 'task', title: `▶ Task gestartet`, detail: String(msg.task_id ?? ''), agentId }]);
+          setTimeline(p => [...p, { id, at: ts, kind: 'task', title: 'Task gestartet', detail: String(msg.task_id ?? ''), agentId }]);
         }
         if (t === 'task_completed') {
           const out = String(msg.output ?? '').slice(0, 400);
           setAgentLive(p => ({ ...p, [agentId]: { status: 'done', taskId: String(msg.task_id ?? p[agentId]?.taskId ?? ''), output: out } }));
-          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: '✓ Task abgeschlossen', detail: out.slice(0, 120), agentId }]);
+          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: 'Task abgeschlossen', detail: out.slice(0, 120), agentId }]);
         }
         if (t === 'execution_completed') {
           finishedRef.current = true;
-          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: '🎉 Crew fertig', detail: String(msg.result ?? '').slice(0, 200) }]);
+          setTimeline(p => [...p, { id, at: ts, kind: 'ok', title: 'Crew fertig', detail: String(msg.result ?? '').slice(0, 200) }]);
           wsRef.current?.close();
           setTimeout(() => { setExecId(null); load(); }, 1600);
         }
         if (t === 'execution_error') {
           finishedRef.current = true;
-          setTimeline(p => [...p, { id, at: ts, kind: 'err', title: '✗ Execution-Fehler', detail: String(msg.error ?? '') }]);
+          setTimeline(p => [...p, { id, at: ts, kind: 'err', title: 'Execution-Fehler', detail: String(msg.error ?? '') }]);
           wsRef.current?.close();
           setTimeout(() => setExecId(null), 2500);
         }
       } catch { /* ignore */ }
     }
 
-    // Try WebSocket first
     let ws: WebSocket | null = null;
     let usedSSE = false;
 
     try {
-      const wsUrl = `/api/crews/ws/${encodeURIComponent(execId)}`;
-      // Convert relative URL to ws:// by detecting protocol
       const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const fullWsUrl = `${proto}//${window.location.host}${wsUrl}`;
+      const fullWsUrl = `${proto}//${window.location.host}/api/crews/ws/${encodeURIComponent(execId)}`;
       ws = new WebSocket(fullWsUrl);
       wsRef.current = ws;
 
@@ -743,7 +738,6 @@ export default function AgentsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--layer-0)' }}>
-      {/* CSS animations */}
       <style>{`
         @keyframes ping {
           75%, 100% { transform: scale(1.6); opacity: 0; }
@@ -762,44 +756,45 @@ export default function AgentsPage() {
       <div style={{
         padding: '16px 24px', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--layer-1)',
+        background: 'var(--layer-1)', flexWrap: 'wrap', gap: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
             background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-          }}>🤖</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
+          </div>
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Agent Teams</h1>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-              Crew AI · WebSocket + SSE {!crewApiOk && '(Crew-API Fallback)'}
+              CrewAI · {crews.length} Crews · {totalAgents} Agents {!crewApiOk && '(Fallback)'}
             </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
-            { icon: <Bot size={12} />, label: `${crews.length} Crews`, color: 'var(--accent-blue)' },
-            { icon: <Zap size={12} />, label: `${totalAgents} Agents`, color: 'var(--accent-purple)' },
-            { icon: <Activity size={12} />, label: `${totalPieces} Outputs`, color: 'var(--accent-green)' },
+            { icon: <Bot size={11} />, label: `${crews.length} Crews`, color: 'var(--accent-blue)' },
+            { icon: <Zap size={11} />, label: `${totalAgents} Agents`, color: 'var(--accent-purple)' },
+            { icon: <Activity size={11} />, label: `${totalPieces} Outputs`, color: 'var(--accent-green)' },
           ].map(s => (
             <div key={s.label} style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 10px', borderRadius: 8,
-              background: s.color + '12', border: `1px solid ${s.color}25`,
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '4px 10px', borderRadius: 8,
+              background: s.color + '10', border: `1px solid ${s.color}20`,
               fontSize: 11, fontWeight: 600, color: s.color,
             }}>
               {s.icon} {s.label}
             </div>
           ))}
           <button type="button" onClick={load} disabled={loading} title="Aktualisieren" style={{
-            display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8,
+            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8,
             border: '1px solid var(--border)', background: 'var(--layer-2)',
             cursor: loading ? 'default' : 'pointer', color: 'var(--text-muted)', fontSize: 11,
           }}>
-            <RefreshCw size={12} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            <RefreshCw size={11} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Laden…' : 'Refresh'}
           </button>
         </div>
@@ -807,8 +802,6 @@ export default function AgentsPage() {
 
       {/* Body */}
       <div style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>
-
-        {/* Error banner */}
         {error && (
           <div style={{
             marginBottom: 16, padding: '10px 14px', borderRadius: 10,
@@ -820,7 +813,6 @@ export default function AgentsPage() {
           </div>
         )}
 
-        {/* Live Execution Panel */}
         {execId && (
           <LivePanel
             execId={execId} crewId={execCrewId} crewLabel={execLabel}
@@ -830,38 +822,12 @@ export default function AgentsPage() {
           />
         )}
 
-        {/* Robot legend */}
-        <div style={{
-          marginBottom: 20, padding: '12px 16px', borderRadius: 12,
-          border: '1px solid var(--border)', background: 'var(--layer-1)',
-        }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-            Agent-Charaktere
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(ROBOTS).map(([role, r]) => (
-              <div key={role} title={role} style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
-                borderRadius: 20, background: r.bgColor, border: `1px solid ${r.color}30`,
-                cursor: 'default',
-              }}>
-                <span style={{ fontSize: 14 }}>{r.avatar}</span>
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: r.color }}>{r.name}</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }}>· {r.trait}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Crew Grid */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
             Lade Crews…
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 12 }}>
             {crews.map(c => (
               <CrewCard key={c.id} crew={c} onStarted={handleStarted} busy={!!execId} />
             ))}

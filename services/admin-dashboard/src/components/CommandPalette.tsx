@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Bot, Workflow, Database, BarChart2, Bell,
@@ -235,13 +235,6 @@ function buildCommands(
 
     // ── External Links
     {
-      label: 'Raycast AI',
-      description: 'AI Chat direkt in Raycast',
-      keywords: 'raycast ai chat external',
-      href: 'raycast://extensions/raycast/raycast-ai/ai-chat',
-      icon: Zap, group: 'Extern', type: 'external',
-    },
-    {
       label: 'n8n Editor',
       description: 'Workflow Editor öffnen',
       keywords: 'n8n editor workflow external',
@@ -282,10 +275,50 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
   const [running, setRunning] = useState<string | null>(null);
-
-  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const close = useCallback(() => { onOpenChange(false); setAiResult(null); setAiQuery(''); }, [onOpenChange]);
 
   const COMMANDS = buildCommands(router, close);
+
+  const handleAiQuery = useCallback(async (query: string) => {
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...dashboardApiAuthHeaders() },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: query }],
+          model: 'allm-aios',
+        }),
+      });
+      if (!res.ok) { setAiResult('Fehler: ' + res.status); return; }
+      const reader = res.body?.getReader();
+      if (!reader) { setAiResult('Keine Antwort'); return; }
+      let result = '';
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6);
+          if (payload === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const text = parsed.choices?.[0]?.delta?.content ?? parsed.text ?? '';
+            result += text;
+          } catch { result += payload; }
+        }
+      }
+      setAiResult(result || 'Keine Antwort erhalten');
+    } catch (e) {
+      setAiResult('Fehler: ' + (e instanceof Error ? e.message : 'Netzwerkfehler'));
+    } finally { setAiLoading(false); }
+  }, []);
 
   const handleSelect = useCallback(
     async (cmd: CommandEntry) => {
@@ -311,13 +344,39 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
-        placeholder="Navigieren, suchen, Befehle ausführen..."
+        placeholder="Suchen, navigieren… oder /ai <Frage> für AI"
         className="text-[--text-primary] placeholder:text-[--text-muted]"
+        onValueChange={(v) => setAiQuery(v)}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' && aiQuery.startsWith('/ai ')) {
+            e.preventDefault();
+            handleAiQuery(aiQuery.slice(4).trim());
+          }
+        }}
       />
       <CommandList>
+        {/* AI Response Panel */}
+        {(aiLoading || aiResult) && (
+          <div style={{
+            padding: '12px 16px', margin: '8px 12px', borderRadius: 8,
+            background: 'var(--layer-2)', border: '1px solid var(--accent-blue)30',
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-blue)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {aiLoading ? 'AI denkt nach…' : 'AI Antwort'}
+            </div>
+            {aiLoading ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Verarbeite Anfrage…</div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, whiteSpace: 'pre-wrap', maxHeight: 200, overflowY: 'auto' }}>
+                {aiResult}
+              </div>
+            )}
+          </div>
+        )}
+
         <CommandEmpty>
           <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-            Keine Ergebnisse — versuche einen anderen Begriff.
+            {aiQuery.startsWith('/ai ') ? 'Enter drücken um AI zu fragen' : 'Keine Ergebnisse — versuche /ai <Frage>'}
           </span>
         </CommandEmpty>
 

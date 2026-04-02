@@ -3,10 +3,20 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Sun, Moon, Settings, Bell, FlaskConical, Command, FileText, AlertCircle, AlertTriangle, Info, X, Menu } from 'lucide-react';
+import { Search, Sun, Moon, Settings, Bell, Command, FileText, AlertCircle, AlertTriangle, Info, X, Menu, ChevronDown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from '@/components/CommandPalette';
 import { getRecentTemplates, type RecentTemplate } from '@/lib/template-engine';
+import { PROVIDER_META, ORCHESTRATOR_AUTO, type ModelProvider } from '@/lib/chat-models';
+
+type AiosMode = 'orchestrator' | ModelProvider;
+
+const MODE_OPTIONS: { key: AiosMode; label: string; color: string }[] = [
+  { key: 'orchestrator', label: 'Orchestrator', color: '#60a5fa' },
+  { key: 'anthropic',    label: 'Claude',       color: PROVIDER_META.anthropic.color },
+  { key: 'google',       label: 'Gemini',       color: PROVIDER_META.google.color },
+  { key: 'openrouter',   label: 'OpenRouter',   color: PROVIDER_META.openrouter.color },
+];
 
 interface Alert {
   name: string;
@@ -36,6 +46,9 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
+  const [aiosMode, setAiosMode] = useState<AiosMode>('orchestrator');
+  const [modeOpen, setModeOpen] = useState(false);
+  const modeRef = useRef<HTMLDivElement>(null);
 
   const fetchAlerts = useCallback(async () => {
     try {
@@ -53,15 +66,26 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
     return () => clearInterval(id);
   }, [fetchAlerts]);
 
-  // Close bell dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
         setBellOpen(false);
       }
+      if (modeRef.current && !modeRef.current.contains(e.target as Node)) {
+        setModeOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Load saved mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('aios-mode') as AiosMode | null;
+    if (saved && MODE_OPTIONS.some(o => o.key === saved)) {
+      setAiosMode(saved);
+    }
   }, []);
 
   useEffect(() => {
@@ -164,17 +188,62 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
 
         {/* Right actions */}
         <div className="flex items-center gap-1">
-          {/* Playground */}
-          <Link href="/claude-workspace">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-[--text-secondary] hover:text-[--text-primary]"
+          {/* Mode Selector */}
+          <div ref={modeRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setModeOpen(o => !o)}
+              className="flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-[--border-bright]"
+              style={{
+                borderColor: MODE_OPTIONS.find(o => o.key === aiosMode)?.color ?? 'var(--border)',
+                color: MODE_OPTIONS.find(o => o.key === aiosMode)?.color ?? 'var(--text-secondary)',
+                background: 'var(--layer-2)',
+              }}
             >
-              <FlaskConical size={13} />
-              <span className="hidden sm:inline">Playground</span>
-            </Button>
-          </Link>
+              <Zap size={11} />
+              <span className="hidden sm:inline">{MODE_OPTIONS.find(o => o.key === aiosMode)?.label}</span>
+              <ChevronDown size={11} style={{ opacity: 0.6 }} />
+            </button>
+
+            {modeOpen && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                right: 0,
+                width: 180,
+                background: 'var(--layer-1)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                zIndex: 200,
+                overflow: 'hidden',
+              }}>
+                {MODE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => {
+                      setAiosMode(opt.key);
+                      localStorage.setItem('aios-mode', opt.key);
+                      setModeOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs transition-colors hover:bg-[--layer-3]"
+                    style={{
+                      color: aiosMode === opt.key ? opt.color : 'var(--text-secondary)',
+                      fontWeight: aiosMode === opt.key ? 600 : 400,
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ background: opt.color }}
+                    />
+                    {opt.label}
+                    {opt.key === 'orchestrator' && (
+                      <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>AUTO</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Alerts bell */}
           <div ref={bellRef} style={{ position: 'relative' }}>
