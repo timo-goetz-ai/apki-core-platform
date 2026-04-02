@@ -67,9 +67,13 @@ jobs:
           key: ${{ env.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /srv/automation-plus-ki/stacks/homestack
-            echo "Starte Alembic Migration..."
-            docker exec aios-nexus-core alembic upgrade head
+            CONTAINER=$(docker ps --format '{{.Names}}' | grep '^jws4csswkokg4ow4cskg48c4' | head -1)
+            if [ -z "$CONTAINER" ]; then
+              echo "nexus-core Container nicht gefunden – überspringe Migration"
+              exit 0
+            fi
+            echo "Starte Alembic Migration in $CONTAINER..."
+            docker exec "$CONTAINER" alembic upgrade head
             echo "Migration erfolgreich"
 
   # ──────────────────────────────────────────────
