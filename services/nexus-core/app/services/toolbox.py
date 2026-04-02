@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 from pathlib import Path
 
 import httpx
@@ -21,10 +22,22 @@ class ToolboxError(Exception):
 
 
 class Toolbox:
+
+    @staticmethod
+    def _default_mcp_config_path() -> Path:
+        """Monorepo (parents[4]) vs. Docker: /app + infra unter /app/infra."""
+        here = Path(__file__).resolve()
+        env = os.environ.get("MCP_SERVERS_CONFIG")
+        if env:
+            return Path(env)
+        docker_candidate = here.parents[2] / "infra" / "mcp-servers.json"
+        if docker_candidate.exists():
+            return docker_candidate
+        return here.parents[4] / "infra" / "mcp-servers.json"
+
     def __init__(self, config_path: str | Path | None = None):
         if config_path is None:
-            # Relativer Pfad: repo-root/infra/mcp-servers.json
-            config_path = Path(__file__).resolve().parents[4] / "infra" / "mcp-servers.json"
+            config_path = self._default_mcp_config_path()
         self._servers: dict[str, dict] = {}
         self._circuit_failures: dict[str, int] = {}
         self._load(Path(config_path))
@@ -84,7 +97,7 @@ class Toolbox:
                 self._circuit_failures[server] = 0  # Reset bei Erfolg
                 return resp.json()
 
-            except httpx.TimeoutException as exc:
+            except httpx.TimeoutException:
                 # Exit Code 28 Äquivalent: Timeout
                 last_exc = ToolboxError(
                     f"{server}/{tool} timed out after {timeout}s (attempt {attempt}/3)",
