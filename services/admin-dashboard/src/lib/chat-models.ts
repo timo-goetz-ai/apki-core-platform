@@ -1,4 +1,4 @@
-export type ModelProvider = 'openrouter' | 'anthropic' | 'google';
+export type ModelProvider = 'anythingllm' | 'anthropic' | 'google' | 'openrouter';
 
 export interface ModelInfo {
   id: string;
@@ -10,42 +10,24 @@ export interface ModelInfo {
 }
 
 export const MODELS: Record<string, ModelInfo> = {
-  // ── OpenRouter FREE Tier (primary, no cost) ────────────────────────────
-  "or-deepseek-r1": {
-    id: "deepseek/deepseek-r1:free",
-    label: "DeepSeek R1",
-    provider: "openrouter", free: true, tools: false,
-    description: "Starkes Reasoning-Modell, kostenlos"
+  // ── AnythingLLM Workspaces (lokal, kostenlos) ──────────────────────────
+  "allm-aios": {
+    id: "aios",
+    label: "AIOS (Standard)",
+    provider: "anythingllm", free: true, tools: false,
+    description: "Lokaler LLM-Hub — Haupt-Workspace"
   },
-  "or-gemini-free": {
-    id: "google/gemini-2.0-flash-exp:free",
-    label: "Gemini 2.0 Flash",
-    provider: "openrouter", free: true, tools: true,
-    description: "Schnell & multimodal, kostenlos"
+  "allm-research": {
+    id: "research",
+    label: "Research",
+    provider: "anythingllm", free: true, tools: false,
+    description: "Lokaler LLM-Hub — Research-Workspace"
   },
-  "or-llama-free": {
-    id: "meta-llama/llama-3.3-70b-instruct:free",
-    label: "Llama 3.3 70B",
-    provider: "openrouter", free: true, tools: true,
-    description: "Meta's bestes open-source Modell, kostenlos"
-  },
-  "or-llama4": {
-    id: "meta-llama/llama-4-maverick:free",
-    label: "Llama 4 Maverick",
-    provider: "openrouter", free: true, tools: true,
-    description: "Llama 4 — neuestes Meta Modell, kostenlos"
-  },
-  "or-qwen-free": {
-    id: "qwen/qwen-2.5-72b-instruct:free",
-    label: "Qwen 2.5 72B",
-    provider: "openrouter", free: true, tools: true,
-    description: "Alibaba's Flaggschiff, kostenlos"
-  },
-  "or-mistral-free": {
-    id: "mistralai/mistral-7b-instruct:free",
-    label: "Mistral 7B",
-    provider: "openrouter", free: true, tools: false,
-    description: "Kompakt & schnell, kostenlos"
+  "allm-code": {
+    id: "code",
+    label: "Code",
+    provider: "anythingllm", free: true, tools: false,
+    description: "Lokaler LLM-Hub — Code-Workspace"
   },
 
   // ── Anthropic Direct (eigenes Claude-Abo) ──────────────────────────────
@@ -88,27 +70,50 @@ export const MODELS: Record<string, ModelInfo> = {
     description: "Neuestes Gemini — dein AI Studio"
   },
 
+  // ── OpenRouter (Multi-Model Gateway) ──────────────────────────────────
+  "openrouter-auto": {
+    id: "openrouter/auto",
+    label: "OpenRouter Auto",
+    provider: "openrouter", free: false, tools: true,
+    description: "Automatische Modellwahl via OpenRouter"
+  },
+  "openrouter-llama": {
+    id: "meta-llama/llama-3.1-70b-instruct",
+    label: "Llama 3.1 70B",
+    provider: "openrouter", free: false, tools: true,
+    description: "Open-Source Power via OpenRouter"
+  },
+  "openrouter-mixtral": {
+    id: "mistralai/mixtral-8x7b-instruct",
+    label: "Mixtral 8x7B",
+    provider: "openrouter", free: false, tools: true,
+    description: "Schnelles Open-Source Modell via OpenRouter"
+  },
+
 };
 
-export const DEFAULT_MODEL = "or-deepseek-r1";
+export const DEFAULT_MODEL = "allm-aios";
 
 /** Orchestrator-Modus: Auto wählt Modell je nach Anwendbarkeit (Tool-Use, Länge, Kosten). */
 export const ORCHESTRATOR_AUTO = "auto" as const;
 
 /** Modell-Routing für Auto-Modus: Priorität pro Anwendungsfall */
 export const ORCHESTRATOR_ROUTING = {
-  /** Einfache Chats, kurze Anfragen → kostenlos & schnell */
-  simple: ["or-mistral-free", "or-gemini-free"],
-  /** Tool-Use, Infrastruktur-Abfragen → OpenRouter Free mit Tools */
-  tools: ["or-gemini-free", "or-llama-free", "or-llama4", "or-deepseek-r1"],
+  /** Einfache Chats, kurze Anfragen → AnythingLLM lokal */
+  simple: ["allm-aios", "allm-research"],
+  /** Tool-Use, Infrastruktur-Abfragen → Anthropic (function calling) */
+  tools: ["claude-haiku", "claude-sonnet", "gemini-2-flash"],
   /** Komplexes Reasoning, lange Kontexte → stärkere Modelle */
-  reasoning: ["or-deepseek-r1", "or-qwen-free", "or-llama4", "or-gemini-free"],
+  reasoning: ["claude-sonnet", "allm-research", "gemini-pro"],
+  /** Fallback / günstige Alternative → OpenRouter */
+  fallback: ["openrouter-auto", "openrouter-llama"],
 } as const;
 
 export const PROVIDER_META: Record<ModelProvider, { label: string; color: string; badge: string; description: string }> = {
-  openrouter: { label: "Free Tier", color: "#fbbf24", badge: "FREE", description: "OpenRouter kostenlose Modelle" },
-  anthropic:  { label: "Anthropic", color: "#eb6041", badge: "ABO", description: "Dein Claude-Abo (direkt)" },
-  google:     { label: "Google AI Studio", color: "#34d399", badge: "ABO", description: "Dein AI Studio Key (direkt)" },
+  anythingllm: { label: "AnythingLLM", color: "#22d3ee", badge: "LOKAL", description: "Lokaler LLM-Hub (kostenlos)" },
+  anthropic:   { label: "Anthropic", color: "#eb6041", badge: "ABO", description: "Dein Claude-Abo (direkt)" },
+  google:      { label: "Google AI Studio", color: "#34d399", badge: "ABO", description: "Dein AI Studio Key (direkt)" },
+  openrouter:  { label: "OpenRouter", color: "#a78bfa", badge: "API", description: "Multi-Model Gateway (Pay-per-Use)" },
 };
 
 export const getModelsByProvider = (provider: ModelProvider) =>

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { exportCsv } from '@/lib/csv-export';
 import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
+import { humanizeWorkflowName, getWorkflowGroup, WORKFLOW_GROUPS, GROUP_META, type WorkflowGroup } from '@/lib/workflow-utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Workflow {
@@ -25,7 +26,7 @@ interface Workflow {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const WORKFLOWS_TABLE = 'mfz43ghxesvn1yy';
 const N8N_BASE = 'https://n8n.automation-plus-ki.de';
-const LAYERS = ['Alle', '100_INGEST', '200_BRAIN', '300_RESEARCH', '400_CONTENT', '500_HUMAN'];
+const FILTER_GROUPS: ('Alle' | WorkflowGroup)[] = ['Alle', ...WORKFLOW_GROUPS];
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   active:         { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
@@ -222,8 +223,9 @@ export default function WorkflowsPage() {
   }, []);
 
   const filtered = workflows.filter(wf => {
-    const matchKat    = kategorie === 'Alle' || wf.Layer === kategorie;
-    const q           = search.toLowerCase();
+    const group = getWorkflowGroup(wf.Layer, wf.Name);
+    const matchKat = kategorie === 'Alle' || group === kategorie;
+    const q = search.toLowerCase();
     const matchSearch = !q || (wf.Name ?? '').toLowerCase().includes(q) || (wf.Beschreibung ?? '').toLowerCase().includes(q);
     return matchKat && matchSearch;
   });
@@ -295,17 +297,20 @@ export default function WorkflowsPage() {
             />
           </div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {LAYERS.map(k => {
+            {FILTER_GROUPS.map(k => {
               const isActive = kategorie === k;
+              const meta = k !== 'Alle' ? GROUP_META[k] : null;
+              const activeColor = meta?.color ?? 'var(--accent-blue)';
               return (
                 <button
                   key={k}
                   onClick={() => setKategorie(k)}
+                  title={meta?.description}
                   style={{
                     padding: '4px 10px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
-                    background: isActive ? 'rgba(56,189,248,0.1)' : 'transparent',
-                    border: isActive ? '1px solid rgba(56,189,248,0.28)' : '1px solid transparent',
-                    color: isActive ? 'var(--accent-blue)' : 'var(--text-muted)',
+                    background: isActive ? activeColor + '15' : 'transparent',
+                    border: isActive ? `1px solid ${activeColor}40` : '1px solid transparent',
+                    color: isActive ? activeColor : 'var(--text-muted)',
                     fontWeight: isActive ? 600 : 400, transition: 'all 0.1s',
                   }}
                 >
@@ -373,8 +378,8 @@ export default function WorkflowsPage() {
                     </span>
                   </div>
                   <div style={{ marginTop: 4, marginLeft: 15, display: 'flex', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      {wf.Layer}
+                    <span style={{ fontSize: 10, color: GROUP_META[getWorkflowGroup(wf.Layer, wf.Name)]?.color ?? 'var(--text-muted)', fontWeight: 500 }}>
+                      {getWorkflowGroup(wf.Layer, wf.Name)}
                     </span>
                     {wf.Schedule && wf.Schedule !== 'on_demand' && (
                       <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

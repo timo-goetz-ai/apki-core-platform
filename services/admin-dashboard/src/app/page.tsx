@@ -22,14 +22,15 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const CORE_SERVICES = ['n8n', 'nocodb', 'grafana', 'coolify', 'authentik', 'prometheus', 'anythingllm'];
+const SERVICE_LABELS: Record<string, string> = { anythingllm: 'LLM' };
 
-const QUICK_ACCESS = [
-  { label: 'NocoDB',       icon: <Database size={16} />,   href: 'https://nocodb.automation-plus-ki.de',   color: 'var(--accent-blue)' },
-  { label: 'Telegram',     icon: <MessageSquare size={16} />, href: 'https://t.me',                        color: 'var(--accent-blue)' },
-  { label: 'Prometheus',   icon: <Activity size={16} />,   href: 'https://prometheus.automation-plus-ki.de', color: 'var(--accent-amber)' },
-  { label: 'Python Editor', icon: <Terminal size={16} />,  href: '/tools',                                 color: 'var(--accent-green)', internal: true },
-  { label: 'Fabrik',       icon: <GitBranch size={16} />,  href: '/fabrik',                                color: 'var(--accent-purple)', internal: true },
-  { label: 'API Explorer', icon: <Globe size={16} />,      href: '/api-explorer',                          color: 'var(--accent-blue)', internal: true },
+const COMMAND_CENTER = [
+  { label: 'Content starten',  icon: <Play size={16} />,       href: '/content-factory',   color: 'var(--accent-purple)', metric: 'contentJobs' as const },
+  { label: 'Agent Engine',     icon: <GitBranch size={16} />,  href: '/fabrik',             color: 'var(--accent-blue)',   metric: 'mcpServers' as const },
+  { label: 'Monitoring',       icon: <Activity size={16} />,   href: '/monitoring',         color: 'var(--accent-amber)',  metric: 'alerts' as const },
+  { label: 'Workflows',        icon: <Zap size={16} />,        href: '/workflows',          color: 'var(--accent-green)',  metric: 'workflows' as const },
+  { label: 'Crew starten',     icon: <Terminal size={16} />,   href: '/agents',             color: 'var(--accent-blue)',   metric: 'crews' as const },
+  { label: 'Mail & Reports',   icon: <Globe size={16} />,      href: '/logs',               color: 'var(--text-muted)',    metric: 'mails' as const },
 ];
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────────────
@@ -435,19 +436,19 @@ function LiveDashboardPanel() {
   );
 }
 
-// ── Quick Access Grid ──────────────────────────────────────────────────────────
-function QuickAccessPanel() {
+// ── Command Center Grid ───────────────────────────────────────────────────────
+function CommandCenterPanel({ metrics }: { metrics: Record<string, number | null> }) {
   return (
     <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <ArrowUpRight size={14} color="var(--accent-blue)" />
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Quick Access</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Command Center</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-        {QUICK_ACCESS.map(item => {
-          const inner = (
+        {COMMAND_CENTER.map(item => (
+          <Link key={item.label} href={item.href}>
             <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
               background: 'var(--layer-2)', border: '1px solid var(--border)',
               transition: 'all 0.12s', textDecoration: 'none',
@@ -457,12 +458,12 @@ function QuickAccessPanel() {
             >
               <span style={{ color: item.color }}>{item.icon}</span>
               <span style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.2 }}>{item.label}</span>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: item.color, fontWeight: 600 }}>
+                {metrics[item.metric] != null ? metrics[item.metric] : '—'}
+              </span>
             </div>
-          );
-          return item.internal
-            ? <Link key={item.label} href={item.href}>{inner}</Link>
-            : <a key={item.label} href={item.href} target="_blank" rel="noreferrer">{inner}</a>;
-        })}
+          </Link>
+        ))}
       </div>
     </div>
   );
@@ -493,7 +494,7 @@ function StatusStrip({ services }: { services: Record<string, ServiceHealth> }) 
         return (
           <span key={svc} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLOR[st], flexShrink: 0 }} />
-            <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10 }}>{svc}</span>
+            <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10 }}>{SERVICE_LABELS[svc] ?? svc}</span>
           </span>
         );
       })}
@@ -510,6 +511,9 @@ export default function OverviewPage() {
   const [wfCount, setWfCount]     = useState<number | null>(null);
   const [agentActions, setAgentActions] = useState<number | null>(null);
   const [refreshSig, setRefreshSig] = useState(0);
+  const [ccMetrics, setCcMetrics] = useState<Record<string, number | null>>({
+    contentJobs: null, mcpServers: null, alerts: null, workflows: null, crews: 10, mails: null,
+  });
 
   const refresh = useCallback(() => setRefreshSig(s => s + 1), []);
 
@@ -536,6 +540,23 @@ export default function OverviewPage() {
       .catch(() => {});
   }, [refreshSig]);
 
+  // Command Center live metrics
+  useEffect(() => {
+    const headers = { ...dashboardApiAuthHeaders() };
+    Promise.all([
+      fetch('/api/content-factory/pipeline', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/monitoring/alerts').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([pipeline, alertsData]) => {
+      setCcMetrics(prev => ({
+        ...prev,
+        contentJobs: Array.isArray(pipeline) ? pipeline.filter((j: { status?: string }) => j.status === 'running').length : 0,
+        alerts: alertsData?.alerts?.length ?? 0,
+        workflows: wfCount ?? 0,
+        mcpServers: Object.keys(services).length || null,
+      }));
+    });
+  }, [refreshSig, wfCount, services]);
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--layer-0)', display: 'flex', flexDirection: 'column' }}>
       {/* Status Strip */}
@@ -544,9 +565,9 @@ export default function OverviewPage() {
       {/* Page Header */}
       <div style={{ padding: '18px 24px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>Ops Playground</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>AIOS Command Center</h1>
           <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-            Workflows · Agents · Data · Live Metrics
+            Agents · Workflows · Content · Monitoring
           </p>
         </div>
         <button onClick={refresh} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
@@ -558,12 +579,11 @@ export default function OverviewPage() {
       {/* Main content */}
       <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
 
-        {/* Row 1: 4 Status Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+        {/* Row 1: 3 Status Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           <WorkflowsCard services={services} />
           <AnythingLLMCard services={services} />
           <TelegramCard />
-          <StorageCard />
         </div>
 
         {/* Row 2: Research Panel + KPI sidebar */}
@@ -588,7 +608,7 @@ export default function OverviewPage() {
         {/* Row 3: Live Dashboard + Quick Access */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 16 }}>
           <LiveDashboardPanel />
-          <QuickAccessPanel />
+          <CommandCenterPanel metrics={ccMetrics} />
         </div>
 
       </div>
