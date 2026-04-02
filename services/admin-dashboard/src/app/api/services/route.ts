@@ -29,6 +29,7 @@ const HEALTH_CHECKS = [
   { id: "mcp-google",     url: "https://mcp-google.automation-plus-ki.de/health" },
   { id: "mcp-hetzner",    url: "https://mcp-hetzner.automation-plus-ki.de/health" },
   { id: "mcp-coolify",    url: "https://mcp-coolify.automation-plus-ki.de/health" },
+  { id: "anythingllm",    url: "https://llm.automation-plus-ki.de/api/ping" },
   { id: "playwright",     url: "http://homestack-playwright-proxy:8080" },
   { id: "fishaudio",      url: "https://api.fish.audio" },
 ];
