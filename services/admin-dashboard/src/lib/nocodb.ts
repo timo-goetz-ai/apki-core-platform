@@ -449,7 +449,7 @@ export async function createPipelineJob(
 export async function getPipelineJobs(): Promise<PipelineJob[]> {
   if (!TOKEN || !TABLE_CONTENT_PIPELINE) return [];
   try {
-    return await nocoGet<PipelineJob>(TABLE_CONTENT_PIPELINE, { sort: '-created_at' });
+    return await nocoGet<PipelineJob>(TABLE_CONTENT_PIPELINE, { sort: '-CreatedAt' });
   } catch (e) {
     console.warn('[NocoDB] getPipelineJobs Fehler:', e);
     return [];
@@ -601,7 +601,7 @@ export async function createMediaAsset(data: Omit<MediaAsset, 'Id'>): Promise<Me
 
 export async function getMediaAssets(pipelineJobId?: string): Promise<MediaAsset[]> {
   try {
-    const params: Record<string, string> = { sort: '-created_at' };
+    const params: Record<string, string> = { sort: '-CreatedAt' };
     if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
     return await nocoGet<MediaAsset>(TABLE_MEDIA_ASSETS, params);
   } catch (e) {
@@ -645,7 +645,7 @@ export async function createPublishLogEntry(data: Omit<PublishLogEntry, 'Id'>): 
 
 export async function getPublishLog(pipelineJobId?: string): Promise<PublishLogEntry[]> {
   try {
-    const params: Record<string, string> = { sort: '-created_at' };
+    const params: Record<string, string> = { sort: '-CreatedAt' };
     if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
     return await nocoGet<PublishLogEntry>(TABLE_PUBLISH_LOG, params);
   } catch (e) {
@@ -713,7 +713,7 @@ export async function getContentPieces(
 ): Promise<ContentPiece[]> {
   try {
     const params: Record<string, string> = {
-      sort: '-created_at',
+      sort: '-CreatedAt',
       limit: String(limit),
     };
     if (status) params.where = `(status,eq,${status})`;
@@ -836,7 +836,7 @@ export async function createBatchJob(
 export async function getBatchJobs(limit = 50): Promise<BatchJob[]> {
   try {
     return await nocoGet<BatchJob>(TABLE_BATCH_JOBS, {
-      sort: '-created_at',
+      sort: '-CreatedAt',
       limit: String(limit),
     });
   } catch (e) {
