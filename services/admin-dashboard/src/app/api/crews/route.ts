@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     let pieces: Array<Record<string, unknown>> = [];
     if (NOCODB_TOKEN) {
       const piecesRes = await fetch(
-        `${NOCODB_URL}/api/v2/tables/${TABLE_CONTENT_PIECES}/records?limit=20&sort=-created_at`,
+        `${NOCODB_URL}/api/v2/tables/${TABLE_CONTENT_PIECES}/records?limit=20&sort=-CreatedAt`,
         { headers: { 'xc-token': NOCODB_TOKEN }, next: { revalidate: 0 } }
       );
       if (piecesRes.ok) {
