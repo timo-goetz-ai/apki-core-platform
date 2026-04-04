@@ -37,9 +37,9 @@ const INFRA = [
 ];
 
 const ENDPOINTS = [
-  { label: 'n8n API',         url: 'http://10.0.1.29:5678',                   auth: 'X-N8N-API-KEY' },
+  { label: 'n8n API',         url: 'https://n8n.automation-plus-ki.de',        auth: 'X-N8N-API-KEY' },
   { label: 'NocoDB API',      url: 'https://nocodb.automation-plus-ki.de',    auth: 'xc-token' },
-  { label: 'Prometheus',      url: 'http://10.0.1.29:9090',                   auth: 'intern' },
+  { label: 'Prometheus',      url: 'https://prometheus.automation-plus-ki.de', auth: 'Authentik' },
   { label: 'Admin Dashboard', url: 'https://admin.automation-plus-ki.de',     auth: 'Authentik OIDC' },
   { label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',   auth: 'Service Token' },
   { label: 'Coolify',         url: 'https://coolify.automation-plus-ki.de',   auth: 'Bearer' },
