@@ -37,7 +37,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
 
 // ─── Quick links & API addresses ──────────────────────────────────────────────
 const QUICK_LINKS = [
-  { label: 'n8n Workflows',  url: 'http://10.0.1.29:5678',                         color: 'var(--accent-amber)', desc: 'Workflow-Editor' },
+  { label: 'n8n Workflows',  url: 'https://n8n.automation-plus-ki.de',              color: 'var(--accent-amber)', desc: 'Workflow-Editor' },
   { label: 'NocoDB',         url: 'https://nocodb.automation-plus-ki.de',           color: 'var(--accent-green)', desc: 'Datenbank-UI' },
   { label: 'Grafana',        url: 'https://grafana.automation-plus-ki.de',          color: 'var(--accent-amber)', desc: 'Monitoring' },
   { label: 'Prometheus',     url: 'https://prometheus.automation-plus-ki.de',       color: 'var(--accent-purple)', desc: 'Metriken' },
@@ -46,11 +46,11 @@ const QUICK_LINKS = [
 ];
 
 const API_ENDPOINTS = [
-  { label: 'n8n API',          url: 'http://10.0.1.29:5678/api/v1',                desc: 'Workflows & Executions',    auth: 'X-N8N-API-KEY' },
+  { label: 'n8n API',          url: 'https://n8n.automation-plus-ki.de/api/v1',    desc: 'Workflows & Executions',    auth: 'X-N8N-API-KEY' },
   { label: 'NocoDB API',       url: 'https://nocodb.automation-plus-ki.de/api/v1', desc: 'Tabellen & Datensätze',     auth: 'xc-token' },
   { label: 'AIOS Core API',   url: 'https://api.automation-plus-ki.de',           desc: 'Python FastAPI Backend',    auth: 'Bearer Token' },
   { label: 'Dashboard API',    url: '/api/nocodb/table?id=TABLE_ID',               desc: 'Interne Next.js Routen',    auth: 'Session' },
-  { label: 'Prometheus API',   url: 'http://10.0.1.29:9090/api/v1',               desc: 'Metriken & Queries',        auth: 'kein Auth' },
+  { label: 'Prometheus API',   url: 'https://prometheus.automation-plus-ki.de/api/v1', desc: 'Metriken & Queries',    auth: 'Authentik' },
   { label: 'Grafana API',      url: 'https://grafana.automation-plus-ki.de/api',   desc: 'Dashboards & Alerting',     auth: 'Bearer Token' },
 ];
 

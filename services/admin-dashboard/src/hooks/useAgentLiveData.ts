@@ -100,15 +100,9 @@ export function useAgentLiveData(): LiveDashboardData {
     try {
       const res = await fetch('/api/nocodb/workflows', { headers: { ...dashboardApiAuthHeaders() } });
       if (!res.ok) return;
-      const data = await res.json();
-      const workflows = data.list ?? [];
-      // Count active scheduled workflows
-      const activeScheduled = workflows.filter(
-        (w: Record<string, unknown>) => w.Status === 'aktiv' && w.Schedule && w.Schedule !== 'on_demand'
-      ).length;
-      void activeScheduled; // available for future use
+      await res.json();
     } catch {
-      // ignore
+      // polling failure — silent retry on next interval
     }
   }, []);
 
