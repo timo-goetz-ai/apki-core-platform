@@ -8,8 +8,8 @@ const HEALTH_CHECKS = [
   { id: "voice",          url: "http://voice-api-ckgw404o88ow0ccs00cow8k8:8000/health" },
   // Homestack-Services via öffentliche URL (eigenes Netzwerk)
   { id: "n8n",            url: "https://n8n.automation-plus-ki.de/healthz" },
-  { id: "grafana",        url: "https://grafana.automation-plus-ki.de/api/health" },
-  { id: "prometheus",     url: "https://prometheus.automation-plus-ki.de/-/healthy" },
+  { id: "grafana",        url: "http://homestack-grafana:3000/api/health" },
+  { id: "prometheus",     url: "http://homestack-prometheus:9090/-/healthy" },
   { id: "authentik",      url: "https://auth.automation-plus-ki.de/-/health/ready/" },
   { id: "nocodb",         url: "https://nocodb.automation-plus-ki.de/api/v1/health" },
   { id: "mailpit",        url: "https://mail.automation-plus-ki.de" },
@@ -29,7 +29,7 @@ const HEALTH_CHECKS = [
   { id: "mcp-google",     url: "https://mcp-google.automation-plus-ki.de/health" },
   { id: "mcp-hetzner",    url: "https://mcp-hetzner.automation-plus-ki.de/health" },
   { id: "mcp-coolify",    url: "https://mcp-coolify.automation-plus-ki.de/health" },
-  { id: "anythingllm",    url: "https://llm.automation-plus-ki.de/api/ping" },
+  { id: "anythingllm",    url: "https://mcp-anythingllm.automation-plus-ki.de/health" },
   { id: "playwright",     url: "http://homestack-playwright-proxy:8080" },
   { id: "fishaudio",      url: "https://api.fish.audio" },
 ];

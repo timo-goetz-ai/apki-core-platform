@@ -12,8 +12,8 @@ interface Alert {
 }
 
 export async function GET() {
-  const prometheusUrl = process.env.PROMETHEUS_URL ?? 'https://prometheus.automation-plus-ki.de';
-  const grafanaUrl    = process.env.GRAFANA_URL    ?? 'https://grafana.automation-plus-ki.de';
+  const prometheusUrl = process.env.PROMETHEUS_URL ?? 'http://homestack-prometheus:9090';
+  const grafanaUrl    = process.env.GRAFANA_URL    ?? 'http://homestack-grafana:3000';
   const grafanaToken  = process.env.GRAFANA_TOKEN  ?? '';
 
   const alerts: Alert[] = [];
