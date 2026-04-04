@@ -10,7 +10,7 @@ import { NextRequest } from "next/server";
 
  */
 export function verifyApiKey(request: NextRequest): boolean {
-  const apiKey = process.env.DASHBOARD_API_KEY;
+  const apiKey = process.env.DASHBOARD_API_KEY?.trim();
   // Wenn kein Key gesetzt → offen (interne Nutzung, hinter Traefik-Auth)
   if (!apiKey) return true;
 
