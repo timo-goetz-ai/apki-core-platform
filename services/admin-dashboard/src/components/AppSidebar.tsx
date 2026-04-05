@@ -52,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: FileText,
     items: [
       { label: 'Pipeline', href: '/content-factory', icon: FileText },
+      { label: 'Produziert', href: '/content-factory/produced', icon: ScrollText },
       { label: 'Planung', href: 'https://postiz.automation-plus-ki.de', icon: CalendarDays, external: true },
     ],
   },
@@ -59,7 +60,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Voice',
     icon: Mic,
     items: [
-      { label: 'Debug & Latenz', href: '/monitoring/voice', icon: Mic },
+      { label: 'Voice Studio', href: '/voice', icon: Mic },
+      { label: 'Debug & Latenz', href: '/monitoring/voice', icon: Gauge },
     ],
   },
   {

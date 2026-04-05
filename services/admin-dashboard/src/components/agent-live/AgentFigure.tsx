@@ -1,16 +1,14 @@
 'use client';
 
 /**
- * Inline SVG robot agent — inspired by the design mockups.
- * Parametrisable: name, color, size, active state.
- * Rendered as <g> to be placed inside the track SVG.
+ * Clean, minimal agent figure for the enterprise dashboard.
+ * Rendered as <g> inside the track SVG.
  */
 
 interface Props {
   name: string;
   color: string;
   isActive: boolean;
-  /** Centre position */
   x: number;
   y: number;
   size?: number;
@@ -18,70 +16,50 @@ interface Props {
 
 export function AgentFigure({ name, color, isActive, x, y, size = 1 }: Props) {
   const s = size;
+  const activeColor = isActive ? color : 'var(--text-muted)';
+
   return (
     <g transform={`translate(${x},${y}) scale(${s})`} style={{ pointerEvents: 'none' }}>
-      {/* Shadow */}
-      <ellipse cx={0} cy={22} rx={14} ry={4} fill="black" opacity={0.25} />
+      {/* Subtle shadow */}
+      <ellipse cx={0} cy={18} rx={10} ry={3} fill="black" opacity={0.15} />
 
-      {/* Body */}
-      <rect x={-12} y={2} width={24} height={18} rx={6} fill={color} opacity={0.7} />
-      <rect x={-12} y={2} width={24} height={18} rx={6} fill="none" stroke={color} strokeWidth={1.5} />
+      {/* Body — simple rounded rect */}
+      <rect x={-10} y={0} width={20} height={14} rx={5} fill={activeColor} opacity={0.5} />
+      <rect x={-10} y={0} width={20} height={14} rx={5} fill="none" stroke={activeColor} strokeWidth={1} strokeOpacity={0.6} />
 
-      {/* Head */}
-      <circle cx={0} cy={-6} r={16} fill="#1e293b" stroke={color} strokeWidth={2} />
+      {/* Head — clean circle */}
+      <circle cx={0} cy={-8} r={12} fill="var(--layer-2)" stroke={activeColor} strokeWidth={1.5} />
+
+      {/* Active ring — subtle pulse */}
       {isActive && (
-        <circle cx={0} cy={-6} r={18} fill="none" stroke={color} strokeWidth={1} opacity={0.4}>
-          <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite" />
+        <circle cx={0} cy={-8} r={14} fill="none" stroke={color} strokeWidth={0.8} opacity={0.3}>
+          <animate attributeName="r" values="14;17;14" dur="3s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.3;0;0.3" dur="3s" repeatCount="indefinite" />
         </circle>
       )}
 
-      {/* Visor / face plate */}
-      <rect x={-11} y={-14} width={22} height={12} rx={5} fill="#0f172a" stroke={color} strokeWidth={0.8} opacity={0.8} />
+      {/* Eyes — small dots */}
+      <circle cx={-4} cy={-9} r={2} fill={isActive ? 'var(--accent-blue)' : 'var(--text-muted)'} opacity={isActive ? 0.9 : 0.4} />
+      <circle cx={4} cy={-9} r={2} fill={isActive ? 'var(--accent-blue)' : 'var(--text-muted)'} opacity={isActive ? 0.9 : 0.4} />
 
-      {/* Eyes — glowing cyan ovals */}
-      <ellipse cx={-5} cy={-9} rx={3.5} ry={4} fill="#22d3ee" opacity={isActive ? 1 : 0.5}>
+      {/* Status indicator dot */}
+      <circle cx={0} cy={-22} r={2} fill={isActive ? 'var(--accent-green)' : 'var(--text-muted)'} opacity={isActive ? 1 : 0.3}>
         {isActive && (
-          <animate attributeName="opacity" values="1;0.6;1" dur="1.5s" repeatCount="indefinite" />
-        )}
-      </ellipse>
-      <ellipse cx={5} cy={-9} rx={3.5} ry={4} fill="#22d3ee" opacity={isActive ? 1 : 0.5}>
-        {isActive && (
-          <animate attributeName="opacity" values="1;0.6;1" dur="1.5s" repeatCount="indefinite" />
-        )}
-      </ellipse>
-
-      {/* Eye glow */}
-      {isActive && (
-        <>
-          <ellipse cx={-5} cy={-9} rx={5} ry={5.5} fill="#22d3ee" opacity={0.15} />
-          <ellipse cx={5} cy={-9} rx={5} ry={5.5} fill="#22d3ee" opacity={0.15} />
-        </>
-      )}
-
-      {/* Antenna */}
-      <line x1={0} y1={-22} x2={0} y2={-28} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-      <circle cx={0} cy={-30} r={2.5} fill={isActive ? '#22d3ee' : color} opacity={isActive ? 1 : 0.5}>
-        {isActive && (
-          <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
         )}
       </circle>
 
-      {/* Ear pieces */}
-      <rect x={-19} y={-12} width={6} height={10} rx={3} fill="#334155" stroke={color} strokeWidth={0.8} />
-      <rect x={13} y={-12} width={6} height={10} rx={3} fill="#334155" stroke={color} strokeWidth={0.8} />
-
-      {/* Name badge */}
-      <rect x={-24} y={30} width={48} height={16} rx={8} fill="rgba(0,0,0,0.7)" />
+      {/* Name badge — clean, no heavy background */}
+      <rect x={-22} y={24} width={44} height={14} rx={7} fill="var(--layer-1)" stroke="var(--border)" strokeWidth={0.5} />
       <text
         x={0}
-        y={39}
+        y={31.5}
         textAnchor="middle"
         dominantBaseline="central"
-        fill="white"
-        fontSize="8"
+        fill="var(--text-secondary)"
+        fontSize="7"
         fontFamily="var(--font-mono)"
-        fontWeight="600"
+        fontWeight="500"
       >
         {name.length > 10 ? name.slice(0, 9) + '…' : name}
       </text>

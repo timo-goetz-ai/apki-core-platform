@@ -7,18 +7,18 @@ import type { AgentState, LiveDashboardData } from '@/components/agent-live/type
 const CREWS_POLL_MS = 10_000;
 const WORKFLOWS_POLL_MS = 30_000;
 
-/** Agent colours by crew type / workflow group */
+/** Agent colours — monochrome palette (blue + green only) */
 const AGENT_COLORS: Record<string, string> = {
-  content: 'var(--accent-purple)',
+  content: 'var(--accent-blue)',
   research: 'var(--accent-blue)',
   niche: 'var(--accent-green)',
-  forecast: 'var(--accent-amber)',
-  multichannel: 'var(--accent-red)',
-  red_team: '#f87171',
+  forecast: 'var(--accent-blue)',
+  multichannel: 'var(--accent-green)',
+  red_team: 'var(--accent-blue)',
   market: 'var(--accent-blue)',
-  director: 'var(--accent-amber)',
+  director: 'var(--accent-green)',
   quick: 'var(--accent-green)',
-  xai: '#a78bfa',
+  xai: 'var(--accent-blue)',
 };
 
 function colorForCrew(id: string): string {

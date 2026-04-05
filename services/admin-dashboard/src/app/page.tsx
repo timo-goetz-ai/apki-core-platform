@@ -21,7 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
   offline: 'var(--accent-red)', unknown: 'var(--text-muted)',
 };
 
-const CORE_SERVICES = ['n8n', 'nocodb', 'grafana', 'coolify', 'authentik', 'prometheus', 'anythingllm'];
+const CORE_SERVICES = ['n8n', 'grafana', 'authentik', 'prometheus', 'anythingllm'];
 const SERVICE_LABELS: Record<string, string> = { anythingllm: 'LLM' };
 
 const COMMAND_CENTER = [
@@ -58,46 +58,6 @@ function Sparkline({ data, color, width = 120, height = 40 }: {
   );
 }
 
-function MiniBarChart({ data, color, width = 120, height = 40 }: {
-  data: number[]; color: string; width?: number; height?: number;
-}) {
-  const max = Math.max(...data) || 1;
-  const barW = width / data.length - 2;
-  return (
-    <svg width={width} height={height} style={{ display: 'block' }}>
-      {data.map((v, i) => {
-        const bh = ((v / max) * (height - 4));
-        return (
-          <rect key={i} x={i * (barW + 2)} y={height - bh - 2} width={barW} height={bh}
-            rx={1} fill={color} fillOpacity={0.7 + (i / data.length) * 0.3} />
-        );
-      })}
-    </svg>
-  );
-}
-
-function DonutGauge({ value, max, color }: { value: number; max: number; color: string }) {
-  const pct = value / max;
-  const r = 30; const cx = 40; const cy = 40;
-  const circ = 2 * Math.PI * r;
-  const dash = circ * pct;
-  return (
-    <svg width={80} height={80} style={{ display: 'block' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--layer-2)" strokeWidth={8} />
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={8}
-        strokeDasharray={`${dash} ${circ}`}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${cx} ${cy})`} />
-      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
-        fill="var(--text-primary)" fontSize={13} fontWeight={700} fontFamily="var(--font-mono)">
-        {value}
-      </text>
-      <text x={cx} y={cy + 15} textAnchor="middle" fill="var(--text-muted)" fontSize={9}>
-        Max {max} req/s
-      </text>
-    </svg>
-  );
-}
 
 // ── Aktive Workflows Card ──────────────────────────────────────────────────────
 function WorkflowsCard({ services }: { services: Record<string, ServiceHealth> }) {
@@ -373,63 +333,66 @@ function KpiCard({ label, value, icon, color }: { label: string; value: string; 
   );
 }
 
-// ── Live Dashboard Panel ───────────────────────────────────────────────────────
-const API_LATENCY_DATA = [98, 112, 105, 118, 95, 109, 124, 108, 101, 112, 115, 112];
-const WORKFLOW_SUCCESS_DATA = [95, 100, 98, 100, 97, 100, 96, 99, 100, 100, 95, 100];
-const NOCODB_ROWS_DATA = [145, 162, 178, 190, 210, 230, 255, 290, 320, 890, 1100, 1200];
+// ── Live Prometheus KPIs Panel ────────────────────────────────────────────────
+interface PrometheusMetrics {
+  cpu: number | null; ram: number | null; disk: number | null; uptimeDays: number | null;
+  cpuHistory: number[]; ramHistory: number[]; diskHistory: number[];
+}
 
-function LiveDashboardPanel() {
+function LiveKpiPanel({ metrics, loading }: { metrics: PrometheusMetrics | null; loading: boolean }) {
+  const kpis = [
+    { label: 'CPU Auslastung', value: metrics?.cpu, unit: '%', history: metrics?.cpuHistory ?? [], color: 'var(--accent-blue)', warn: 80 },
+    { label: 'RAM Nutzung', value: metrics?.ram, unit: '%', history: metrics?.ramHistory ?? [], color: 'var(--accent-green)', warn: 85 },
+    { label: 'Disk Nutzung', value: metrics?.disk, unit: '%', history: metrics?.diskHistory ?? [], color: 'var(--accent-amber)', warn: 80 },
+  ];
+
   return (
     <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', flex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Activity size={14} color="var(--accent-green)" />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Live Dashboard</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Server Metriken</span>
+          <span className="pulsing-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-green)', display: 'inline-block' }} />
         </div>
-        <a href="https://grafana.automation-plus-ki.de" target="_blank" rel="noreferrer"
-          style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}>
-          Prometheus/Grafana <ExternalLink size={9} />
-        </a>
+        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+          Prometheus · 10s refresh
+        </span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        {/* API Response Zeit */}
-        <div style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>API Response Zeit</div>
-          <Sparkline data={API_LATENCY_DATA} color="var(--accent-green)" width={100} height={40} />
-          <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>12:00–12:30</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>112ms avg</span>
-          </div>
-        </div>
+        {kpis.map(kpi => {
+          const val = kpi.value;
+          const displayColor = val != null && val > kpi.warn ? 'var(--accent-red)' : kpi.color;
+          return (
+            <div key={kpi.label} style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>{kpi.label}</div>
+              {kpi.history.length > 1 ? (
+                <Sparkline data={kpi.history} color={displayColor} width={100} height={40} />
+              ) : (
+                <div style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {loading ? (
+                    <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+                  ) : (
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Keine Daten</span>
+                  )}
+                </div>
+              )}
+              <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>30min</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: displayColor, fontFamily: 'var(--font-mono)' }}>
+                  {val != null ? `${val}${kpi.unit}` : '–'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
 
-        {/* Workflow Success Rate */}
-        <div style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>Workflow Success Rate</div>
-          <MiniBarChart data={WORKFLOW_SUCCESS_DATA} color="var(--accent-green)" width={100} height={40} />
-          <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>last 6 hours</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>Avg 96.5%</span>
+        {/* Uptime */}
+        <div style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, alignSelf: 'flex-start' }}>Uptime</div>
+          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 }}>
+            {metrics?.uptimeDays != null ? metrics.uptimeDays : '–'}
           </div>
-        </div>
-
-        {/* NocoDB Datensätze */}
-        <div style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>NocoDB Datensätze heute</div>
-          <MiniBarChart data={NOCODB_ROWS_DATA} color="var(--accent-blue)" width={100} height={40} />
-          <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>last 7 days</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>1200 today</span>
-          </div>
-        </div>
-
-        {/* Durchsatz */}
-        <div style={{ background: 'var(--layer-2)', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, alignSelf: 'flex-start' }}>Durchsatz</div>
-          <DonutGauge value={82} max={100} color="var(--accent-green)" />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-green)' }} />
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Green zone</span>
-          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>Tage</div>
         </div>
       </div>
     </div>
@@ -491,9 +454,10 @@ function StatusStrip({ services }: { services: Record<string, ServiceHealth> }) 
       <span style={{ height: 12, width: 1, background: 'var(--border)' }} />
       {CORE_SERVICES.map(svc => {
         const st = services[svc]?.status ?? 'unknown';
+        const isOnline = st === 'online';
         return (
           <span key={svc} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLOR[st], flexShrink: 0 }} />
+            <span className={isOnline ? 'pulsing-dot' : ''} style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLOR[st], flexShrink: 0 }} />
             <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10 }}>{SERVICE_LABELS[svc] ?? svc}</span>
           </span>
         );
@@ -511,11 +475,33 @@ export default function OverviewPage() {
   const [wfCount, setWfCount]     = useState<number | null>(null);
   const [agentActions, setAgentActions] = useState<number | null>(null);
   const [refreshSig, setRefreshSig] = useState(0);
+  const [promMetrics, setPromMetrics] = useState<PrometheusMetrics | null>(null);
+  const [promLoading, setPromLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [ccMetrics, setCcMetrics] = useState<Record<string, number | null>>({
     contentJobs: null, mcpServers: null, alerts: null, workflows: null, crews: 10, mails: null,
   });
 
-  const refresh = useCallback(() => setRefreshSig(s => s + 1), []);
+  const refresh = useCallback(() => {
+    setRefreshSig(s => s + 1);
+    setLastRefresh(new Date());
+  }, []);
+
+  // Auto-refresh every 10s
+  useEffect(() => {
+    const id = setInterval(refresh, 10_000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  // Fetch Prometheus KPIs
+  useEffect(() => {
+    setPromLoading(true);
+    fetch('/api/monitoring/metrics')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPromMetrics(d); })
+      .catch(() => {})
+      .finally(() => setPromLoading(false));
+  }, [refreshSig]);
 
   useEffect(() => {
     fetch('/api/services')
@@ -607,7 +593,7 @@ export default function OverviewPage() {
 
         {/* Row 3: Live Dashboard + Quick Access */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 16 }}>
-          <LiveDashboardPanel />
+          <LiveKpiPanel metrics={promMetrics} loading={promLoading} />
           <CommandCenterPanel metrics={ccMetrics} />
         </div>
 
