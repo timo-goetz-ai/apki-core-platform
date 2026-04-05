@@ -48,32 +48,26 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Agent Engine',
-    icon: Cpu,
-    items: [
-      { label: 'Deployments', href: '/fabrik', icon: Cpu },
-      { label: 'MCP Server', href: '/mcp-plattform', icon: Globe },
-      { label: 'Registry', href: '/fabrik#registry', icon: Database },
-      { label: 'API Explorer', href: '/api-explorer', icon: Terminal },
-    ],
-  },
-  {
     label: 'Content',
     icon: FileText,
     items: [
       { label: 'Pipeline', href: '/content-factory', icon: FileText },
-      { label: 'Batch', href: '/batch-production', icon: Layers },
-      { label: 'Planning', href: 'https://postiz.automation-plus-ki.de', icon: CalendarDays, external: true },
+      { label: 'Planung', href: 'https://postiz.automation-plus-ki.de', icon: CalendarDays, external: true },
+    ],
+  },
+  {
+    label: 'Voice',
+    icon: Mic,
+    items: [
+      { label: 'Debug & Latenz', href: '/monitoring/voice', icon: Mic },
     ],
   },
   {
     label: 'Monitoring',
     icon: BarChart3,
     items: [
-      { label: 'Metrics', href: '/monitoring', icon: Gauge },
+      { label: 'System', href: '/monitoring', icon: Gauge },
       { label: 'Alerts', href: '/monitoring/grafana', icon: BellRing },
-      { label: 'Voice Debug', href: '/monitoring/voice', icon: Mic },
-      { label: 'Logs', href: '/logs', icon: ScrollText },
     ],
   },
   {
