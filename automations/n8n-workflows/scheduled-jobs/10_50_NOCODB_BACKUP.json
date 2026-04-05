@@ -37,13 +37,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $vars.NOCODB_URL }}/api/v2/tables/{{ $json.id }}/records?limit=5000",
+        "url": "={{ $env.DIRECTUS_URL }}/api/v2/tables/{{ $json.id }}/records?limit=5000",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -73,7 +73,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "=https://{{ $vars.S3_BUCKET }}.fsn1.your-objectstorage.com/{{ $json.key }}",
+        "url": "=https://{{ $env.S3_BUCKET }}.fsn1.your-objectstorage.com/{{ $json.key }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

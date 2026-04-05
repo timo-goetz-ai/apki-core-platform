@@ -182,7 +182,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -223,7 +223,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -264,7 +264,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -324,7 +324,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -365,7 +365,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -406,7 +406,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
