@@ -8,7 +8,7 @@ import {
   Database, Settings, ScrollText,
   Layers, CalendarDays, BarChart3,
   ChevronRight, Activity, Globe, FileText,
-  Gauge, BellRing, Terminal,
+  Gauge, BellRing, Terminal, Mic,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Metrics', href: '/monitoring', icon: Gauge },
       { label: 'Alerts', href: '/monitoring/grafana', icon: BellRing },
+      { label: 'Voice Debug', href: '/monitoring/voice', icon: Mic },
       { label: 'Logs', href: '/logs', icon: ScrollText },
     ],
   },
