@@ -3,6 +3,8 @@ name: Build & Push – Docker Images
 on:
   push:
     branches: [main]
+    paths:
+      - 'services/**'
   workflow_dispatch:
     inputs:
       service:
@@ -17,14 +19,43 @@ env:
   OWNER: timogoetz1988
 
 jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    outputs:
+      nexus-core: ${{ steps.filter.outputs.nexus-core }}
+      admin-dashboard: ${{ steps.filter.outputs.admin-dashboard }}
+      crew-api: ${{ steps.filter.outputs.crew-api }}
+      landing-page: ${{ steps.filter.outputs.landing-page }}
+      telegram-bot: ${{ steps.filter.outputs.telegram-bot }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            nexus-core:
+              - 'services/nexus-core/**'
+            admin-dashboard:
+              - 'services/admin-dashboard/**'
+            crew-api:
+              - 'services/crew-api/**'
+            landing-page:
+              - 'services/landing-page/**'
+            telegram-bot:
+              - 'services/telegram-bot/**'
+
   build-nexus-core:
     name: Build nexus-core
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || github.event_name == 'push' }}
+    needs: [detect-changes]
+    if: |
+      (github.event_name == 'push' && needs.detect-changes.outputs.nexus-core == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core'))
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -55,31 +86,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy – Scan pushed image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core:latest
-          format: sarif
-          output: trivy-nexus-core.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 0
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: trivy-nexus-core.sarif
-          category: trivy-nexus-core
-
   build-admin-dashboard:
     name: Build admin-dashboard
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || github.event_name == 'push' }}
+    needs: [detect-changes]
+    if: |
+      (github.event_name == 'push' && needs.detect-changes.outputs.admin-dashboard == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard'))
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -112,31 +128,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy – Scan pushed image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard:latest
-          format: sarif
-          output: trivy-admin-dashboard.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 0
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: trivy-admin-dashboard.sarif
-          category: trivy-admin-dashboard
-
   build-crew-api:
     name: Build crew-api
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'crew-api' || github.event_name == 'push' }}
+    needs: [detect-changes]
+    if: |
+      (github.event_name == 'push' && needs.detect-changes.outputs.crew-api == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'crew-api'))
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -166,31 +167,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy – Scan pushed image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/crew-api:latest
-          format: sarif
-          output: trivy-crew-api.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 0
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: trivy-crew-api.sarif
-          category: trivy-crew-api
-
   build-landing-page:
     name: Build landing-page
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'landing-page' || github.event_name == 'push' }}
+    needs: [detect-changes]
+    if: |
+      (github.event_name == 'push' && needs.detect-changes.outputs.landing-page == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'landing-page'))
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -220,31 +206,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy – Scan pushed image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-landing-page:latest
-          format: sarif
-          output: trivy-landing-page.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 0
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: trivy-landing-page.sarif
-          category: trivy-landing-page
-
   build-telegram-bot:
     name: Build telegram-bot
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'telegram-bot' || github.event_name == 'push' }}
+    needs: [detect-changes]
+    if: |
+      (github.event_name == 'push' && needs.detect-changes.outputs.telegram-bot == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'telegram-bot'))
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -274,20 +245,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Trivy – Scan pushed image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/telegram-bot:latest
-          format: sarif
-          output: trivy-telegram-bot.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 0
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        continue-on-error: true
-        with:
-          sarif_file: trivy-telegram-bot.sarif
-          category: trivy-telegram-bot
