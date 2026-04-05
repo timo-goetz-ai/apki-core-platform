@@ -1,5 +1,5 @@
 {
-  "name": "10_50_NOCODB_BACKUP",
+  "name": "10_50_DIRECTUS_BACKUP",
   "nodes": [
     {
       "parameters": {
