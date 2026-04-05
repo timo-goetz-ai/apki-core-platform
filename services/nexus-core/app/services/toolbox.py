@@ -30,10 +30,14 @@ class Toolbox:
         env = os.environ.get("MCP_SERVERS_CONFIG")
         if env:
             return Path(env)
-        docker_candidate = here.parents[2] / "infra" / "mcp-servers.json"
-        if docker_candidate.exists():
-            return docker_candidate
-        return here.parents[4] / "infra" / "mcp-servers.json"
+        # Walk up the tree looking for infra/mcp-servers.json
+        for i in range(min(len(here.parents), 6)):
+            candidate = here.parents[i] / "infra" / "mcp-servers.json"
+            if candidate.exists():
+                return candidate
+        # Fallback: empty config (no crash in Docker)
+        logger.warning("mcp-servers.json not found in any parent directory")
+        return here.parent / "mcp-servers.json"  # won't exist, but _load handles missing
 
     def __init__(self, config_path: str | Path | None = None):
         if config_path is None:
