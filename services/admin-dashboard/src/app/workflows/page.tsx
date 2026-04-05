@@ -1,404 +1,347 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  ExternalLink, Search, Download, Activity, Clock,
-  GitBranch, StickyNote, Hash,
-} from 'lucide-react';
-import { exportCsv } from '@/lib/csv-export';
-import { humanizeWorkflowName, getWorkflowGroup, WORKFLOW_GROUPS, GROUP_META, type WorkflowGroup } from '@/lib/workflow-utils';
+import { useEffect, useState, useCallback } from 'react';
+import { CATEGORY_GROUPS, SCHEDULE_TAGS, type CategoryGroup } from '@/lib/workflow-categories';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Workflow {
-  Id: number;
-  WorkflowID: string;
-  Name: string;
-  Status: string;
-  Layer: string;
-  Beschreibung: string;
-  Schedule: string;
-  AI_Model: string;
-  LastRun: string | null;
-  Notes: string | null;
+/* ── Types ────────────────────────────────────────────────────────────────── */
+
+interface LiveWorkflow {
+  id: string;
+  name: string;
+  active: boolean;
+  updatedAt: string;
+  nodeCount: number;
+  tags: string[];
+  categoryKey: string;
+  categoryNr: number;
+  categoryLabel: string;
+  categoryEmoji: string;
+  scheduleTag: string;
+  scheduleLabel: string;
+  scheduleIcon: string;
+  scheduleColor: string;
+  schedule: string;
+  description: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const N8N_BASE = 'https://n8n.automation-plus-ki.de';
-const FILTER_GROUPS: ('Alle' | WorkflowGroup)[] = ['Alle', ...WORKFLOW_GROUPS];
+interface Execution {
+  id: string;
+  workflowId: string;
+  workflowName: string;
+  status: string;
+  startedAt: string;
+  stoppedAt: string | null;
+}
 
-const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  active:         { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
-  inactive:       { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
-  development:    { color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
-  archived:       { color: 'var(--accent-red)', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
-  // legacy values
-  aktiv:          { color: 'var(--accent-green)', bg: 'rgba(52,211,153,0.10)',  label: 'Aktiv'          },
-  inaktiv:        { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.10)', label: 'Inaktiv'        },
-  in_entwicklung: { color: 'var(--accent-amber)', bg: 'rgba(251,191,36,0.10)',  label: 'In Entwicklung' },
-  archiviert:     { color: 'var(--accent-red)', bg: 'rgba(248,113,113,0.10)', label: 'Archiviert'     },
+interface LiveData {
+  workflows: LiveWorkflow[];
+  executions: Execution[];
+  stats: { total: number; active: number; inactive: number; errors: number };
+}
+
+/* ── Helpers ──────────────────────────────────────────────────────────────── */
+
+const N8N_BASE = 'https://n8n.automation-plus-ki.de';
+
+function fmtTime(iso: string): string {
+  try { return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+  catch { return iso; }
+}
+
+function fmtDate(iso: string): string {
+  try { return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+  catch { return iso; }
+}
+
+function durationStr(start: string, stop?: string | null): string {
+  const s = new Date(start).getTime();
+  const e = stop ? new Date(stop).getTime() : Date.now();
+  const ms = e - s;
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function statusColor(s: string): string {
+  if (s === 'success') return 'var(--accent-green)';
+  if (s === 'error' || s === 'failed') return 'var(--accent-red)';
+  if (s === 'running' || s === 'waiting') return 'var(--accent-blue)';
+  return 'var(--text-muted)';
+}
+
+/* ── Styles ───────────────────────────────────────────────────────────────── */
+
+const S = {
+  page: { padding: '24px 28px 48px', background: 'var(--layer-0)', minHeight: '100vh', fontFamily: 'var(--font-ui)', color: 'var(--text-primary)' } as const,
+  card: { background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 } as const,
+  label: { fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--text-muted)' } as const,
+  mono: { fontFamily: 'var(--font-mono)', fontSize: 13 } as const,
+  btn: { padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-ui)', transition: 'opacity 0.15s' } as const,
 };
 
-// ─── Section label helper ─────────────────────────────────────────────────────
-function SectionLabel({ children }: { children: React.ReactNode }) {
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+export default function WorkflowsPage() {
+  const [data, setData] = useState<LiveData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Core Operations', 'KI & Automatisierung']));
+  const [search, setSearch] = useState('');
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/n8n/live');
+      if (!res.ok) return;
+      const d: LiveData = await res.json();
+      setData(d);
+      setLastUpdated(new Date());
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
+
+  /* Filter workflows */
+  const filtered = data?.workflows.filter((wf) =>
+    !search || wf.name.toLowerCase().includes(search.toLowerCase()) || wf.categoryLabel.toLowerCase().includes(search.toLowerCase()),
+  ) ?? [];
+
+  /* Group workflows by category group */
+  function getGroupWorkflows(group: CategoryGroup): LiveWorkflow[] {
+    const catKeys = new Set(group.categories.map((c) => c.key));
+    return filtered.filter((wf) => catKeys.has(wf.categoryKey)).sort((a, b) => a.categoryNr - b.categoryNr || a.name.localeCompare(b.name));
+  }
+
+  /* ── Render ──────────────────────────────────────────────────────────────── */
+
   return (
-    <p style={{
-      margin: '0 0 7px',
-      fontSize: 10,
-      fontFamily: 'var(--font-mono)',
-      color: 'var(--text-muted)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.09em',
-      fontWeight: 600,
-    }}>
-      {children}
-    </p>
-  );
-}
+    <div style={S.page}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <span style={{ fontSize: 22, fontWeight: 600 }}>Operations Center</span>
 
-// ─── Detail view ──────────────────────────────────────────────────────────────
-function WorkflowDetail({ wf }: { wf: Workflow }) {
-  const cfg = STATUS_CONFIG[wf.Status] ?? STATUS_CONFIG.inactive;
-  const n8nUrl = wf.WorkflowID ? `${N8N_BASE}/workflow/${wf.WorkflowID}` : null;
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8, padding: '3px 10px', borderRadius: 20, background: 'var(--layer-3)', border: '1px solid var(--border)' }}>
+          <span className="ops-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: data ? 'var(--accent-green)' : 'var(--accent-red)' }} />
+          <span style={{ ...S.label }}>{loading ? 'LOADING' : 'LIVE'}</span>
+        </span>
 
-  return (
-    <div style={{ padding: '32px 36px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ flex: 1 }} />
 
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Badges row */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-              background: cfg.bg, color: cfg.color,
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.color, boxShadow: wf.Status === 'active' ? `0 0 5px ${cfg.color}` : 'none' }} />
-              {cfg.label}
-            </span>
-            <span style={{
-              padding: '3px 10px', borderRadius: 20, fontSize: 11,
-              background: 'var(--layer-2)', border: '1px solid var(--border)',
-              color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)',
-            }}>
-              {wf.Layer}
-            </span>
-            {wf.AI_Model && (
-              <span style={{
-                padding: '3px 10px', borderRadius: 20, fontSize: 11,
-                background: 'var(--layer-2)', border: '1px solid var(--border)',
-                color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
-              }}>
-                {wf.AI_Model}
-              </span>
-            )}
-          </div>
+        {/* Search */}
+        <input
+          type="text" placeholder="Suchen..."
+          value={search} onChange={(e) => setSearch(e.target.value)}
+          style={{ width: 200, padding: '6px 12px', background: 'var(--layer-3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 12, outline: 'none' }}
+        />
 
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.25 }}>
-            {wf.Name}
-          </h2>
-          {wf.WorkflowID && (
-            <p style={{ margin: '5px 0 0', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              <Hash size={10} style={{ display: 'inline', marginRight: 3 }} />{wf.WorkflowID}
-            </p>
-          )}
-        </div>
-
-        {n8nUrl && (
-          <a
-            href={n8nUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 14px', borderRadius: 8, flexShrink: 0,
-              background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.22)',
-              color: 'var(--accent-amber)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
-              transition: 'all 0.12s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(251,191,36,0.14)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(251,191,36,0.08)'; }}
-          >
-            In n8n öffnen <ExternalLink size={11} />
-          </a>
+        <button onClick={fetchData} style={{ ...S.btn, background: 'var(--layer-3)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+          Refresh
+        </button>
+        {lastUpdated && (
+          <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)' }}>
+            {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
         )}
       </div>
 
-      {/* ── Beschreibung ── */}
-      {wf.Beschreibung && (
-        <div style={{ marginBottom: 24 }}>
-          <SectionLabel>Beschreibung</SectionLabel>
-          <div style={{
-            background: 'var(--layer-2)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '16px 20px',
-          }}>
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.75 }}>
-              {wf.Beschreibung}
-            </p>
+      {/* Stats Bar */}
+      {data && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Gesamt', value: data.stats.total, color: 'var(--text-primary)' },
+            { label: 'Aktiv', value: data.stats.active, color: 'var(--accent-green)' },
+            { label: 'Inaktiv', value: data.stats.inactive, color: 'var(--text-muted)' },
+            { label: 'Fehler (24h)', value: data.stats.errors, color: data.stats.errors > 0 ? 'var(--accent-red)' : 'var(--text-muted)' },
+          ].map((s) => (
+            <div key={s.label} style={{ ...S.card, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600, color: s.color }}>{s.value}</span>
+              <span style={S.label}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Category Groups */}
+      {CATEGORY_GROUPS.map((group) => {
+        const wfs = getGroupWorkflows(group);
+        const activeCount = wfs.filter((w) => w.active).length;
+        const isExpanded = expandedGroups.has(group.label);
+
+        return (
+          <div key={group.label} style={{ marginBottom: 12 }}>
+            {/* Group Header */}
+            <button
+              onClick={() => toggleGroup(group.label)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                padding: '10px 12px', background: 'var(--layer-1)', border: '1px solid var(--border)',
+                borderRadius: isExpanded ? '8px 8px 0 0' : 8, cursor: 'pointer',
+                color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--layer-2)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--layer-1)'; }}
+            >
+              <span style={{ fontSize: 14 }}>{group.emoji}</span>
+              <span>{group.label}</span>
+              <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>
+                {wfs.length} Workflows
+              </span>
+
+              {/* Status dots */}
+              <div style={{ display: 'flex', gap: 3, marginLeft: 8 }}>
+                {wfs.slice(0, 12).map((wf) => (
+                  <span key={wf.id} style={{ width: 6, height: 6, borderRadius: '50%', background: wf.active ? 'var(--accent-green)' : 'var(--text-muted)' }} title={wf.name} />
+                ))}
+                {wfs.length > 12 && <span style={{ ...S.mono, fontSize: 9, color: 'var(--text-muted)' }}>+{wfs.length - 12}</span>}
+              </div>
+
+              <div style={{ flex: 1 }} />
+
+              <span style={{ ...S.mono, fontSize: 11, color: 'var(--accent-green)' }}>
+                {activeCount}/{wfs.length}
+              </span>
+
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+
+            {/* Expanded Content */}
+            {isExpanded && wfs.length > 0 && (
+              <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
+                {/* Table Header */}
+                <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 100px 100px 60px 40px', gap: 4, padding: '6px 12px', borderBottom: '1px solid var(--border)' }}>
+                  <span style={S.label}></span>
+                  <span style={S.label}>Workflow</span>
+                  <span style={S.label}>Zeitplan</span>
+                  <span style={S.label}>Aktualisiert</span>
+                  <span style={S.label}>Nodes</span>
+                  <span style={S.label}>n8n</span>
+                </div>
+
+                {wfs.map((wf) => (
+                  <div
+                    key={wf.id}
+                    style={{ display: 'grid', gridTemplateColumns: '32px 1fr 100px 100px 60px 40px', gap: 4, padding: '8px 12px', borderBottom: '1px solid var(--border)', transition: 'background 0.1s', alignItems: 'center' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--layer-1)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    {/* Status dot */}
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: wf.active ? 'var(--accent-green)' : 'var(--text-muted)' }} />
+                    </span>
+
+                    {/* Name + Category */}
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 500 }}>{wf.categoryEmoji} {wf.name}</span>
+                      {wf.description && (
+                        <div style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {wf.description}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Schedule */}
+                    <span style={{ ...S.mono, fontSize: 11, color: wf.scheduleColor }}>
+                      {wf.scheduleIcon} {wf.scheduleTag}
+                      {wf.schedule && <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>{wf.schedule}</span>}
+                    </span>
+
+                    {/* Updated */}
+                    <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)' }}>
+                      {fmtDate(wf.updatedAt)}
+                    </span>
+
+                    {/* Node count */}
+                    <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center' }}>
+                      {wf.nodeCount}
+                    </span>
+
+                    {/* n8n link */}
+                    <a
+                      href={`${N8N_BASE}/workflow/${wf.id}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ color: 'var(--accent-blue)', textDecoration: 'none', fontSize: 12, textAlign: 'center' }}
+                      title="In n8n offnen"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" x2="21" y1="14" y2="3" />
+                      </svg>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isExpanded && wfs.length === 0 && (
+              <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: 16, textAlign: 'center', color: 'var(--text-muted)', ...S.mono, fontSize: 12 }}>
+                Keine Workflows in dieser Kategorie
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Recent Executions */}
+      {data && data.executions.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={S.label}>Letzte Ausfuhrungen</div>
+          <div style={{ ...S.card, marginTop: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr 80px 70px', gap: 4, padding: '6px 8px', borderBottom: '1px solid var(--border)' }}>
+              {['Zeit', 'Workflow', 'Status', 'Dauer'].map((h) => (
+                <span key={h} style={S.label}>{h}</span>
+              ))}
+            </div>
+
+            {data.executions.slice(0, 15).map((exec) => (
+              <div key={exec.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 80px 70px', gap: 4, padding: '6px 8px', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)' }}>{fmtTime(exec.startedAt)}</span>
+                <span style={{ ...S.mono, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {exec.workflowName}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor(exec.status) }} />
+                  <span style={{ ...S.mono, fontSize: 11, color: statusColor(exec.status) }}>{exec.status}</span>
+                </span>
+                <span style={{ ...S.mono, fontSize: 11, color: 'var(--text-muted)' }}>
+                  {exec.stoppedAt ? durationStr(exec.startedAt, exec.stoppedAt) : '...'}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* ── Stats grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-        {[
-          { label: 'Layer',      value: wf.Layer    || '—', Icon: GitBranch, color: 'var(--accent-blue)' },
-          { label: 'Schedule',   value: wf.Schedule || '—', Icon: Clock,     color: 'var(--accent-purple)' },
-          { label: 'Letzter Run', value: wf.LastRun ? new Date(wf.LastRun).toLocaleDateString('de-DE') : '—', Icon: Activity, color: 'var(--accent-green)' },
-        ].map(({ label, value, Icon, color }) => (
-          <div key={label} style={{
-            background: 'var(--layer-2)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '13px 16px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7, color: 'var(--text-muted)' }}>
-              <Icon size={12} />
-              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {label}
-              </span>
-            </div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color, fontFamily: 'var(--font-mono)' }}>
-              {value}
-            </p>
-          </div>
+      {/* Pulse animation + Schedule tag legend */}
+      <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {Object.values(SCHEDULE_TAGS).map((tag) => (
+          <span key={tag.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 4, background: 'var(--layer-2)', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 12 }}>{tag.icon}</span>
+            <span style={{ ...S.mono, fontSize: 10, color: tag.color }}>{tag.key}</span>
+            <span style={{ ...S.mono, fontSize: 10, color: 'var(--text-muted)' }}>{tag.label}</span>
+          </span>
         ))}
       </div>
 
-      {/* ── Notizen ── */}
-      {wf.Notes && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionLabel><StickyNote size={9} style={{ display: 'inline', marginRight: 3 }} />Notizen</SectionLabel>
-          <div style={{
-            background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.15)',
-            borderRadius: 10, padding: '12px 16px',
-          }}>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.65, fontFamily: 'var(--font-mono)' }}>
-              {wf.Notes}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyDetail({ count }: { count: number }) {
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      color: 'var(--text-muted)', gap: 10, padding: 40,
-    }}>
-      <Activity size={36} style={{ opacity: 0.2 }} />
-      <p style={{ margin: 0, fontSize: 15, fontWeight: 500, opacity: 0.6 }}>Workflow auswählen</p>
-      <p style={{ margin: 0, fontSize: 12, opacity: 0.4 }}>{count} Workflows verfügbar</p>
-    </div>
-  );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
-export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState('');
-  const [kategorie, setKategorie] = useState('Alle');
-  const [selected, setSelected]   = useState<Workflow | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res  = await fetch('/api/nocodb/workflows');
-        const data = await res.json();
-        const list: Workflow[] = Array.isArray(data) ? data : (data.list ?? []);
-        setWorkflows(list);
-        if (list.length > 0) setSelected(list[0]);
-      } catch (e) {
-        console.error(e);
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  const filtered = workflows.filter(wf => {
-    const group = getWorkflowGroup(wf.Layer, wf.Name);
-    const matchKat = kategorie === 'Alle' || group === kategorie;
-    const q = search.toLowerCase();
-    const matchSearch = !q || (wf.Name ?? '').toLowerCase().includes(q) || (wf.Beschreibung ?? '').toLowerCase().includes(q);
-    return matchKat && matchSearch;
-  });
-
-  const aktiv         = workflows.filter(w => w.Status === 'active' || w.Status === 'aktiv').length;
-  const inEntwicklung = workflows.filter(w => w.Status === 'development' || w.Status === 'in_entwicklung').length;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-
-      {/* ── Top bar ── */}
-      <div style={{
-        padding: '18px 28px 14px',
-        borderBottom: '1px solid var(--border)',
-        flexShrink: 0,
-        background: 'var(--layer-1)',
-      }}>
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--text-primary)' }}>Workflows</h1>
-            <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              {workflows.length} gesamt · {aktiv} aktiv · {inEntwicklung} in Entwicklung
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => exportCsv('workflows.csv', filtered as unknown as Record<string, unknown>[])}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7,
-                background: 'var(--layer-2)', border: '1px solid var(--border)',
-                color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              <Download size={12} /> CSV
-            </button>
-            <a
-              href="https://n8n.automation-plus-ki.de"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7,
-                background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.22)',
-                color: 'var(--accent-amber)', fontSize: 12, fontWeight: 500, textDecoration: 'none',
-              }}
-            >
-              n8n öffnen <ExternalLink size={11} />
-            </a>
-          </div>
-        </div>
-
-        {/* Search + Category filter */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <Search size={12} style={{
-              position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text-muted)', pointerEvents: 'none',
-            }} />
-            <input
-              type="text"
-              placeholder="Name oder Zweck suchen…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: 240, paddingLeft: 28, paddingRight: 10, height: 32, borderRadius: 7,
-                background: 'var(--layer-2)', border: '1px solid var(--border)',
-                color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {FILTER_GROUPS.map(k => {
-              const isActive = kategorie === k;
-              const meta = k !== 'Alle' ? GROUP_META[k] : null;
-              const activeColor = meta?.color ?? 'var(--accent-blue)';
-              return (
-                <button
-                  key={k}
-                  onClick={() => setKategorie(k)}
-                  title={meta?.description}
-                  style={{
-                    padding: '4px 10px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
-                    background: isActive ? activeColor + '15' : 'transparent',
-                    border: isActive ? `1px solid ${activeColor}40` : '1px solid transparent',
-                    color: isActive ? activeColor : 'var(--text-muted)',
-                    fontWeight: isActive ? 600 : 400, transition: 'all 0.1s',
-                  }}
-                >
-                  {k}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── 2-panel body ── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-        {/* LEFT — Workflow list */}
-        <div style={{
-          width: 320, flexShrink: 0,
-          borderRight: '1px solid var(--border)',
-          overflowY: 'auto',
-          background: 'var(--layer-0)',
-        }}>
-          {loading ? (
-            Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{
-                padding: '13px 16px', borderBottom: '1px solid var(--border)',
-              }}>
-                <div style={{ height: 12, width: '70%', borderRadius: 4, background: 'var(--layer-2)', marginBottom: 6 }} />
-                <div style={{ height: 9, width: '40%', borderRadius: 4, background: 'var(--layer-2)', opacity: 0.5 }} />
-              </div>
-            ))
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: '24px 16px', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
-              Keine Treffer
-            </div>
-          ) : (
-            filtered.map(wf => {
-              const cfg        = STATUS_CONFIG[wf.Status] ?? STATUS_CONFIG.inaktiv;
-              const isSelected = selected?.Id === wf.Id;
-              return (
-                <div
-                  key={wf.Id}
-                  onClick={() => setSelected(wf)}
-                  style={{
-                    padding: '11px 16px',
-                    borderBottom: '1px solid var(--border)',
-                    borderLeft: `2px solid ${isSelected ? 'var(--accent-blue)' : 'transparent'}`,
-                    background: isSelected ? 'rgba(56,189,248,0.05)' : 'transparent',
-                    cursor: 'pointer', transition: 'all 0.1s',
-                  }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{
-                      width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                      background: cfg.color,
-                      boxShadow: wf.Status === 'aktiv' ? `0 0 4px ${cfg.color}80` : 'none',
-                    }} />
-                    <span style={{
-                      fontSize: 12, fontWeight: isSelected ? 600 : 500,
-                      color: isSelected ? 'var(--text-primary)' : 'var(--text-primary)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-                    }}>
-                      {wf.Name}
-                    </span>
-                  </div>
-                  <div style={{ marginTop: 4, marginLeft: 15, display: 'flex', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: GROUP_META[getWorkflowGroup(wf.Layer, wf.Name)]?.color ?? 'var(--text-muted)', fontWeight: 500 }}>
-                      {getWorkflowGroup(wf.Layer, wf.Name)}
-                    </span>
-                    {wf.Schedule && wf.Schedule !== 'on_demand' && (
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        {wf.Schedule}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* RIGHT — Detail */}
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--layer-1)' }}>
-          {selected
-            ? <WorkflowDetail wf={selected} />
-            : <EmptyDetail count={filtered.length} />
-          }
-        </div>
-      </div>
+      <style>{`
+        @keyframes ops-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .ops-pulse { animation: ops-pulse 2s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 }
