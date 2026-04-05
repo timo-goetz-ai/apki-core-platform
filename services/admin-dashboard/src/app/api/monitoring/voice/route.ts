@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { checkFishAudioHealth } from '@/lib/fishaudio';
+import { checkDeepgramHealth } from '@/lib/deepgram';
 
 const VOICE_API =
   process.env.VOICE_API_BASE_URL ??
@@ -9,9 +9,9 @@ const VOICE_API =
 export async function GET() {
   const t0 = Date.now();
 
-  const [healthRes, fishRes] = await Promise.allSettled([
+  const [healthRes, dgRes] = await Promise.allSettled([
     fetch(`${VOICE_API}/health`, { signal: AbortSignal.timeout(6000) }),
-    checkFishAudioHealth(),
+    checkDeepgramHealth(),
   ]);
 
   const voiceLatency = Date.now() - t0;
@@ -21,8 +21,8 @@ export async function GET() {
       ? await healthRes.value.json()
       : null;
 
-  const fishHealth =
-    fishRes.status === 'fulfilled' ? fishRes.value : { ok: false };
+  const dgHealth =
+    dgRes.status === 'fulfilled' ? dgRes.value : { ok: false };
 
   return NextResponse.json({
     voice: {
@@ -31,14 +31,14 @@ export async function GET() {
       db: voiceHealth?.db ?? 'unknown',
     },
     tts: {
-      ok: (fishHealth as { ok: boolean }).ok,
+      ok: (dgHealth as { ok: boolean }).ok,
       latencyMs: voiceLatency,
     },
     providers: {
       voicePlatform: !!voiceHealth,
-      fishAudio: (fishHealth as { ok: boolean }).ok,
-      whisper: !!voiceHealth, // STT available if platform is up
-      openrouter: !!voiceHealth, // LLM available if platform is up
+      deepgram: (dgHealth as { ok: boolean }).ok,
+      stt: (dgHealth as { ok: boolean }).ok,
+      openrouter: !!voiceHealth,
     },
     timestamp: new Date().toISOString(),
   });

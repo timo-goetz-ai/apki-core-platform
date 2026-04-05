@@ -7,8 +7,8 @@ export interface VoiceHealthData {
   tts: { ok: boolean; latencyMs: number };
   providers: {
     voicePlatform: boolean;
-    fishAudio: boolean;
-    whisper: boolean;
+    deepgram: boolean;
+    stt: boolean;
     openrouter: boolean;
   };
   timestamp: string;
