@@ -171,8 +171,8 @@ export default function VoiceDebugPage() {
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, padding: '8px 0' }}>
         {[
           { label: 'Voice Platform', ok: health?.providers.voicePlatform },
-          { label: 'Fish Audio', ok: health?.providers.fishAudio },
-          { label: 'Whisper STT', ok: health?.providers.whisper },
+          { label: 'Deepgram', ok: health?.providers.deepgram },
+          { label: 'Deepgram STT', ok: health?.providers.stt },
           { label: 'OpenRouter', ok: health?.providers.openrouter },
         ].map((p) => (
           <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
