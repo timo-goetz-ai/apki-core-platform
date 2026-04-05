@@ -41,7 +41,7 @@
           "parameters": [
             {
               "name": "x-picsart-api-key",
-              "value": "={{ $vars.PICSART_API_KEY }}"
+              "value": "={{ $env.PICSART_API_KEY }}"
             }
           ]
         },
@@ -104,7 +104,7 @@
           "parameters": [
             {
               "name": "x-picsart-api-key",
-              "value": "={{ $vars.PICSART_API_KEY }}"
+              "value": "={{ $env.PICSART_API_KEY }}"
             }
           ]
         },
@@ -221,7 +221,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -286,7 +286,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
+              "value": "Bearer ={{ $env.DIRECTUS_TOKEN }}"
             }
           ]
         },
