@@ -2,12 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, Sun, Moon, Settings, Bell, Command, FileText, AlertCircle, AlertTriangle, Info, X, Menu, ChevronDown, Zap } from 'lucide-react';
+import { Sun, Moon, Settings, Bell, AlertCircle, AlertTriangle, Info, X, Menu, ChevronDown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommandPalette } from '@/components/CommandPalette';
-import { getRecentTemplates, type RecentTemplate } from '@/lib/template-engine';
-import { PROVIDER_META, ORCHESTRATOR_AUTO, type ModelProvider } from '@/lib/chat-models';
+import { PROVIDER_META, type ModelProvider } from '@/lib/chat-models';
 
 type AiosMode = 'orchestrator' | ModelProvider;
 
@@ -39,10 +36,7 @@ const ALERT_COLOR = {
 } as const;
 
 export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } = {}) {
-  const router = useRouter();
   const [isDark, setIsDark] = useState(true);
-  const [commandOpen, setCommandOpen] = useState(false);
-  const [recentTemplates, setRecentTemplates] = useState<RecentTemplate[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -114,24 +108,6 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  useEffect(() => {
-    const refresh = () => setRecentTemplates(getRecentTemplates());
-    refresh();
-    window.addEventListener('aios:templates:updated', refresh);
-    return () => window.removeEventListener('aios:templates:updated', refresh);
-  }, []);
-
-  // Cmd+K global shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCommandOpen(true);
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, []);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -155,35 +131,6 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
             <Menu size={20} strokeWidth={2} />
           </button>
         ) : null}
-        {/* Command palette search trigger */}
-        <button
-          onClick={() => setCommandOpen(true)}
-          className="flex min-h-[44px] flex-1 max-w-sm items-center gap-2 rounded-md border border-[--border] bg-[--layer-2] px-3 py-2 text-sm text-[--text-muted] transition-colors hover:border-[--border-bright] hover:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-1)]"
-        >
-          <Search size={13} className="shrink-0" />
-          <span className="flex-1 text-left">Suchen oder navigieren...</span>
-          <kbd className="flex items-center gap-1 rounded border border-[--border-bright] bg-[--layer-3] px-1.5 py-0.5 font-mono text-[10px] text-[--text-muted]">
-            <Command size={9} />K
-          </kbd>
-        </button>
-
-        {/* Quick-access templates */}
-        {recentTemplates.length > 0 && (
-          <div className="hidden md:flex items-center gap-1.5">
-            <FileText size={12} className="text-[--text-muted] shrink-0" />
-            {recentTemplates.slice(0, 5).map(t => (
-              <button
-                key={t.id}
-                onClick={() => router.push('/templates')}
-                title={t.name}
-                className="max-w-[100px] truncate rounded border border-[--border] bg-[--layer-2] px-2 py-1 text-[10px] text-[--text-muted] hover:text-[--text-primary] hover:border-[--border-bright] transition-colors"
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         <div className="flex-1" />
 
         {/* Right actions */}
@@ -361,7 +308,6 @@ export function AppHeader({ onOpenMobileNav }: { onOpenMobileNav?: () => void } 
         </div>
       </header>
 
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </>
   );
 }

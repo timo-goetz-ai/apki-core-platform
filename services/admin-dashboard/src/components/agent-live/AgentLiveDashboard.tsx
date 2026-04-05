@@ -14,7 +14,7 @@ export function AgentLiveDashboard() {
       {/* Header */}
       <div
         style={{
-          padding: '16px 24px',
+          padding: '14px 24px',
           borderBottom: '1px solid var(--border)',
           background: 'var(--layer-1)',
           display: 'flex',
@@ -23,9 +23,9 @@ export function AgentLiveDashboard() {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Bot size={20} style={{ color: 'var(--accent-blue)' }} />
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
+          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>
             Agent Live Monitor
           </h1>
           <span
@@ -33,19 +33,22 @@ export function AgentLiveDashboard() {
               fontSize: 10,
               fontFamily: 'var(--font-mono)',
               color: 'var(--accent-green)',
-              background: 'rgba(52,211,153,0.1)',
+              background: 'rgba(52,211,153,0.08)',
               padding: '2px 8px',
-              borderRadius: 10,
-              fontWeight: 600,
+              borderRadius: 4,
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
             }}
           >
-            <span className="live-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-green)', marginRight: 5 }} />
+            <span className="pulsing-dot" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-green)' }} />
             LIVE
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 16, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-          <span>{agents.length} Agents geladen</span>
-          <span>{activeCount} aktiv</span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+          <span><strong style={{ color: 'var(--text-secondary)' }}>{agents.length}</strong> Agents</span>
+          <span><strong style={{ color: 'var(--accent-blue)' }}>{activeCount}</strong> aktiv</span>
         </div>
       </div>
 
@@ -60,15 +63,6 @@ export function AgentLiveDashboard() {
 
       {/* Status bar */}
       <StatusBar agents={agents} completedToday={completedToday} avgDurationSec={avgDurationSec} />
-
-      {/* Blink animation for thought dots */}
-      <style>{`
-        @keyframes blink {
-          0%, 20% { opacity: 0; }
-          50% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }

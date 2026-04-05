@@ -21,13 +21,11 @@ const AI_PROVIDERS = [
 
 const SERVICES = [
   { id: 'n8n',        label: 'n8n Workflows',   url: 'https://n8n.automation-plus-ki.de',         desc: 'Workflow Automation',    color: 'var(--accent-amber)' },
-  { id: 'nocodb',     label: 'NocoDB',          url: 'https://nocodb.automation-plus-ki.de',      desc: 'Datenbank UI',           color: 'var(--accent-blue)' },
+  { id: 'directus',   label: 'Directus',        url: 'https://directus.automation-plus-ki.de',    desc: 'Headless CMS & API',     color: 'var(--accent-blue)' },
   { id: 'grafana',    label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',     desc: 'Monitoring & Dashboards',color: 'var(--accent-amber)' },
   { id: 'prometheus', label: 'Prometheus',      url: 'https://prometheus.automation-plus-ki.de',  desc: 'Metriken & Alerting',    color: 'var(--accent-red)' },
-  { id: 'coolify',    label: 'Coolify',         url: 'https://coolify.automation-plus-ki.de',     desc: 'Deployment Plattform',   color: 'var(--accent-purple)' },
   { id: 'authentik',  label: 'Authentik SSO',   url: 'https://auth.automation-plus-ki.de',        desc: 'SSO & Identity Provider',color: 'var(--accent-green)' },
   { id: 'qdrant',     label: 'Qdrant',          url: 'https://qdrant.automation-plus-ki.de',      desc: 'Vector Database',        color: 'var(--accent-purple)' },
-  { id: 'mailpit',    label: 'Mailpit',         url: 'https://mail.automation-plus-ki.de',        desc: 'SMTP Catcher / Testing', color: 'var(--accent-green)' },
   { id: 'traefik',    label: 'Traefik',         url: 'https://traefik.automation-plus-ki.de',     desc: 'Reverse Proxy',          color: 'var(--accent-blue)' },
 ];
 
@@ -36,9 +34,9 @@ const INTEGRATIONS = [
   { key: 'telegram',   label: 'Telegram Bot',        envVar: 'TELEGRAM_BOT_TOKEN',    desc: 'Notifications & Alerts',   icon: '✈️' },
   { key: 'cloudflare', label: 'Cloudflare',          envVar: 'CLOUDFLARE_API_TOKEN',  desc: 'DNS & Tunnels',            icon: '☁️' },
   { key: 'n8n',        label: 'n8n API',             envVar: 'N8N_API_KEY',           desc: 'Workflow Automation',      icon: '⚙️' },
-  { key: 'nocodb',     label: 'NocoDB',              envVar: 'NOCODB_API_TOKEN',      desc: 'Datenbank-Backend',        icon: '🗄️' },
-  { key: 'coolify',    label: 'Coolify',             envVar: 'COOLIFY_API_KEY',       desc: 'Deployment-Plattform',     icon: '🚀' },
+  { key: 'directus',   label: 'Directus',            envVar: 'DIRECTUS_TOKEN',        desc: 'Headless CMS & API',       icon: '🗄️' },
   { key: 's3',         label: 'Hetzner S3 Storage',  envVar: 'S3_ACCESS_KEY',         desc: 'Object Storage Bucket',    icon: '🪣' },
+  { key: 'discord',    label: 'Discord',             envVar: 'DISCORD_WEBHOOK_URL',   desc: 'Server Notifications',     icon: '💬' },
   { key: 'mailtrap',   label: 'Mailtrap / Mailpit',  envVar: 'MAILTRAP_API_TOKEN',    desc: 'E-Mail Testing & Sending', icon: '📧' },
   { key: 'picsart',    label: 'PicsArt AI',          envVar: 'PICSART_API_KEY',       desc: 'Bildgenerierung',          icon: '🎨' },
   { key: 'fishaudio',  label: 'Fish Audio',          envVar: 'FISHAUDIO_API_KEY',     desc: 'Text-to-Speech',           icon: '🔊' },
@@ -55,13 +53,22 @@ function ConfigRow({
     <div className="flex items-center justify-between rounded-lg border border-[--border] bg-[--layer-2] px-4 py-3">
       <div className="flex items-center gap-3">
         {icon && <span className="text-base leading-none">{icon}</span>}
-        <div>
-          <p className="text-sm font-medium text-[--text-primary]">{label}</p>
-          <p className="text-[11px] text-[--text-muted] mt-0.5">
-            <span className="font-mono text-[--text-muted]">{envVar}</span>
-            <span className="mx-1.5">·</span>
-            {desc}
-          </p>
+        <div className="flex items-center gap-2">
+          <span
+            className={configured ? 'pulsing-dot' : ''}
+            style={{
+              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+              background: loading ? 'var(--text-muted)' : configured ? 'var(--accent-green)' : 'var(--accent-red)',
+            }}
+          />
+          <div>
+            <p className="text-sm font-medium text-[--text-primary]">{label}</p>
+            <p className="text-[11px] text-[--text-muted] mt-0.5">
+              <span className="font-mono text-[--text-muted]">{envVar}</span>
+              <span className="mx-1.5">·</span>
+              {desc}
+            </p>
+          </div>
         </div>
       </div>
       <div className="shrink-0">
@@ -92,10 +99,9 @@ function ServiceRow({ service, status, pinging }: {
     <div className="flex items-center justify-between rounded-lg border border-[--border] bg-[--layer-2] px-4 py-3">
       <div className="flex items-center gap-3">
         <span
-          className="h-2 w-2 rounded-full shrink-0"
+          className={`h-2 w-2 rounded-full shrink-0 ${status === 'online' ? 'pulsing-dot' : ''}`}
           style={{
             background: status === 'online' ? 'var(--accent-green)' : status === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)',
-            boxShadow: status === 'online' ? '0 0 6px var(--accent-green)' : 'none',
           }}
         />
         <div>

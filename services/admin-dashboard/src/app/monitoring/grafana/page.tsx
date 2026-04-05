@@ -103,10 +103,6 @@ export default function GrafanaPage() {
       {/* Dashboards tab */}
       {!loading && tab === 'dashboards' && (
         <div>
-          {/* Grafana iframe */}
-          <div style={{ ...panel, marginBottom: 20, padding: 0, overflow: 'hidden', height: 500 }}>
-            <iframe src={GRAFANA_URL} style={{ width: '100%', height: '100%', border: 'none' }} title="Grafana" />
-          </div>
           {/* Dashboard list */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
             {(grafanaData?.dashboards ?? []).map(d => (

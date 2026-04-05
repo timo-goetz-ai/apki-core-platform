@@ -36,8 +36,8 @@ export interface LiveDashboardData {
 /** The 5 stations on the ∞-track */
 export const STATIONS: TrackStation[] = [
   { id: 'analyse',   label: 'Analyse',    icon: '📊', t: 0.00, color: 'var(--accent-blue)' },
-  { id: 'research',  label: 'Research',   icon: '🔍', t: 0.20, color: 'var(--accent-purple)' },
-  { id: 'uebergabe', label: 'Übergabe',   icon: '🔄', t: 0.50, color: 'var(--accent-amber)' },
+  { id: 'research',  label: 'Research',   icon: '🔍', t: 0.20, color: 'var(--accent-blue)' },
+  { id: 'uebergabe', label: 'Übergabe',   icon: '🔄', t: 0.50, color: 'var(--text-muted)' },
   { id: 'content',   label: 'Content',    icon: '✍️',  t: 0.70, color: 'var(--accent-green)' },
-  { id: 'export',    label: 'Export',     icon: '📤', t: 0.90, color: 'var(--accent-red)' },
+  { id: 'export',    label: 'Export',     icon: '📤', t: 0.90, color: 'var(--accent-green)' },
 ];
