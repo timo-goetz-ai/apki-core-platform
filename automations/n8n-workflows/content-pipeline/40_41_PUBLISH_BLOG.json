@@ -117,8 +117,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $env.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -166,8 +166,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $env.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

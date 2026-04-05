@@ -14,7 +14,7 @@
 | `__pycache__` überall entfernt | frei |
 | `.DS_Store` Dateien entfernt | frei |
 | Kaputten `.cursorrules` Symlink entfernt | Fehler behoben |
-| **Alles in `~/aios/` konsolidiert + GitHub gepusht** | System konsolidiert |
+| **Alles in `~/Projects/01_Active_Projects/aios/` konsolidiert + GitHub gepusht** | System konsolidiert |
 
 ---
 
@@ -55,13 +55,13 @@
 ```bash
 rm -rf ~/._AIOS_MIGRATION_OUTPUT
 ```
-> Alles davon ist in `~/aios/` vorhanden. 184 KB gespart.
+> Alles davon ist in `~/Projects/01_Active_Projects/aios/` vorhanden. 184 KB gespart.
 
 ### 1.2 `canvas/` löschen
 ```bash
 rm -rf ~/canvas
 ```
-> Die HTML-Datei ist in `~/aios/docs/visuals/` vorhanden.
+> Die HTML-Datei ist in `~/Projects/01_Active_Projects/aios/docs/visuals/` vorhanden.
 
 ### 1.3 `00_UNSORTED/` löschen
 ```bash
@@ -141,7 +141,7 @@ Dieser Ordner synchronisiert sich bei jeder Änderung – verbraucht iCloud-Spei
 ```
 1. Ordner "Schreibtisch – iMac von Timo" in ~/05_FILES/ARCHIV_IMAC/ verschieben
 2. Nicht mehr benötigte Dateien darin löschen
-3. Wichtige Projekte bereits in ~/aios/ vorhanden
+3. Wichtige Projekte bereits in ~/Projects/01_Active_Projects/aios/ vorhanden
 ```
 
 ### Was im iMac-Desktop zu behalten wäre:
@@ -194,10 +194,10 @@ Dieser Ordner synchronisiert sich bei jeder Änderung – verbraucht iCloud-Spei
 ## NÄCHSTE SCHRITTE FÜR DICH
 
 1. **Sage: "Phase 1 ausführen"** → Ich lösche sofort `_AIOS_MIGRATION_OUTPUT`, `canvas`, `00_UNSORTED`
-2. **Prüfe `~/aios/`** → Stelle sicher, dass alles da ist was du brauchst
+2. **Prüfe `~/Projects/01_Active_Projects/aios/`** → Stelle sicher, dass alles da ist was du brauchst
 3. **Sage: "Phase 2 ausführen"** → Ich archiviere `01_AI`, `02_PROJECTS`, `03_BUSINESS/STUDIO`
 4. **iCloud-Sync** → Das machst du manuell in den Systemeinstellungen (Anleitung oben)
 
 ---
 
-*Erstellt: 12. März 2026 | Alle kritischen Daten gesichert in ~/aios/ (GitHub: TimoGoetz1988/aios)*
+*Erstellt: 12. März 2026 | Alle kritischen Daten gesichert in ~/Projects/01_Active_Projects/aios/ (GitHub: TimoGoetz1988/aios)*

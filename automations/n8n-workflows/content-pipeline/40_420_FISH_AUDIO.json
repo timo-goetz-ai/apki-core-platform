@@ -121,13 +121,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records",
+        "url": "https://directus.automation-plus-ki.de/items/420_media_assets",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -188,13 +188,13 @@
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records?where=(job_id,eq,${$('Dateiname').item.json.pipeline_job_id})&limit=1",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline?filter[job_id][_eq]=${$('Dateiname').item.json.pipeline_job_id}&limit=1",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -213,19 +213,19 @@
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "PATCH",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify([{Id:$json.list?.[0]?.Id,audio_url:$('Dateiname').item.json.audio_url||'',stage:'publish',status:'running'}]) }}",
+        "body": "={{ JSON.stringify([{Id:$json.data?.[0]?.Id,audio_url:$('Dateiname').item.json.audio_url||'',stage:'publish',status:'running'}]) }}",
         "options": {
           "response": {
             "response": {

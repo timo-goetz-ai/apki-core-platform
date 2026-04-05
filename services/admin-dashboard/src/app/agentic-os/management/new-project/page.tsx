@@ -54,7 +54,7 @@ const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
 const INTEGRATIONS_LIST = [
   'n8n', 'NocoDB', 'GitHub', 'Telegram', 'Cloudflare',
   'Hetzner S3', 'Mailtrap', 'Grafana', 'Prometheus', 'Coolify',
-  'Qdrant', 'Ollama', 'Claude API', 'OpenRouter',
+  'Qdrant', 'Ollama', 'Claude API', 'AnythingLLM',
 ];
 
 // ── Report Generator ───────────────────────────────────────────────────────────

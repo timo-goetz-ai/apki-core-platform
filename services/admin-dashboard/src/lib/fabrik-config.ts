@@ -54,7 +54,7 @@ export const FABRIK_STATIONS: FabrikStation[] = [
     links: [
       { label: 'MCP Plattform', href: '/mcp-plattform' },
       { label: 'Claude Workspace', href: '/claude-workspace' },
-      { label: 'Raycast', href: '/raycast-workspace' },
+      { label: 'AnythingLLM', href: '/claude-workspace' },
       { label: 'Settings', href: '/settings' },
     ],
     agentFocus: ['MCP-Tools', 'Cursor/Claude Rules', 'Skills & Plugins'],

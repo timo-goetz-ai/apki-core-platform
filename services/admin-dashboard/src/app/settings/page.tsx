@@ -14,7 +14,7 @@ import { useLLM, LLM_MODELS } from '@/lib/llm-context';
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const AI_PROVIDERS = [
-  { key: 'openrouter', label: 'OpenRouter',     envVar: 'OPENROUTER_API_KEY',   desc: 'Free-Tier + Paid Modelle', color: 'var(--accent-blue)' },
+  { key: 'anythingllm', label: 'AnythingLLM',   envVar: 'ANYTHINGLLM_URL',       desc: 'Lokales LLM-Hub (kostenlos)', color: 'var(--accent-blue)' },
   { key: 'anthropic',  label: 'Anthropic',      envVar: 'ANTHROPIC_API_KEY',    desc: 'Claude Abo direkt',       color: 'var(--accent-purple)' },
   { key: 'google',     label: 'Google AI Studio', envVar: 'GOOGLE_AI_API_KEY',  desc: 'Gemini direkt',           color: 'var(--accent-green)' },
 ];

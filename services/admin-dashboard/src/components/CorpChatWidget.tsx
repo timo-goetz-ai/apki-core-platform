@@ -215,7 +215,7 @@ export function CorpChatWidget() {
         <div style={{ minWidth: 0 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 }}>KI-Steuerung</p>
           <p style={{ fontSize: 11, color: configured === false ? "var(--warn)" : "var(--text2)", margin: "2px 0 0" }}>
-            {configured === null ? "Verbinde…" : configured ? "OpenRouter · Tool-Calling aktiv" : "⚠️ OPENROUTER_API_KEY fehlt"}
+            {configured === null ? "Verbinde…" : configured ? "AnythingLLM · aktiv" : "⚠️ ANYTHINGLLM_URL fehlt"}
           </p>
         </div>
 

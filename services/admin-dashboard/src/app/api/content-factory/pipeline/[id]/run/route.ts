@@ -28,22 +28,21 @@ export async function POST(
   const steps: string[] = JSON.parse(job.steps_requested ?? '["blog","image","voice"]');
   const errors: Record<string, string> = {};
 
-  // ── STEP 1: Blog-Text via OpenRouter (direkt, kein Self-Call) ──────────────
+  // ── STEP 1: Blog-Text via AnythingLLM (direkt, kein Self-Call) ─────────────
   if (steps.includes('blog')) {
     await updatePipelineJob(jobId, { stage: 'text', status: 'running' });
     try {
-      const orKey = process.env.OPENROUTER_API_KEY;
-      if (!orKey) throw new Error('OPENROUTER_API_KEY nicht gesetzt');
+      const allmlUrl = process.env.ANYTHINGLLM_URL ?? 'http://localhost:3003';
+      const allmlKey = process.env.ANYTHINGLLM_API_KEY ?? '';
+      const allmlWs  = process.env.ANYTHINGLLM_WORKSPACE ?? 'aios';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (allmlKey) headers['Authorization'] = `Bearer ${allmlKey}`;
 
-      const llmRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const llmRes = await fetch(`${allmlUrl}/api/openai/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${orKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://aios.automation-plus-ki.de',
-        },
+        headers,
         body: JSON.stringify({
-          model: 'deepseek/deepseek-chat',
+          model: allmlWs,
           messages: [
             {
               role: 'user',
@@ -63,7 +62,7 @@ Excerpt (1 Satz): ...`,
         }),
       });
 
-      if (!llmRes.ok) throw new Error(`OpenRouter ${llmRes.status}: ${await llmRes.text()}`);
+      if (!llmRes.ok) throw new Error(`AnythingLLM ${llmRes.status}: ${await llmRes.text()}`);
 
       const llmData = await llmRes.json() as { choices?: { message?: { content?: string } }[] };
       const blogContent = llmData.choices?.[0]?.message?.content ?? '';

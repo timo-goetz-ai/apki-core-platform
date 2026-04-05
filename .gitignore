@@ -51,3 +51,8 @@ logs/
 # Backups
 *.bak
 *.backup
+
+# Persona / CV mit personenbezogenen Daten (nur lokal)
+content/personas/private/
+content/personas/*.private.*
+content/personas/*FULL*

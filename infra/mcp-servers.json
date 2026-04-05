@@ -152,6 +152,17 @@
       "status": "active",
       "description": "Direct SSH access to Hetzner host — exec commands, sudo, Docker management"
     },
+    "mcp-anythingllm": {
+      "url": "https://mcp-anythingllm.automation-plus-ki.de",
+      "coolify_id": null,
+      "env_vars": {
+        "ANYTHINGLLM_URL": "http://10.0.1.18:3001",
+        "ANYTHINGLLM_API_KEY": "<anythingllm-api-key>"
+      },
+      "category": "ai",
+      "status": "active",
+      "description": "AnythingLLM workspace chat, RAG queries, document upload via MCP"
+    },
     "mcp-registry": {
       "url": "https://registry.npmmirror.com",
       "coolify_id": null,

@@ -33,13 +33,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mg4p0eux8onz3nq/records?where=(batch_id,eq,{{ $json.batch_id }})&limit=1",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline?filter[batch_id][_eq]={{ $json.batch_id }}&limit=1",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -55,7 +55,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Batch Job aus Response extrahieren + Topics parsen\nconst res   = $input.first().json;\nconst batch = res.list?.[0];\nif (!batch) throw new Error(`Batch Job nicht gefunden: ${$('Input validieren').item.json.batch_id}`);\n\nconst topics = JSON.parse(batch.topics_json ?? '[]');\nconst steps  = JSON.parse(batch.steps_json  ?? '[\"blog\",\"image\",\"voice\"]');\n\nreturn topics.map((topic, idx) => ({ json: {\n  batch_id:   batch.batch_id,\n  batch_db_id: batch.Id,\n  topic,\n  category: batch.category,\n  steps,\n  topic_index: idx,\n  total_count: topics.length\n} }));"
+        "jsCode": "// Batch Job aus Response extrahieren + Topics parsen\nconst res   = $input.first().json;\nconst batch = res.data?.[0];\nif (!batch) throw new Error(`Batch Job nicht gefunden: ${$('Input validieren').item.json.batch_id}`);\n\nconst topics = JSON.parse(batch.topics_json ?? '[]');\nconst steps  = JSON.parse(batch.steps_json  ?? '[\"blog\",\"image\",\"voice\"]');\n\nreturn topics.map((topic, idx) => ({ json: {\n  batch_id:   batch.batch_id,\n  batch_db_id: batch.Id,\n  topic,\n  category: batch.category,\n  steps,\n  topic_index: idx,\n  total_count: topics.length\n} }));"
       },
       "id": "parse-topics",
       "name": "Topics aufteilen",
@@ -69,13 +69,13 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mg4p0eux8onz3nq/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -124,13 +124,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -230,13 +230,13 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mg4p0eux8onz3nq/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

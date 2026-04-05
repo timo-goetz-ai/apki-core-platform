@@ -34,13 +34,13 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -119,13 +119,13 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgjsuwl4jwlyhdc/records",
+        "url": "https://directus.automation-plus-ki.de/items/400_content_pipeline",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

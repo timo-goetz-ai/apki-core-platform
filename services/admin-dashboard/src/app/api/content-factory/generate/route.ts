@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const result: Record<string, unknown> = { title: blogTitle, category, steps: {} };
   const errors: Record<string, string> = {};
 
-  // ── STEP 1: Blog Post via LLM (OpenRouter) ─────────────────────────────────
+  // ── STEP 1: Blog Post via LLM (AnythingLLM) ───────────────────────────────
   if (steps.includes("blog")) {
     try {
       const llmRes = await fetch(
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            modelKey: "deepseek-chat",
+            modelKey: "allm-aios",
             messages: [
               {
                 role: "user",

@@ -6,7 +6,6 @@ import {
   GitBranch, StickyNote, Hash,
 } from 'lucide-react';
 import { exportCsv } from '@/lib/csv-export';
-import { dashboardApiAuthHeaders } from '@/lib/dashboard-auth-headers';
 import { humanizeWorkflowName, getWorkflowGroup, WORKFLOW_GROUPS, GROUP_META, type WorkflowGroup } from '@/lib/workflow-utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,7 +23,6 @@ interface Workflow {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const WORKFLOWS_TABLE = 'mfz43ghxesvn1yy';
 const N8N_BASE = 'https://n8n.automation-plus-ki.de';
 const FILTER_GROUPS: ('Alle' | WorkflowGroup)[] = ['Alle', ...WORKFLOW_GROUPS];
 
@@ -210,7 +208,7 @@ export default function WorkflowsPage() {
     (async () => {
       setLoading(true);
       try {
-        const res  = await fetch(`/api/nocodb/table?id=${WORKFLOWS_TABLE}&limit=200`, { headers: { ...dashboardApiAuthHeaders() } });
+        const res  = await fetch('/api/nocodb/workflows');
         const data = await res.json();
         const list: Workflow[] = Array.isArray(data) ? data : (data.list ?? []);
         setWorkflows(list);

@@ -8,14 +8,15 @@ class Settings(BaseSettings):
     n8n_api_url: str = ""
     n8n_api_key: str = ""
 
-    # NocoDB
-    nocodb_api_url: str = ""
-    nocodb_api_token: str = ""
-    nocodb_content_pieces_table_id: str = ""
+    # Directus
+    directus_url: str = ""
+    directus_token: str = ""
+    directus_content_collection: str = "400_content_pipeline"
 
-    # LLM Provider Keys
-    openrouter_api_key: str = ""
-    openai_api_key: str = ""
+    # LLM Provider
+    anythingllm_url: str = "http://anythingllm:3001"
+    anythingllm_api_key: str = ""
+    anythingllm_workspace: str = "aios"
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
 
