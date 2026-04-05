@@ -68,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'System', href: '/monitoring', icon: Gauge },
       { label: 'Alerts', href: '/monitoring/grafana', icon: BellRing },
+      { label: 'Logs', href: '/logs', icon: ScrollText },
     ],
   },
   {
@@ -75,6 +76,16 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Workflow,
     items: [
       { label: 'Alle Workflows', href: '/workflows', icon: Workflow },
+    ],
+  },
+  {
+    label: 'Technik',
+    icon: Cpu,
+    items: [
+      { label: 'Deployments', href: '/fabrik', icon: Cpu },
+      { label: 'MCP Server', href: '/mcp-plattform', icon: Globe },
+      { label: 'API Explorer', href: '/api-explorer', icon: Terminal },
+      { label: 'Services', href: '/services', icon: Database },
     ],
   },
 ];
