@@ -42,8 +42,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }

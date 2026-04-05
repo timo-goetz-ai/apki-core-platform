@@ -1,30 +1,29 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-const N8N_API      = process.env.N8N_INTERNAL_URL    || 'http://10.0.1.29:5678';
-const N8N_KEY      = process.env.N8N_API_KEY          || '';
-const OR_KEY       = process.env.OPENROUTER_API_KEY   || '';
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY   || '';
-const GEMINI_KEY   = process.env.GOOGLE_AI_API_KEY    || '';
+const N8N_API         = process.env.N8N_INTERNAL_URL    || 'http://10.0.1.16:5678';
+const N8N_KEY         = process.env.N8N_API_KEY          || '';
+const ANYTHINGLLM_URL = process.env.ANYTHINGLLM_URL      || 'http://localhost:3003';
+const ANYTHINGLLM_KEY = process.env.ANYTHINGLLM_API_KEY  || '';
+const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY    || '';
+const GEMINI_KEY      = process.env.GOOGLE_AI_API_KEY    || '';
 
-async function fetchOpenRouterCredits() {
-  if (!OR_KEY) return { credit: null, limit: null, isFreeTier: false, valid: false, error: 'Key fehlt' };
+async function fetchAnythingLLMStatus() {
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
-      headers: { Authorization: `Bearer ${OR_KEY}` },
-      signal: AbortSignal.timeout(5000),
+    const res = await fetch(`${ANYTHINGLLM_URL}/api/health`, {
+      headers: ANYTHINGLLM_KEY ? { Authorization: `Bearer ${ANYTHINGLLM_KEY}` } : {},
+      signal: AbortSignal.timeout(4000),
     });
-    if (!res.ok) return { credit: null, limit: null, isFreeTier: false, valid: false, error: `HTTP ${res.status}` };
-    const data = await res.json();
-    return {
-      credit: data?.data?.usage ?? null,
-      limit:  data?.data?.limit ?? null,
-      isFreeTier: data?.data?.is_free_tier ?? false,
-      valid: true,
-      error: null,
-    };
+    if (!res.ok) return { online: false, url: ANYTHINGLLM_URL, workspaces: null, error: `HTTP ${res.status}` };
+    const workspacesRes = await fetch(`${ANYTHINGLLM_URL}/api/v1/workspaces`, {
+      headers: ANYTHINGLLM_KEY ? { Authorization: `Bearer ${ANYTHINGLLM_KEY}` } : {},
+      signal: AbortSignal.timeout(4000),
+    }).catch(() => null);
+    const wsData = workspacesRes?.ok ? await workspacesRes.json().catch(() => null) : null;
+    const workspaceCount = wsData?.workspaces?.length ?? null;
+    return { online: true, url: ANYTHINGLLM_URL, workspaces: workspaceCount, error: null };
   } catch {
-    return { credit: null, limit: null, isFreeTier: false, valid: false, error: 'Timeout' };
+    return { online: false, url: ANYTHINGLLM_URL, workspaces: null, error: 'Nicht erreichbar' };
   }
 }
 
@@ -84,17 +83,16 @@ async function fetchN8nStats() {
 }
 
 export async function GET() {
-  const [openrouter, anthropic, gemini, n8n] = await Promise.all([
-    fetchOpenRouterCredits(),
+  const [anythingllm, anthropic, gemini, n8n] = await Promise.all([
+    fetchAnythingLLMStatus(),
     checkAnthropicKey(),
     checkGeminiKey(),
     fetchN8nStats(),
   ]);
   return NextResponse.json({
-    openrouter,
+    anythingllm,
     anthropic,
     gemini,
-    raycast: { type: 'subscription', note: 'Kein Cost-API — Abo-Dienst', valid: true },
     n8n,
     fetchedAt: new Date().toISOString(),
   });

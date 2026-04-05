@@ -28,9 +28,9 @@ const QUICK_PROMPTS = [
 ];
 
 const PROVIDERS = [
-  { provider: 'openrouter' as const, label: '⚡ Free · OpenRouter', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',  selBorder: 'rgba(56,189,248,0.2)',  selColor: 'var(--accent-blue)' },
-  { provider: 'anthropic'  as const, label: '◆ Anthropic · Claude', color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',  selBorder: 'rgba(251,191,36,0.25)', selColor: 'var(--accent-amber)' },
-  { provider: 'google'     as const, label: '◈ Google AI Studio',   color: 'var(--accent-green)',             selBg: 'rgba(52,211,153,0.08)',  selBorder: 'rgba(52,211,153,0.25)', selColor: 'var(--accent-green)' },
+  { provider: 'anythingllm' as const, label: '⚡ Lokal · AnythingLLM', color: 'var(--text-muted)',    selBg: 'rgba(56,189,248,0.08)',  selBorder: 'rgba(56,189,248,0.2)',  selColor: 'var(--accent-blue)' },
+  { provider: 'anthropic'   as const, label: '◆ Anthropic · Claude',   color: 'var(--accent-amber)', selBg: 'rgba(251,191,36,0.08)',  selBorder: 'rgba(251,191,36,0.25)', selColor: 'var(--accent-amber)' },
+  { provider: 'google'      as const, label: '◈ Google AI Studio',     color: 'var(--accent-green)', selBg: 'rgba(52,211,153,0.08)',  selBorder: 'rgba(52,211,153,0.25)', selColor: 'var(--accent-green)' },
 ] as const;
 
 // ── Markdown-lite renderer ─────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ export default function ClaudeWorkspacePage() {
   }, [modelOpen]);
 
   const currentModel = modelKey === ORCHESTRATOR_AUTO
-    ? { label: 'Auto (Orchestrator)', free: true, tools: true, provider: 'openrouter' as const }
+    ? { label: 'Auto (Orchestrator)', free: true, tools: true, provider: 'anythingllm' as const }
     : (MODELS[modelKey] ?? MODELS[DEFAULT_MODEL]);
 
   const sendMessage = useCallback(async (text?: string) => {
@@ -289,7 +289,7 @@ export default function ClaudeWorkspacePage() {
                     color: modelKey === ORCHESTRATOR_AUTO ? 'var(--accent-blue)' : 'var(--text-secondary)',
                     fontSize: 11, fontFamily: 'var(--font-mono)', textAlign: 'left',
                   }}>
-                    <span>Auto — OpenRouter · Claude · Gemini</span>
+                    <span>Auto — AnythingLLM · Claude · Gemini</span>
                     <span style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(34,211,238,0.15)', color: 'var(--accent-blue)' }}>ROUTING</span>
                   </button>
                   <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 6px' }} />

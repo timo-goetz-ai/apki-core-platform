@@ -36,13 +36,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mrdi13quucpnps4/records?limit=20&sort=-created_at",
+        "url": "https://directus.automation-plus-ki.de/items/300_trends?limit=20&sort=-created_at",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -59,13 +59,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mvb46y3ncw21m1g/records?limit=10&sort=-created_at",
+        "url": "https://directus.automation-plus-ki.de/items/310_sentiment?limit=10&sort=-created_at",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -82,13 +82,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/m5abfrtfyr2j912/records?limit=10&sort=-created_at",
+        "url": "https://directus.automation-plus-ki.de/items/320_content_opportunities?limit=10&sort=-created_at",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -121,7 +121,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Alle drei Datensätze zu einem Forecast-Prompt kombinieren\nconst items = $input.all();\n\nconst trends       = items[0]?.json?.list ?? [];\nconst sentiments   = items[1]?.json?.list ?? [];\nconst opportunities = items[2]?.json?.list ?? [];\n\nconst trendsText = trends.slice(0, 10).map((t, i) =>\n  `${i+1}. ${t.topic ?? t.keyword ?? t.title ?? JSON.stringify(t).substring(0,80)}`\n).join('\\n');\n\nconst sentimentText = sentiments.slice(0, 5).map((s) =>\n  `- ${s.topic ?? s.keyword ?? ''}: ${s.sentiment ?? s.score ?? s.label ?? 'neutral'}`\n).join('\\n');\n\nconst oppText = opportunities.slice(0, 8).map((o, i) =>\n  `${i+1}. ${o.topic ?? o.title ?? ''} (Score: ${o.opportunity_score ?? 'n/a'})`\n).join('\\n');\n\nconst today = new Date();\nconst in14Days = new Date(today.getTime() + 14*24*60*60*1000);\nconst dateRange = `${today.toISOString().split('T')[0]} bis ${in14Days.toISOString().split('T')[0]}`;\n\nconst prompt = `Du bist ein Content-Stratege spezialisiert auf KI-Themen im deutschsprachigen Raum (DACH).\n\nAnalysiere folgende Daten und erstelle einen 2-Wochen Content-Forecast.\n\n## AKTUELLE TRENDS (letzte 30 Tage)\n${trendsText || 'Keine Trend-Daten verfügbar'}\n\n## SENTIMENT-ANALYSE\n${sentimentText || 'Keine Sentiment-Daten verfügbar'}\n\n## TOP CONTENT-CHANCEN\n${oppText || 'Keine Opportunity-Daten verfügbar'}\n\n## DEIN AUFTRAG\nErstelle einen Content-Kalender für: ${dateRange}\n\nLiefere NUR valides JSON (kein Text drumherum):\n{\n  \"forecast_period\": \"${dateRange}\",\n  \"market_pulse\": \"2-3 Sätze zur aktuellen Stimmungslage\",\n  \"hot_topics_now\": [\"Thema1\", \"Thema2\", \"Thema3\"],\n  \"upcoming_topics\": [\"Thema1\", \"Thema2\"],\n  \"topics_declining\": [\"Thema1\"],\n  \"recommended_pieces\": [\n    {\n      \"topic\": \"Konkretes Thema\",\n      \"category\": \"KI-Tools\",\n      \"publish_date\": \"YYYY-MM-DD\",\n      \"target_platforms\": \"blog,linkedin\",\n      \"priority\": \"high\",\n      \"reasoning\": \"Kurze Begründung\"\n    }\n  ]\n}\nErstelle genau 7 recommended_pieces. Variiere Kategorien, Plattformen und Daten über 14 Tage.`;\n\nreturn [{ json: { prompt, date_range: dateRange } }];"
+        "jsCode": "// Alle drei Datensätze zu einem Forecast-Prompt kombinieren\nconst items = $input.all();\n\nconst trends       = items[0]?.json?.data ?? [];\nconst sentiments   = items[1]?.json?.data ?? [];\nconst opportunities = items[2]?.json?.data ?? [];\n\nconst trendsText = trends.slice(0, 10).map((t, i) =>\n  `${i+1}. ${t.topic ?? t.keyword ?? t.title ?? JSON.stringify(t).substring(0,80)}`\n).join('\\n');\n\nconst sentimentText = sentiments.slice(0, 5).map((s) =>\n  `- ${s.topic ?? s.keyword ?? ''}: ${s.sentiment ?? s.score ?? s.label ?? 'neutral'}`\n).join('\\n');\n\nconst oppText = opportunities.slice(0, 8).map((o, i) =>\n  `${i+1}. ${o.topic ?? o.title ?? ''} (Score: ${o.opportunity_score ?? 'n/a'})`\n).join('\\n');\n\nconst today = new Date();\nconst in14Days = new Date(today.getTime() + 14*24*60*60*1000);\nconst dateRange = `${today.toISOString().split('T')[0]} bis ${in14Days.toISOString().split('T')[0]}`;\n\nconst prompt = `Du bist ein Content-Stratege spezialisiert auf KI-Themen im deutschsprachigen Raum (DACH).\n\nAnalysiere folgende Daten und erstelle einen 2-Wochen Content-Forecast.\n\n## AKTUELLE TRENDS (letzte 30 Tage)\n${trendsText || 'Keine Trend-Daten verfügbar'}\n\n## SENTIMENT-ANALYSE\n${sentimentText || 'Keine Sentiment-Daten verfügbar'}\n\n## TOP CONTENT-CHANCEN\n${oppText || 'Keine Opportunity-Daten verfügbar'}\n\n## DEIN AUFTRAG\nErstelle einen Content-Kalender für: ${dateRange}\n\nLiefere NUR valides JSON (kein Text drumherum):\n{\n  \"forecast_period\": \"${dateRange}\",\n  \"market_pulse\": \"2-3 Sätze zur aktuellen Stimmungslage\",\n  \"hot_topics_now\": [\"Thema1\", \"Thema2\", \"Thema3\"],\n  \"upcoming_topics\": [\"Thema1\", \"Thema2\"],\n  \"topics_declining\": [\"Thema1\"],\n  \"recommended_pieces\": [\n    {\n      \"topic\": \"Konkretes Thema\",\n      \"category\": \"KI-Tools\",\n      \"publish_date\": \"YYYY-MM-DD\",\n      \"target_platforms\": \"blog,linkedin\",\n      \"priority\": \"high\",\n      \"reasoning\": \"Kurze Begründung\"\n    }\n  ]\n}\nErstelle genau 7 recommended_pieces. Variiere Kategorien, Plattformen und Daten über 14 Tage.`;\n\nreturn [{ json: { prompt, date_range: dateRange } }];"
       },
       "id": "build-forecast-prompt",
       "name": "Forecast-Prompt bauen",
@@ -174,13 +174,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mm1ssn0luruhzyx/records",
+        "url": "https://directus.automation-plus-ki.de/items/330_knowledge_items",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -200,13 +200,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
+        "url": "https://directus.automation-plus-ki.de/items/audit_log",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

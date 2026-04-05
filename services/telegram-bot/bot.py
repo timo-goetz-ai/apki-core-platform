@@ -557,7 +557,7 @@ async def handle_deployments(update: Update, context: ContextTypes.DEFAULT_TYPE)
 @require_auth
 async def handle_trends(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = await loading(update, "⏳ Lade Trend-Daten…")
-    rows = await api.get_nocodb_rows(http_client, api.TABLE_TRENDS, limit=5)
+    rows = await api.get_directus_rows(http_client, api.COLL_TRENDS, limit=5)
 
     if not rows:
         await msg.edit_text(
@@ -594,7 +594,7 @@ async def handle_trends(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 @require_auth
 async def handle_sentiment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = await loading(update, "⏳ Lade Sentiment-Daten…")
-    rows = await api.get_nocodb_rows(http_client, api.TABLE_SENTIMENT, limit=5)
+    rows = await api.get_directus_rows(http_client, api.COLL_SENTIMENT, limit=5)
 
     if not rows:
         await msg.edit_text(
@@ -637,7 +637,7 @@ async def handle_sentiment(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 @require_auth
 async def handle_content(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = await loading(update, "⏳ Lade Content Opportunities…")
-    rows = await api.get_nocodb_rows(http_client, api.TABLE_CONTENT_OPP, limit=5)
+    rows = await api.get_directus_rows(http_client, api.COLL_CONTENT_OPP, limit=5)
 
     if not rows:
         await msg.edit_text("📭 Keine Content Opportunities gefunden.")
@@ -661,10 +661,10 @@ async def handle_analytics(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     msg = await loading(update, "⏳ Lade Analytics…")
 
     trends_count, sentiment_count, content_count, pipeline_count = await asyncio.gather(
-        api.count_nocodb_rows(http_client, api.TABLE_TRENDS),
-        api.count_nocodb_rows(http_client, api.TABLE_SENTIMENT),
-        api.count_nocodb_rows(http_client, api.TABLE_CONTENT_OPP),
-        api.count_nocodb_rows(http_client, api.TABLE_CONTENT_PIPELINE),
+        api.count_directus_rows(http_client, api.COLL_TRENDS),
+        api.count_directus_rows(http_client, api.COLL_SENTIMENT),
+        api.count_directus_rows(http_client, api.COLL_CONTENT_OPP),
+        api.count_directus_rows(http_client, api.COLL_CONTENT_PIPELINE),
         return_exceptions=True,
     )
 
@@ -679,7 +679,7 @@ async def handle_analytics(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         f"• *Content Pipeline:* {_fmt(pipeline_count)} Einträge",
         "",
         "_Detailansicht: `trends`, `sentiment`, `content`_",
-        f"_NocoDB: {api.NOCODB_BASE_URL}_",
+        f"_Directus: {api.DIRECTUS_URL}_",
     ]
     fallback = "\n".join(lines)
     data_ctx = {
@@ -699,7 +699,7 @@ async def handle_analytics(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 @require_auth
 async def handle_content_factory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = await loading(update, "⏳ Lade Content Pipeline…")
-    rows = await api.get_nocodb_rows(http_client, api.TABLE_CONTENT_PIPELINE, limit=5)
+    rows = await api.get_directus_rows(http_client, api.COLL_CONTENT_PIPELINE, limit=5)
 
     if not rows:
         await msg.edit_text("📭 Keine Einträge in der Content Pipeline.")
@@ -723,7 +723,7 @@ async def handle_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     # Try agents table (may be empty per CLAUDE.md)
     try:
-        rows = await api.get_nocodb_rows(http_client, "agents", limit=10)
+        rows = await api.get_directus_rows(http_client, "110_agents", limit=10)
     except Exception:
         rows = []
 
@@ -749,7 +749,7 @@ async def handle_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 @require_auth
 async def handle_knowledge(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = await loading(update, "⏳ Lade Knowledge Base…")
-    rows = await api.get_nocodb_rows(http_client, api.TABLE_PROMPTS, limit=5)
+    rows = await api.get_directus_rows(http_client, api.COLL_PROMPTS, limit=5)
 
     if not rows:
         await msg.edit_text("📭 Keine Einträge in der Knowledge Base / Prompt-Bibliothek.")

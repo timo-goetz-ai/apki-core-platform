@@ -124,18 +124,18 @@
       ],
       "parameters": {
         "method": "PATCH",
-        "url": "=http://homestack-nocodb:8080/api/v1/db/data/noco/pwxfagcnm6bru9w/mjq8palk78za2sz/{{ $json.rowId }}",
+        "url": "https://directus.automation-plus-ki.de/items/510_tasks/{{ $json.rowId }}",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "qvOud9RyADawysdG0vqzVa8vZ2n-wXCnK6skTXC2"
-            },
-            {
               "name": "content-type",
               "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -155,18 +155,18 @@
       ],
       "parameters": {
         "method": "PATCH",
-        "url": "=http://homestack-nocodb:8080/api/v1/db/data/noco/pwxfagcnm6bru9w/mjq8palk78za2sz/{{ $json.rowId }}",
+        "url": "https://directus.automation-plus-ki.de/items/510_tasks/{{ $json.rowId }}",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "qvOud9RyADawysdG0vqzVa8vZ2n-wXCnK6skTXC2"
-            },
-            {
               "name": "content-type",
               "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

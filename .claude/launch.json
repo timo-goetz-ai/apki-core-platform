@@ -3,30 +3,31 @@
   "configurations": [
     {
       "name": "Admin Dashboard (aios-admin-dashboard)",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "cwd": "/Users/zuhause_mit_ideen/projects/ai-os/services/admin-dashboard",
-      "port": 3000
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev"],
+      "cwd": "services/admin-dashboard",
+      "port": 3000,
+      "autoPort": true
     },
     {
       "name": "Landing Page (automation-plus-ki.de)",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "/Users/zuhause_mit_ideen/projects/ai-os/services/landing-page",
+      "cwd": "services/landing-page",
       "port": 3001
     },
     {
       "name": "Infra Dashboard",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "/Users/zuhause_mit_ideen/projects/ai-os/projects/infra-dashboard",
+      "cwd": "projects/infra-dashboard",
       "port": 3002
     },
     {
       "name": "KI-Flow Dashboard (updated)",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "/Users/zuhause_mit_ideen/projects/ai-os/dashboard-experimente/ki-flow-dashboard-updated",
+      "cwd": "dashboard-experimente/ki-flow-dashboard-updated",
       "port": 3003
     }
   ]

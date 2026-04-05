@@ -1,4 +1,4 @@
-"""HTTP API clients for n8n, NocoDB, Prometheus, and Coolify."""
+"""HTTP API clients for n8n, Directus, Prometheus, and Coolify."""
 from __future__ import annotations
 
 import os
@@ -7,25 +7,24 @@ from datetime import datetime, timezone, timedelta
 import httpx
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-N8N_BASE_URL    = os.environ.get("N8N_BASE_URL", "http://10.0.1.29:5678")
+N8N_BASE_URL    = os.environ.get("N8N_BASE_URL", "http://homestack-n8n:5678")
 N8N_API_KEY     = os.environ.get("N8N_API_KEY", "")
-NOCODB_BASE_URL = os.environ.get("NOCODB_BASE_URL", "https://nocodb.automation-plus-ki.de")
-NOCODB_TOKEN    = os.environ.get("NOCODB_API_TOKEN", "")
-NOCODB_PROJECT  = os.environ.get("NOCODB_PROJECT_ID", "pfx0ca6docorj8n")
-PROM_BASE_URL   = os.environ.get("PROMETHEUS_BASE_URL", "http://10.0.1.29:9090")
+DIRECTUS_URL    = os.environ.get("DIRECTUS_URL", "https://directus.automation-plus-ki.de")
+DIRECTUS_TOKEN  = os.environ.get("DIRECTUS_TOKEN", "")
+PROM_BASE_URL   = os.environ.get("PROMETHEUS_BASE_URL", "http://homestack-prometheus:9090")
 COOLIFY_BASE    = os.environ.get("COOLIFY_BASE_URL", "https://coolify.automation-plus-ki.de")
 COOLIFY_TOKEN   = os.environ.get("COOLIFY_API_TOKEN", "")
 JARVIS_WEBHOOK  = os.environ.get("JARVIS_WEBHOOK_URL", "https://n8n.automation-plus-ki.de/webhook/jarvis-intent")
 
 TIMEOUT = httpx.Timeout(12.0)
 
-# ─── NocoDB Table IDs ─────────────────────────────────────────────────────────
-TABLE_TRENDS    = "m91y1ifz2aop1ef"
-TABLE_SENTIMENT = "moigzpvd4yw1d0a"
-TABLE_CONTENT_OPP = "m7ehbmbi5t2w0dw"
-TABLE_CONTENT_PIPELINE = "m48nvpornrxuba9"
-TABLE_PROMPTS   = "mijlvsujsgqa92m"
-TABLE_WORKFLOWS_REG = "mnwlsxsm0q1k2d2"
+# ─── Directus Collection Names ────────────────────────────────────────────────
+COLL_TRENDS           = "300_trends"
+COLL_SENTIMENT        = "310_sentiment"
+COLL_CONTENT_OPP      = "320_content_opportunities"
+COLL_CONTENT_PIPELINE = "400_content_pipeline"
+COLL_PROMPTS          = "200_prompts"
+COLL_WORKFLOWS_REG    = "100_workflows"
 
 
 # ─── n8n ──────────────────────────────────────────────────────────────────────
@@ -153,38 +152,38 @@ async def query_prometheus(client: httpx.AsyncClient, promql: str) -> dict:
     return r.json().get("data", {})
 
 
-# ─── NocoDB ───────────────────────────────────────────────────────────────────
+# ─── Directus ────────────────────────────────────────────────────────────────
 
-async def get_nocodb_rows(
+async def get_directus_rows(
     client: httpx.AsyncClient,
-    table_id: str,
+    collection: str,
     limit: int = 5,
-    sort: str = "-CreatedAt",
+    sort: str = "-date_created",
 ) -> list[dict]:
-    """Fetch rows from a NocoDB table."""
-    url = f"{NOCODB_BASE_URL}/api/v1/db/data/noco/{NOCODB_PROJECT}/{table_id}"
+    """Fetch rows from a Directus collection."""
+    url = f"{DIRECTUS_URL}/items/{collection}"
     r = await client.get(
         url,
-        headers={"xc-token": NOCODB_TOKEN},
+        headers={"Authorization": f"Bearer {DIRECTUS_TOKEN}"},
         params={"limit": limit, "sort": sort},
         timeout=TIMEOUT,
     )
     r.raise_for_status()
-    return r.json().get("list", [])
+    return r.json().get("data", [])
 
 
-async def count_nocodb_rows(client: httpx.AsyncClient, table_id: str) -> int:
-    """Return total row count of a NocoDB table."""
-    url = f"{NOCODB_BASE_URL}/api/v1/db/data/noco/{NOCODB_PROJECT}/{table_id}"
+async def count_directus_rows(client: httpx.AsyncClient, collection: str) -> int:
+    """Return total row count of a Directus collection."""
+    url = f"{DIRECTUS_URL}/items/{collection}"
     r = await client.get(
         url,
-        headers={"xc-token": NOCODB_TOKEN},
-        params={"limit": 1},
+        headers={"Authorization": f"Bearer {DIRECTUS_TOKEN}"},
+        params={"limit": 0, "meta": "total_count"},
         timeout=TIMEOUT,
     )
     r.raise_for_status()
     data = r.json()
-    return data.get("pageInfo", {}).get("totalRows", len(data.get("list", [])))
+    return data.get("meta", {}).get("total_count", 0)
 
 
 # ─── Coolify ──────────────────────────────────────────────────────────────────

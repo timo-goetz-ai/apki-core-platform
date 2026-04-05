@@ -36,13 +36,13 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/m5abfrtfyr2j912/records?limit=1&sort=-created_at&where=(recommendation,eq,Produce Now)",
+        "url": "https://directus.automation-plus-ki.de/items/320_content_opportunities?limit=1&sort=-created_at&filter[recommendation][_eq]=Produce Now",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -58,7 +58,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const res = $input.first().json;\nconst items = res.list ?? [];\n\n// Fallback: neueste Opportunity nehmen wenn kein 'Produce Now' vorhanden\nif (!items.length) {\n  return [{ json: {\n    opp_id: null,\n    topic: 'KI-Agenten in der Praxis 2026',\n    category: 'KI-Tools',\n    context: 'Allgemeiner Überblick über KI-Agenten'\n  } }];\n}\n\nconst opp = items[0];\nreturn [{ json: {\n  opp_id:   opp.Id,\n  topic:    opp.topic ?? opp.title ?? opp.keyword ?? '',\n  category: opp.category ?? 'KI-Tools',\n  context:  opp.summary ?? opp.description ?? opp.niche_analysis ?? ''\n} }];"
+        "jsCode": "const res = $input.first().json;\nconst items = res.data ?? [];\n\n// Fallback: neueste Opportunity nehmen wenn kein 'Produce Now' vorhanden\nif (!items.length) {\n  return [{ json: {\n    opp_id: null,\n    topic: 'KI-Agenten in der Praxis 2026',\n    category: 'KI-Tools',\n    context: 'Allgemeiner Überblick über KI-Agenten'\n  } }];\n}\n\nconst opp = items[0];\nreturn [{ json: {\n  opp_id:   opp.Id,\n  topic:    opp.topic ?? opp.title ?? opp.keyword ?? '',\n  category: opp.category ?? 'KI-Tools',\n  context:  opp.summary ?? opp.description ?? opp.niche_analysis ?? ''\n} }];"
       },
       "id": "extract-topic",
       "name": "Topic extrahieren",
@@ -124,13 +124,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mm1ssn0luruhzyx/records",
+        "url": "https://directus.automation-plus-ki.de/items/330_knowledge_items",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
@@ -150,13 +150,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
+        "url": "https://directus.automation-plus-ki.de/items/audit_log",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

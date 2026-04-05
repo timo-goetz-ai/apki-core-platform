@@ -23,8 +23,9 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL   = "google/gemini-2.0-flash:free"
+ANYTHINGLLM_URL  = os.environ.get("ANYTHINGLLM_URL", "http://anythingllm:3001")
+ANYTHINGLLM_KEY  = os.environ.get("ANYTHINGLLM_API_KEY", "")
+ANYTHINGLLM_WS   = os.environ.get("ANYTHINGLLM_WORKSPACE", "aios")
 
 # ─── System Prompt ────────────────────────────────────────────────────────────
 
@@ -94,10 +95,10 @@ async def generate_response(
 ) -> str | None:
     """Generate a human-friendly AI response using conversation history + live data.
 
-    Returns None if OpenRouter is not configured or the call fails.
+    Returns None if AnythingLLM is not reachable or the call fails.
     The caller falls back to pre-formatted text in that case.
     """
-    if not OPENROUTER_API_KEY:
+    if not ANYTHINGLLM_URL:
         return None
 
     history = memory.get(user_id)
@@ -118,14 +119,14 @@ async def generate_response(
     })
 
     try:
+        headers = {"Content-Type": "application/json"}
+        if ANYTHINGLLM_KEY:
+            headers["Authorization"] = f"Bearer {ANYTHINGLLM_KEY}"
         r = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            f"{ANYTHINGLLM_URL}/api/openai/chat/completions",
+            headers=headers,
             json={
-                "model": OPENROUTER_MODEL,
+                "model": ANYTHINGLLM_WS,
                 "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": 0.35,
@@ -155,7 +156,7 @@ async def ask_clarification(
     user_id: int,
 ) -> str | None:
     """Ask the AI to formulate a clarifying question when the intent is unclear."""
-    if not OPENROUTER_API_KEY:
+    if not ANYTHINGLLM_URL:
         return None
 
     history = memory.get(user_id)
@@ -175,14 +176,14 @@ async def ask_clarification(
     ]
 
     try:
+        headers = {"Content-Type": "application/json"}
+        if ANYTHINGLLM_KEY:
+            headers["Authorization"] = f"Bearer {ANYTHINGLLM_KEY}"
         r = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            f"{ANYTHINGLLM_URL}/api/openai/chat/completions",
+            headers=headers,
             json={
-                "model": OPENROUTER_MODEL,
+                "model": ANYTHINGLLM_WS,
                 "messages": messages,
                 "max_tokens": 120,
                 "temperature": 0.4,

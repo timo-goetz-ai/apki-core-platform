@@ -229,13 +229,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mvozxyyz21oaz3z",
+        "url": "https://directus.automation-plus-ki.de/items/130_agent_runs",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

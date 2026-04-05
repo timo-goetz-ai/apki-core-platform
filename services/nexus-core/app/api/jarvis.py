@@ -41,14 +41,14 @@ class StatusUpdate(BaseModel):
     status: str  # approved | aborted
 
 
-# ── Helper: NocoDB Sync ───────────────────────────────────────────────────────
+# ── Helper: Directus Sync ─────────────────────────────────────────────────────
 
-async def _sync_to_nocodb(task: JarvisTask) -> None:
-    """Schreibt/aktualisiert einen Task in NocoDB (best-effort)."""
-    if not settings.nocodb_api_token:
+async def _sync_to_directus(task: JarvisTask) -> None:
+    """Schreibt/aktualisiert einen Task in Directus (best-effort)."""
+    if not settings.directus_token:
         return
     headers = {
-        "xc-token": settings.nocodb_api_token,
+        "Authorization": f"Bearer {settings.directus_token}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -61,12 +61,12 @@ async def _sync_to_nocodb(task: JarvisTask) -> None:
         "tg_msg_id": task.tg_msg_id,
         "audit_log": task.audit_log,
     }
-    url = f"{settings.nocodb_base_url}/api/v1/db/data/noco/{settings.nocodb_jarvis_table_id}/jarvis_tasks"
+    url = f"{settings.directus_url}/items/{settings.directus_jarvis_collection}"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             await client.post(url, json=payload, headers=headers)
     except Exception as exc:
-        logger.warning("NocoDB sync failed: %s", exc)
+        logger.warning("Directus sync failed: %s", exc)
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -105,8 +105,8 @@ async def plan(req: PlanRequest, db: AsyncSession = Depends(get_session)):
     await db.commit()
     await db.refresh(task)
 
-    # 3. NocoDB sync (async, best-effort)
-    await _sync_to_nocodb(task)
+    # 3. Directus sync (async, best-effort)
+    await _sync_to_directus(task)
 
     return {
         "task_id": task.id,
@@ -145,11 +145,11 @@ async def execute(task_id: int, db: AsyncSession = Depends(get_session)):
         task.status = "failed"
         task.audit_log += f"\n[{datetime.utcnow().isoformat()}] failed (HTTP {exc.status_code}): {exc}"
         await db.commit()
-        await _sync_to_nocodb(task)
+        await _sync_to_directus(task)
         raise HTTPException(502, str(exc))
 
     await db.commit()
-    await _sync_to_nocodb(task)
+    await _sync_to_directus(task)
     return {"task_id": task_id, "status": task.status, "result": result}
 
 
@@ -167,7 +167,7 @@ async def update_status(task_id: int, body: StatusUpdate, db: AsyncSession = Dep
     task.status = body.status
     task.audit_log = (task.audit_log or "") + f"\n[{datetime.utcnow().isoformat()}] {body.status}"
     await db.commit()
-    await _sync_to_nocodb(task)
+    await _sync_to_directus(task)
     return {"task_id": task_id, "status": task.status}
 
 

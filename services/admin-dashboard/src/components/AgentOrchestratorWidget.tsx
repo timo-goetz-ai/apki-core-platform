@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-// ── Agent definitions (Multi-Orchestrator: OpenRouter, Ollama, SauerkrautLM, …) ─
+// ── Agent definitions (Multi-Orchestrator: AnythingLLM, Ollama, SauerkrautLM, …) ─
 const AGENTS = [
   {
     id: "claude",
@@ -74,7 +74,7 @@ const AGENTS = [
       "Verarbeite deutsche Anfrage lokal…",
       "Antworte auf Deutsch ohne API-Kosten…",
       "Einfache Klassifikation…",
-      "Kombiniere mit OpenRouter für komplexe Tasks…",
+      "Kombiniere mit AnythingLLM für komplexe Tasks…",
       "Prüfe lokale Verfügbarkeit…",
     ],
   },

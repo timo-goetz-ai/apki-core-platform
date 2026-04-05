@@ -11,7 +11,7 @@ from crewai import Agent, Crew, LLM, Process, Task
 
 from app.config import Settings
 from app.integrations.n8n import N8NClient
-from app.integrations.nocodb import NocoDBClient
+from app.integrations.directus import DirectusClient
 from app.models.crew import CrewConfig
 from app.models.events import (
     ExecutionCompletedEvent,
@@ -206,7 +206,7 @@ class CrewManager:
                 await self.broadcaster.publish(execution_id, ev_tc)
                 yield ev_tc.model_dump()
 
-            # Persist to NocoDB content_pieces (best-effort)
+            # Persist to Directus content_pipeline (best-effort)
             await self._save_content_piece(inputs, str(final_result), execution_id)
 
             _crew_json_log(
@@ -252,15 +252,15 @@ class CrewManager:
     async def _save_content_piece(
         self, inputs: dict, result: str, execution_id: str
     ) -> None:
-        table_id = self.settings.nocodb_content_pieces_table_id
-        if not table_id:
+        collection = self.settings.directus_content_collection
+        if not collection:
             return
-        nocodb = NocoDBClient(self.settings)
-        if not nocodb._enabled():
+        directus = DirectusClient(self.settings)
+        if not directus._enabled():
             return
         try:
-            await nocodb.create_record(
-                table_id,
+            await directus.create_record(
+                collection,
                 {
                     "piece_id": f"crew-{execution_id[:8]}",
                     "title": inputs.get("topic", ""),

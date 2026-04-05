@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { MODELS, DEFAULT_MODEL, ORCHESTRATOR_AUTO, resolveOrchestratorModel } from '@/lib/chat-models';
 
-const OPENROUTER_KEY  = process.env.OPENROUTER_API_KEY ?? '';
+const ANYTHINGLLM_URL = process.env.ANYTHINGLLM_URL ?? 'http://localhost:3003';
+const ANYTHINGLLM_KEY = process.env.ANYTHINGLLM_API_KEY ?? '';
 const NOCODB_URL      = process.env.NOCODB_URL ?? 'https://nocodb.automation-plus-ki.de';
 const NOCODB_TOKEN    = process.env.NOCODB_API_TOKEN ?? '';
 const NOCODB_BASE     = process.env.NOCODB_AI_SYSTEM_BASE_ID ?? '';
@@ -391,7 +392,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
   }
 }
 
-// ─── OpenAI-compatible call (OpenRouter + Google AI Studio) ─────────────────
+// ─── OpenAI-compatible call (AnythingLLM + Google AI Studio) ────────────────
 async function callOpenAICompat(config: {
   baseUrl: string;
   apiKey: string;
@@ -492,7 +493,7 @@ async function* callAnthropicStream(
 export async function GET() {
   const available = Object.entries(MODELS).map(([key, m]) => {
     let isAvailable = false;
-    if (m.provider === 'openrouter') isAvailable = !!OPENROUTER_KEY;
+    if (m.provider === 'anythingllm') isAvailable = !!ANYTHINGLLM_URL;
     else if (m.provider === 'anthropic') isAvailable = !!ANTHROPIC_KEY;
     else if (m.provider === 'google') isAvailable = !!GOOGLE_KEY;
     return { key, ...m, available: isAvailable };
@@ -514,7 +515,7 @@ export async function POST(req: NextRequest) {
 
   const availableKeys = Object.entries(MODELS)
     .filter(([, m]) => {
-      if (m.provider === 'openrouter') return !!OPENROUTER_KEY;
+      if (m.provider === 'anythingllm') return !!ANYTHINGLLM_URL;
       if (m.provider === 'anthropic') return !!ANTHROPIC_KEY;
       if (m.provider === 'google') return !!GOOGLE_KEY;
       return false;
@@ -558,18 +559,15 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        // ── OpenRouter / Google (OpenAI-compatible, with agentic loop) ──
+        // ── AnythingLLM / Google (OpenAI-compatible, with agentic loop) ──
         const baseUrl = model.provider === 'google'
           ? 'https://generativelanguage.googleapis.com/v1beta/openai'
-          : 'https://openrouter.ai/api/v1';
-        const apiKey = model.provider === 'google' ? GOOGLE_KEY : OPENROUTER_KEY;
-        const extraHeaders: Record<string, string> = model.provider === 'openrouter'
-          ? { 'HTTP-Referer': 'https://admin.automation-plus-ki.de', 'X-Title': 'AIOS Dashboard' }
-          : {};
+          : `${ANYTHINGLLM_URL}/api/openai`;
+        const apiKey = model.provider === 'google' ? GOOGLE_KEY : ANYTHINGLLM_KEY;
+        const extraHeaders: Record<string, string> = {};
 
-        if (!apiKey) {
-          const providerName = model.provider === 'google' ? 'Google AI Studio' : 'OpenRouter';
-          send(`❌ ${providerName} API Key nicht konfiguriert.`);
+        if (model.provider === 'google' && !apiKey) {
+          send(`❌ Google AI Studio API Key nicht konfiguriert.`);
           controller.close();
           return;
         }

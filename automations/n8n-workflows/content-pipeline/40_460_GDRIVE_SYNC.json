@@ -39,13 +39,13 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/msxl4hvogh62u4u/records?limit=50&sort=-CreatedAt",
+        "url": "https://directus.automation-plus-ki.de/items/420_media_assets?limit=50&sort=-CreatedAt",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $env.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         }
@@ -61,7 +61,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const d=$input.first().json;\nconst list=d.list||[];\nconst total=d.pageInfo?.totalRows||list.length;\nconst images=list.filter(a=>a.asset_type==='image').length;\nconst audio=list.filter(a=>a.asset_type==='audio').length;\nreturn [{json:{total,images,audio,last_sync:new Date().toISOString()}}];"
+        "jsCode": "const d=$input.first().json;\nconst list=d.data||[];\nconst total=d.pageInfo?.totalRows||list.length;\nconst images=list.filter(a=>a.asset_type==='image').length;\nconst audio=list.filter(a=>a.asset_type==='audio').length;\nreturn [{json:{total,images,audio,last_sync:new Date().toISOString()}}];"
       }
     },
     {
@@ -75,13 +75,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://nocodb.automation-plus-ki.de/api/v2/tables/mgeh1epw96tgx3u/records",
+        "url": "https://directus.automation-plus-ki.de/items/audit_log",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $env.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },

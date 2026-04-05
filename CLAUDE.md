@@ -3,11 +3,13 @@
 
 Monorepo für **Automation+KI / AIOS**: Orchestrierung, Admin-UI, APIs und Landing — betrieben auf **Hetzner** über **Coolify**, Builds über **GitHub Actions** und **Docker**.
 
+**Persona (Agenten, ohne PII im Repo):** [`content/personas/timo-goetz.agent-persona.yaml`](content/personas/timo-goetz.agent-persona.yaml) — `persona_ref: timo-goetz`. Vollständiger Lebenslauf / Kontaktdaten: nur `content/personas/private/` (gitignored).
+
 ## Architektur (Kern-Services)
 
 | Bereich | Pfad / Rolle |
 |--------|----------------|
-| **Admin-Dashboard** | `services/admin-dashboard` — Next.js 14, App Router, Operations-UI (Agentic OS), API-Integrationen (NocoDB, n8n, …) |
+| **Admin-Dashboard** | `services/admin-dashboard` — Next.js 14, App Router, Operations-UI (Agentic OS), API-Integrationen (Directus, n8n, …) |
 | **Landing Page** | `services/landing-page` — Öffentliche Website |
 | **Crew API** | `services/crew-api` — Python-API (siehe CI-/Docker-Context) |
 | **AIOS Core** | `services/aios-core` — Python-Kern-API, DB-Migrationen (Alembic im Deploy-Workflow) |
@@ -28,13 +30,13 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 | System | Erreichbarkeit |
 |--------|----------------|
 | **n8n** | `http://10.0.1.12:5678` intern / `https://n8n.automation-plus-ki.de` öffentlich |
-| **NocoDB** | `http://10.0.1.20:8080` intern / `https://nocodb.automation-plus-ki.de` öffentlich |
+| **Directus** | `https://directus.automation-plus-ki.de` (REST + GraphQL + Admin-UI, Coolify App `nks40ko44owgswk880o4ko88`) |
 
 ## Umgebungsvariablen (Coolify)
 
 Secrets und env-spezifische Werte werden **in Coolify** pro Anwendung/Stack gesetzt (nicht im Repo committen). Typische Kategorien:
 
-- **Next.js / Admin-Dashboard**: URLs und API-Keys für NocoDB, n8n, Authentik-OIDC, interne Service-URLs, ggf. Grafana/Prometheus-Endpoints — jeweils in der Coolify-Ressource für `infra-dashboard` / Admin-Service konfigurieren.
+- **Next.js / Admin-Dashboard**: `DIRECTUS_URL`, `DIRECTUS_TOKEN`, n8n, Authentik-OIDC, interne Service-URLs (Grafana/Prometheus über Docker-Hostnamen) — jeweils in der Coolify-Ressource für `infra-dashboard` konfigurieren.
 - **Python-Services** (`aios-core`, `crew-api`): DB-URLs, API-Keys, CORS, Service-Discovery — analog in den jeweiligen Coolify-Services.
 
 Für lokale Entwicklung: `.env.example`-Dateien im Repo beachten (falls vorhanden) und nur **nicht-sensible** Defaults dokumentieren.
@@ -76,22 +78,24 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
 | Service | URL | Auth |
 |---------|-----|------|
-| n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY: n8n_api_191d56c7f262a4c859c0f77e6a5ee1115480fbd31d687b07` |
-| NocoDB | `http://10.0.1.20:8080` (intern) / `https://nocodb.automation-plus-ki.de` | `xc-token: WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK` |
+| n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY: n8n_api_4ed4f888ccff51c643056ab462f87b5d905546ffbab01bec` |
+| Directus | `https://directus.automation-plus-ki.de` | `Authorization: Bearer dx_aios_36414df3817a1fc996842c2082597ca04d02454bdbe84c62` |
+| NocoDB (legacy) | `https://nocodb.automation-plus-ki.de` (gestoppt, Daten in PG `nocodb` DB als Backup) | `xc-token: WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK` |
 | Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token in Coolify |
 | Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
 | Coolify | `https://coolify.automation-plus-ki.de` | Bearer in Coolify |
 | Admin-Dashboard | `https://admin.automation-plus-ki.de` | Authentik OIDC |
 | Mobile-Ingest (n8n) | `https://n8n.automation-plus-ki.de/webhook/mobile-ingest` | Header `x-aios-token` — nur Coolify/1Password; siehe `docs/operations/MOBILE_INGEST_N8N.md` |
 
-**NocoDB Base-ID (neu):** `pmox01979j55xbd`
-**NocoDB Login:** `ai_studio@timo-goetz-ai.de` / `NocoDB2026Admin`
+**Directus Login:** `ai_studio@timo-goetz-ai.de` / `Directus2026Admin`
+**Directus Static Token:** `dx_aios_36414df3817a1fc996842c2082597ca04d02454bdbe84c62`
+**NocoDB (legacy):** Coolify App `sow4k0go0swkssgokk84wwwg` — gestoppt, PG-Daten erhalten. Base-ID war `pfx0ca6docorj8n`.
 **n8n Login:** `admin@timo-goetz-ai.de` / `Aios2026!`
 
-## Authentik SSO — OAuth2 Provider (Stand 2026-03-27)
+## Authentik SSO — OAuth2 Provider (Stand 2026-04-04)
 
 Authentik: `https://auth.automation-plus-ki.de` | Admin: `akadmin` / `ai_studio@timo-goetz-ai.de`
-API-Token (akadmin): `25ePGtroeI1neB1n9OvKeKI1v6ojRg3InQFabXszrat9N6xnKzjw1lZMP2Lk`
+API-Token (akadmin): `RRHWjJxvgYm5uKdQfaEpNJ1JgcEmcW5m6aODN4LU0PPmiHxgRPpoNgVbdkYg`
 
 | Service | client_id | Typ |
 |---------|-----------|-----|
@@ -99,33 +103,45 @@ API-Token (akadmin): `25ePGtroeI1neB1n9OvKeKI1v6ojRg3InQFabXszrat9N6xnKzjw1lZMP2
 | Admin Dashboard | `nstQ0xU5RXyNq35liCqRe6wnHfJIIPsLWSfdN7qf` | Forward Auth |
 | AIOS Dashboard | `pMrUHmcAbP95cd2Ev1hV72kv8MOrZ7MHDsTF3EUQ` | Forward Auth |
 | Grafana | `rAERcNo8Fk7ZEOuFkMEX6pcMCfk4eRy6X5lIAUml` | Proxy Auth |
-| NocoDB | `V0HDsDvI0MYBpqcHvdp0ueO7Do7UwsNL0JEVp8tD` | Forward Auth |
+| NocoDB | via Homestack Forward Auth (forward_domain) | Forward Auth (inline Traefik, API-Pfade ausgenommen) |
 | Coolify | `yTBQgGHqRE94QNeOiSjMnYxcDTxgNcTlCV6GTDVH` | Forward Auth |
-| Postiz | `1srfgfgKwaYyw6WlvyNYK7Zp1pb5IaIB1d52qXKy` | Forward Auth |
+| Postiz | via Homestack Forward Auth (forward_domain) | Forward Auth |
 | Prometheus | `o0ccmAtRQVchiXDCWMorsbgiQkhpza9BLgDukaPV` | Forward Auth |
 
-Outpost: `c2904edf-8e53-4a02-8345-b0e32e2d999e` (Embedded, alle 10 Provider aktiv)
+Outpost: `382e87cd-20e3-444f-ad62-97b0b2edc5a8` (Embedded, Provider: Homestack Forward Auth pk=19, NocoDB Forward Auth pk=25)
 
-## NocoDB Table-IDs
+## Directus Collections (ehem. NocoDB)
+
+Zugriff via Directus REST: `GET /items/{collection_name}` oder GraphQL: `POST /graphql`
 
 | Tabelle | ID | Beschreibung |
 |---------|-----|--------------|
-| workflows | `mfz43ghxesvn1yy` | n8n-Workflow-Register |
-| trends | `mrdi13quucpnps4` | Output: `30_310_TREND_MONITOR` |
-| sentiment | `mvb46y3ncw21m1g` | Output: `30_320_SENTIMENT_TRACKER` |
-| content_opportunities | `m5abfrtfyr2j912` | Output: `30_330_CONTENT_OPPORTUNITY` |
-| content_pipeline | `mgjsuwl4jwlyhdc` | Content-Produktion |
-| prompts | `mlw20rrihtkbmew` | Prompt-Bibliothek |
-| agents | `m8c0rpjwx5d4bu2` | KI-Agenten-Register |
-| tasks | `mjd39ltx4bq27qj` | Agent-Aufgaben |
-| batch_jobs | `mg4p0eux8onz3nq` | Batch-Produktions-Jobs |
-| content_versions | `mzzemannneaes9g` | Content-Versionierung |
-| media_assets | `msxl4hvogh62u4u` | Medien-Assets (Bilder, Audio, Video) |
-| publish_log | `mcwxjf0na0ixkah` | Publishing-Protokoll (Social/Blog) |
-| mobile_ingest | `m3sn5vn7x9iye25` | Mobile Eingabe / Handy-Uploads |
-| content_pieces | `mm1ssn0luruhzyx` | KI-generierte Content-Pieces (crew-api Output) |
-| fabrik_snapshots | `mx6wt60oh2050du` | Fabrik-Index / Qdrant-Metadaten (Extended-Spalten) |
-| audit_trail | `mgeh1epw96tgx3u` | Audit-Log aller Workflow-Aktionen |
+| 100_workflows | `mnwlsxsm0q1k2d2` | n8n-Workflow-Register |
+| 110_agents | `mjdp54ldeoxlb8s` | KI-Agenten-Register |
+| 120_subagents | `m6kwm1cedzeou6w` | Sub-Agenten |
+| 130_agent_runs | `m0245soubmzha5r` | Agent-Ausführungen |
+| 200_prompts | `mijlvsujsgqa92m` | Prompt-Bibliothek |
+| 210_rules | `mcn1qpaapk5x849` | Regeln |
+| 220_skills | `mdkwfxgjg80tgjd` | Skills |
+| 230_hooks | `mgnxselg5bkglr8` | Hooks |
+| 240_mcp_configs | `m128afvs767oxqa` | MCP-Konfigurationen |
+| 250_plugins | `mbt77n1toqpa094` | Plugins |
+| 260_cursor_configs | `mzzgzfzgatrauwy` | Cursor-Konfigurationen |
+| 300_trends | `m91y1ifz2aop1ef` | Output: `30_310_TREND_MONITOR` |
+| 310_sentiment | `moigzpvd4yw1d0a` | Output: `30_320_SENTIMENT_TRACKER` |
+| 320_content_opportunities | `m7ehbmbi5t2w0dw` | Output: `30_330_CONTENT_OPPORTUNITY` |
+| 330_knowledge_items | `m9hgs3y3iz9xtgl` | Wissens-Items |
+| 340_regulatory | `mzed73lf80jgygt` | Regulatorisches |
+| 350_tools | `m1dtcwceeejaupb` | Tools |
+| 360_social_proof | `mvbndkze3r4yce5` | Social Proof |
+| 400_content_pipeline | `m48nvpornrxuba9` | Content-Produktion |
+| 410_templates | `mlmvyh28wyf9zxu` | Templates |
+| 420_media_assets | `m2u6y7ibyxt9tzp` | Medien-Assets (Bilder, Audio, Video) |
+| 430_brand_identity | `me37a6o966k1dnr` | Brand Identity |
+| 440_publish_log | `mpe25xaikbpr0wj` | Publishing-Protokoll (Social/Blog) |
+| 500_clients | `mxfirejid6z3h5g` | Kunden/Leads |
+| 510_tasks | `mrt4iah96z7za7t` | Agent-Aufgaben |
+| 520_mobile_ingest | `m6e0i80gmudaerl` | Mobile Eingabe / Handy-Uploads |
 
 ## n8n Workflow-IDs (wichtigste)
 
@@ -161,10 +177,9 @@ import { exportCsv } from '@/lib/csv-export'        // exportCsv('file.csv', row
 
 **API-Route-Muster:**
 ```
-GET /api/nocodb/table?id=TABLE_ID&limit=100
-GET /api/nocodb/agents
-GET /api/services                    // Service-Health
-GET /api/monitoring/alerts           // Prometheus + Grafana Alerts
+GET /api/nocodb/agents               // via Directus REST (nocodb.ts als Wrapper)
+GET /api/services                    // Service-Health (interne Docker-Hostnamen!)
+GET /api/monitoring/alerts           // Prometheus + Grafana (intern: homestack-prometheus:9090, homestack-grafana:3000)
 POST /api/n8n/trigger/[workflowId]
 ```
 
@@ -218,9 +233,23 @@ Subagenten-Definitionen in `.claude/agents/`:
 6. **Preview nach Frontend-Edits:** Immer `preview_screenshot` zur Verifikation
 7. **Secrets nie committen:** .env, API-Keys, Tokens nur in Coolify
 
-## Offene Aufgaben (Stand März 2026)
+## Gotchas & Learnings
 
-- `agents`-Tabelle leer → manuell befüllen oder `20_240_AIOS_DISCOVERY` aktivieren
-- Publishing Layer (`440_*` / `41_*` Workflows) wartet auf Blogify-Credentials (`BLOGIFY_CLIENT_ID`, `BLOGIFY_CLIENT_SECRET`, `BLOGIFY_INTEGRATION_ID`)
+- **Authentik Forward Auth**: `forward_single` verursacht Redirect-Loops → `forward_domain` (Homestack) nutzen
+- **Authentik + API-Pfade**: Services mit eigener Auth brauchen separaten Traefik-Router (höhere Priorität) OHNE ForwardAuth für `/api/`
+- **Server-zu-Server Calls**: Immer interne Docker-Hostnamen (`homestack-grafana:3000`, `homestack-prometheus:9090`), NIE externe URLs hinter Authentik
+- **Coolify API**: Custom Labels sind base64-encoded; Apps erstellen via `POST /api/v1/applications/dockerimage`; Coolify Token: `1|mWRD9SEEWgv975LqLZbGrOR90yweebJCv2KL7Qst305ad05a`
+- **Directus Drop-in**: `nocodb.ts` wurde als Wrapper umgeschrieben — gleiche Exports, intern Directus REST. 46 importierende Dateien blieben unverändert
+- **Voice Platform** (`voice.automation-plus-ki.de`): OpenAI/Anthropic Keys via OpenRouter (`OPENAI_BASE_URL=https://openrouter.ai/api/v1`)
+- **Postiz S3**: Bucket `postiz-aios` auf Hetzner Object Storage, `STORAGE_PROVIDER=s3`
+- **1Password**: API-Keys in Vault `05_INFRASTRUCTURE`; `AI-APIs` Item hat OpenRouter-Key
+- **Deploy-Reihenfolge**: Erst neues Image deployen, DANN alte Services stoppen — nicht umgekehrt!
+
+## Offene Aufgaben (Stand April 2026)
+
+- `agents`-Tabelle hat 21 Einträge (migriert von NocoDB nach Directus am 2026-04-04)
+- NocoDB temporär noch aktiv bis neues Dashboard-Image mit Directus-Code deployed ist → dann endgültig stoppen
+- Publishing Layer (`440_*` / `41_*` Workflows) wartet auf Blogify-Credentials
 - Research-Tabellen füllen sich täglich ab 08:00 / 09:30 Uhr (Schedules aktiv)
 - n8n interne IP: `10.0.1.16:5678` (Container: `homestack-n8n`)
+- Voice Platform: `OPENAI_API_KEY` + `ANTHROPIC_API_KEY` fehlen in 1Password (aktuell via OpenRouter)

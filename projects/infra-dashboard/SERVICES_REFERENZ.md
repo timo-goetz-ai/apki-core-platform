@@ -116,7 +116,7 @@ Das Dashboard wertet 403 als **online** — der Service läuft, er verlangt nur 
 
 | Projekt | Pfad |
 |---------|------|
-| **infra-dashboard** | `~/aios/projects/infra-dashboard/` |
+| **infra-dashboard** | `~/Projects/01_Active_Projects/aios/projects/infra-dashboard/` |
 | **AI Agent Platform** | `~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/03_ai-agent-platform/` |
 | **AI Voice Platform** | `~/Geschäft/STUDIO/03_AI_Engineering/07_Projects/01_ai-voice-platform/` |
 | **Bruno API Tests** | `~/Geschäft/STUDIO/03_AI_Engineering/01_APIs/02_bruno-api-tests/` |
@@ -135,7 +135,7 @@ Das Dashboard wertet 403 als **online** — der Service läuft, er verlangt nur 
 ## Neu deployen (nach Code-Änderungen)
 
 ```bash
-cd ~/aios/projects/infra-dashboard
+cd ~/Projects/01_Active_Projects/aios/projects/infra-dashboard
 
 # Image bauen + pushen
 docker build --platform linux/amd64 -t ghcr.io/timogoetz1988/infra-dashboard:latest .

@@ -41,7 +41,7 @@ export function CrewLauncher({ onExecutionStart, initialPromptPath }: Props) {
 
   useEffect(() => {
     // Crews laden
-    fetch("/api/crews/", { headers: { ...dashboardApiAuthHeaders() } })
+    fetch("/api/crews", { headers: { ...dashboardApiAuthHeaders() } })
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data)

@@ -17,10 +17,10 @@ Das bestehende System war über mindestens 3 Verzeichnisse verteilt und hatte me
 - **Deployment-Konfigurationen** überall verstreut
 
 ### Phase 2 – Neue Monorepo-Struktur erstellt
-Ein neues konsolidiertes Repository wurde unter `~/aios/` angelegt mit folgender Struktur:
+Ein neues konsolidiertes Repository wurde unter `~/Projects/01_Active_Projects/aios/` angelegt mit folgender Struktur:
 
 ```
-~/aios/
+~/Projects/01_Active_Projects/aios/
 ├── .github/workflows/      → CI/CD Pipelines (GitHub Actions)
 ├── agents/                 → KI-Agenten (coder-agent, service-agents)
 ├── services/               → Haupt-Services (aios-core, admin-dashboard, crew-api)
@@ -118,7 +118,7 @@ Nach dem ersten Push kamen Fehler-E-Mails von GitHub. Folgende Probleme wurden s
 
 ```bash
 # In das Projektverzeichnis wechseln
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 
 # Alle Services starten
 docker compose up -d
@@ -136,7 +136,7 @@ docker compose down
 ### Git-Workflow
 
 ```bash
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 
 # Neues Feature entwickeln
 git checkout -b feature/mein-feature
@@ -161,14 +161,14 @@ git push origin v1.0.1
 ### Struktur validieren
 
 ```bash
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 bash scripts/utils/validate-structure.sh
 ```
 
 ### Maintenance Dashboard
 
 ```bash
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 bash scripts/utils/maintenance-dashboard.sh
 ```
 
@@ -193,7 +193,7 @@ bash scripts/utils/maintenance-dashboard.sh
 ### Secrets einrichten (einmalig!)
 
 ```bash
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 cp .env.example .env
 nano .env   # oder: open .env (in TextEdit)
 ```
@@ -244,7 +244,7 @@ INTERNET
          ↕ Lokale Entwicklung
 ┌─────────────────────────────────────────────┐
 │  MAC (Docker Desktop)                       │
-│  ~/aios/                                    │
+│  ~/Projects/01_Active_Projects/aios/                                    │
 │  → localhost:3000 (Dashboard)               │
 │  → localhost:8000 (API)                     │
 └─────────────────────────────────────────────┘
@@ -256,23 +256,23 @@ INTERNET
 
 ### aios-core (FastAPI Backend)
 - **Lokal**: http://localhost:8000
-- **Pfad**: `~/aios/services/aios-core/`
+- **Pfad**: `~/Projects/01_Active_Projects/aios/services/aios-core/`
 - **Stack**: Python 3.12, FastAPI, PostgreSQL, Redis, CrewAI
 - **Hauptfunktion**: Zentrale REST-API für das gesamte System
 
 ### admin-dashboard (Next.js Frontend)
 - **Lokal**: http://localhost:3000
-- **Pfad**: `~/aios/services/admin-dashboard/`
+- **Pfad**: `~/Projects/01_Active_Projects/aios/services/admin-dashboard/`
 - **Stack**: Next.js 14, TypeScript, Tailwind CSS
 - **Hauptfunktion**: Web-Oberfläche zur Verwaltung
 
 ### crew-api (CrewAI Integration)
-- **Pfad**: `~/aios/services/crew-api/`
+- **Pfad**: `~/Projects/01_Active_Projects/aios/services/crew-api/`
 - **Stack**: Python 3.12, FastAPI, CrewAI, Redis
 - **Hauptfunktion**: KI-Agenten-Orchestrierung via CrewAI
 
 ### coder-agent (Script-basiert)
-- **Pfad**: `~/aios/agents/coder-agent/`
+- **Pfad**: `~/Projects/01_Active_Projects/aios/agents/coder-agent/`
 - **Stack**: Python, Node.js (Scripts)
 - **Hauptfunktion**: Automatisierung von Coding-Tasks
 
@@ -335,7 +335,7 @@ kill -9 <PID>
 
 ```bash
 # Letzten Run anzeigen
-cd ~/aios
+cd ~/Projects/01_Active_Projects/aios
 gh run list --limit 5
 
 # Fehler-Details anzeigen
@@ -401,7 +401,7 @@ Nach dem kompletten Scan des Workspace wurden folgende Inhalte in das Monorepo i
 ### Aktuelle Monorepo-Struktur (vollständig)
 
 ```
-~/aios/
+~/Projects/01_Active_Projects/aios/
 ├── .github/workflows/          → CI (lint/test), Build&Push, Deploy-Staging, Deploy-Prod
 ├── agents/
 │   ├── coder-agent/            → CrewAI Coder-Agent (Python + JS)
@@ -463,4 +463,4 @@ Nach dem kompletten Scan des Workspace wurden folgende Inhalte in das Monorepo i
 ---
 
 *Dokument erstellt: 12. März 2026 | Zuletzt aktualisiert: 12. März 2026 nach vollständigem Workspace-Scan*
-*Monorepo: ~/aios | GitHub: TimoGoetz1988/aios | Status: CI/CD grün ✅*
+*Monorepo: ~/Projects/01_Active_Projects/aios | GitHub: TimoGoetz1988/aios | Status: CI/CD grün ✅*

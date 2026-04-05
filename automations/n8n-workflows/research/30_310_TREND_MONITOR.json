@@ -89,13 +89,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://nocodb.automation-plus-ki.de/api/v1/db/data/noco/pmox01979j55xbd/mrdi13quucpnps4",
+        "url": "https://directus.automation-plus-ki.de/items/300_trends",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "xc-token",
-              "value": "={{ $vars.NOCODB_API_TOKEN }}"
+              "name": "Authorization",
+              "value": "Bearer ={{ $vars.DIRECTUS_TOKEN }}"
             }
           ]
         },
