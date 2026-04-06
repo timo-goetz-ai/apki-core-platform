@@ -112,7 +112,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
+          # Beide Image-Namen: aios-admin-dashboard (kanonisch) + infra-dashboard (Coolify-kompatibel)
+          images: |
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/infra-dashboard
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -127,6 +130,31 @@ jobs:
             NEXT_PUBLIC_WS_URL=wss://api.aios.automation-plus-ki.de
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Load Coolify secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          COOLIFY_URL:            op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/url
+          COOLIFY_TOKEN:          op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/token
+          COOLIFY_DASHBOARD_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/dashboard_uuid
+
+      - name: Deploy admin-dashboard via Coolify
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${COOLIFY_URL}/api/v1/deploy" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"uuid\": \"${COOLIFY_DASHBOARD_UUID}\", \"force\": true}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+          echo "Coolify Deploy Response: $BODY (HTTP $HTTP_CODE)"
+          if [[ "$HTTP_CODE" != "200" && "$HTTP_CODE" != "201" ]]; then
+            echo "⚠️ Coolify Deploy fehlgeschlagen (HTTP $HTTP_CODE) — Image wurde trotzdem gepusht"
+          else
+            echo "✅ Coolify Deploy ausgelöst"
+          fi
 
   build-crew-api:
     name: Build crew-api
