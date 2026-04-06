@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "directus": {
+      "command": "npx",
+      "args": ["-y", "directus-mcp-server@latest"],
+      "env": {
+        "DIRECTUS_URL": "https://directus.automation-plus-ki.de",
+        "DIRECTUS_TOKEN": "dx_aios_36414df3817a1fc996842c2082597ca04d02454bdbe84c62"
+      }
+    },
+    "mcp-anythingllm": {
+      "type": "url",
+      "url": "https://mcp-anythingllm.automation-plus-ki.de/mcp",
+      "headers": {
+        "Authorization": "Bearer bb171e77879ebce29406be1b4bf8caffc7655a22746a8bcff00374ea228fd74f"
+      }
+    },
+    "mcp-aios-ops": {
+      "type": "stdio",
+      "command": "/Users/zuhause_mit_ideen/.local/bin/uv",
+      "args": ["run", "--directory", "/Users/zuhause_mit_ideen/Projects/01_Active_Projects/aios/infrastructure/mcp-servers/mcp-aios-ops", "mcp-aios-ops"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "COOLIFY_URL": "https://coolify.automation-plus-ki.de",
+        "COOLIFY_TOKEN": "1|mWRD9SEEWgv975LqLZbGrOR90yweebJCv2KL7Qst305ad05a",
+        "AUTHENTIK_URL": "https://auth.automation-plus-ki.de",
+        "AUTHENTIK_TOKEN": "RRHWjJxvgYm5uKdQfaEpNJ1JgcEmcW5m6aODN4LU0PPmiHxgRPpoNgVbdkYg",
+        "BASE_DOMAIN": "automation-plus-ki.de"
+      }
+    }
+  }
+}

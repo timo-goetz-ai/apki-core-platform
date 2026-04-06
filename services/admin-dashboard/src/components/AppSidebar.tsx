@@ -70,7 +70,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'System', href: '/monitoring', icon: Gauge },
       { label: 'Alerts', href: '/monitoring/grafana', icon: BellRing },
-      { label: 'Logs', href: '/logs', icon: ScrollText },
+      { label: 'Analytics', href: '/monitoring/analytics', icon: BarChart3 },
+      { label: 'Logs',      href: '/logs',                 icon: ScrollText },
     ],
   },
   {
