@@ -21,6 +21,19 @@ class Settings(BaseSettings):
     directus_url: str = "https://directus.automation-plus-ki.de"
     directus_jarvis_collection: str = "510_tasks"
 
+    # CORS — kommagetrennte Liste; in Coolify als ALLOWED_ORIGINS setzen
+    # Fallback: nur eigene Domains; niemals "*" in Produktion
+    allowed_origins: str = (
+        "https://aios.automation-plus-ki.de,"
+        "https://admin.automation-plus-ki.de,"
+        "http://localhost:3000,"
+        "http://localhost:3001"
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

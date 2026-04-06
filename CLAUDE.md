@@ -76,26 +76,27 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 
 ## Interne Service-URLs & API-Zugänge
 
-| Service | URL | Auth |
-|---------|-----|------|
-| n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY: n8n_api_4ed4f888ccff51c643056ab462f87b5d905546ffbab01bec` |
-| Directus | `https://directus.automation-plus-ki.de` | `Authorization: Bearer dx_aios_36414df3817a1fc996842c2082597ca04d02454bdbe84c62` |
-| NocoDB (legacy) | `https://nocodb.automation-plus-ki.de` (gestoppt, Daten in PG `nocodb` DB als Backup) | `xc-token: WeWyMvo8QUyzl9LLIZKawX3VxlO8AVC1sWzEJqsK` |
-| Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token in Coolify |
-| Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
-| Coolify | `https://coolify.automation-plus-ki.de` | Bearer in Coolify |
-| Admin-Dashboard | `https://admin.automation-plus-ki.de` | Authentik OIDC |
-| Mobile-Ingest (n8n) | `https://n8n.automation-plus-ki.de/webhook/mobile-ingest` | Header `x-aios-token` — nur Coolify/1Password; siehe `docs/operations/MOBILE_INGEST_N8N.md` |
+> ⚠️ **Keine Credentials hier eintragen — alle Tokens/Passwörter ausschließlich in 1Password Vault `05_INFRASTRUCTURE`**
 
-**Directus Login:** `ai_studio@timo-goetz-ai.de` / `Directus2026Admin`
-**Directus Static Token:** `dx_aios_36414df3817a1fc996842c2082597ca04d02454bdbe84c62`
+| Service | URL | Auth (Quelle) |
+|---------|-----|------|
+| n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY` → 1Password: `05_INFRASTRUCTURE > n8n API Key` |
+| Directus | `https://directus.automation-plus-ki.de` | Bearer Token → 1Password: `05_INFRASTRUCTURE > Directus Token` |
+| NocoDB (legacy) | `https://nocodb.automation-plus-ki.de` (gestoppt, Daten in PG `nocodb` DB als Backup) | xc-token → 1Password: `05_INFRASTRUCTURE > NocoDB Token` |
+| Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token → Coolify Env |
+| Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
+| Coolify | `https://coolify.automation-plus-ki.de` | Bearer → 1Password: `05_INFRASTRUCTURE > Coolify API Token` |
+| Admin-Dashboard | `https://admin.automation-plus-ki.de` | Authentik OIDC |
+| Mobile-Ingest (n8n) | `https://n8n.automation-plus-ki.de/webhook/mobile-ingest` | `x-aios-token` → 1Password: `05_INFRASTRUCTURE`; siehe `docs/operations/MOBILE_INGEST_N8N.md` |
+
+**Directus Login:** `ai_studio@timo-goetz-ai.de` — Passwort → 1Password: `05_INFRASTRUCTURE > Directus Login`
 **NocoDB (legacy):** Coolify App `sow4k0go0swkssgokk84wwwg` — gestoppt, PG-Daten erhalten. Base-ID war `pfx0ca6docorj8n`.
-**n8n Login:** `admin@timo-goetz-ai.de` / `Aios2026!`
+**n8n Login:** `admin@timo-goetz-ai.de` — Passwort → 1Password: `05_INFRASTRUCTURE > n8n Login`
 
 ## Authentik SSO — OAuth2 Provider (Stand 2026-04-04)
 
 Authentik: `https://auth.automation-plus-ki.de` | Admin: `akadmin` / `ai_studio@timo-goetz-ai.de`
-API-Token (akadmin): `RRHWjJxvgYm5uKdQfaEpNJ1JgcEmcW5m6aODN4LU0PPmiHxgRPpoNgVbdkYg`
+API-Token (akadmin): → 1Password: `05_INFRASTRUCTURE > Authentik API Token`
 
 | Service | client_id | Typ |
 |---------|-----------|-----|
@@ -147,13 +148,12 @@ Zugriff via Directus REST: `GET /items/{collection_name}` oder GraphQL: `POST /g
 
 | Workflow | ID | Zeitplan |
 |----------|-----|---------|
-| `30_310_TREND_MONITOR` | `QXMKnvar7vGceevY` | tägl. 08:00 — **AKTIV** |
-| `30_320_SENTIMENT_TRACKER` | `bycPphxXy3Crhx4h` | Mo. 08:00 — **AKTIV** |
-| `30_330_CONTENT_OPPORTUNITY` | `WBi8X5LhT0lrh0Wn` | tägl. 09:30 — **AKTIV** |
-| `40_430_DAILY_DIGEST` | `b1uFH47VF0RcahVS` | tägl. 08:00 — **AKTIV** |
-| `40_435_WEEKLY_SUMMARY` | `DQWIR7s5zaGRqNX2` | Mo. 09:00 — **AKTIV** |
-| `50_540_TELEGRAM_ASSISTANT` | `uDiIZ5Fm2npk1bOW` | on_demand — webhook: `/webhook/tg-assistant` |
-| `40_450_CONTENT_MASTER_FLOW_v2` | `j4DqKVd9N2U1AEGy` | on_demand — webhook: `/webhook/content-master` — **AKTIV** |
+| `17_020_AI — Trend Monitor` | `fEYWN4pWhRcG2tLg` | tägl. 08:00 — **AKTIV** |
+| `17_030_AI — Sentiment Tracker` | `Vx1Aea5glbogJxg6` | Mo. 08:00 — **AKTIV** |
+| `17_040_AI — Content Opportunity` | `I6LcxlyMM8TU7A7V` | tägl. 09:30 — **AKTIV** |
+| `02_010_REPORT — Daily Digest` | `zb9g2zj7SKptuBRq` | tägl. 08:00 — **AKTIV** |
+| `02_020_REPORT — Weekly Summary` | `xxBJQVAd3CSB8ytc` | Mo. 09:00 — **AKTIV** |
+| `06_010_CONTENT — Content Pipeline` | `4jCqinBKiFKJmdor` | on_demand — **AKTIV** |
 
 **AI-Modell in Research-Workflows:** `gemini-2.0-flash` (direkt via Gemini API, KEIN OpenRouter)
 **Gemini API Key:** in n8n Container-Env als `GEMINI_API_KEY`
@@ -238,7 +238,7 @@ Subagenten-Definitionen in `.claude/agents/`:
 - **Authentik Forward Auth**: `forward_single` verursacht Redirect-Loops → `forward_domain` (Homestack) nutzen
 - **Authentik + API-Pfade**: Services mit eigener Auth brauchen separaten Traefik-Router (höhere Priorität) OHNE ForwardAuth für `/api/`
 - **Server-zu-Server Calls**: Immer interne Docker-Hostnamen (`homestack-grafana:3000`, `homestack-prometheus:9090`), NIE externe URLs hinter Authentik
-- **Coolify API**: Custom Labels sind base64-encoded; Apps erstellen via `POST /api/v1/applications/dockerimage`; Coolify Token: `1|mWRD9SEEWgv975LqLZbGrOR90yweebJCv2KL7Qst305ad05a`
+- **Coolify API**: Custom Labels sind base64-encoded; Apps erstellen via `POST /api/v1/applications/dockerimage`; Coolify Token → 1Password: `05_INFRASTRUCTURE > Coolify API Token`
 - **Directus Drop-in**: `nocodb.ts` wurde als Wrapper umgeschrieben — gleiche Exports, intern Directus REST. 46 importierende Dateien blieben unverändert
 - **Voice Platform** (`voice.automation-plus-ki.de`): OpenAI/Anthropic Keys via OpenRouter (`OPENAI_BASE_URL=https://openrouter.ai/api/v1`)
 - **Postiz S3**: Bucket `postiz-aios` auf Hetzner Object Storage, `STORAGE_PROVIDER=s3`
