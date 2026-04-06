@@ -11,7 +11,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { WORKFLOW_CATALOG } from '@/lib/workflow-categories';
+import { WORKFLOW_CATALOG, SCHEDULE_TAGS } from '@/lib/workflow-categories';
 
 const DX_BASE  = (process.env.DIRECTUS_URL  ?? '').replace(/\/$/, '');
 const DX_TOKEN = process.env.DIRECTUS_TOKEN ?? '';
@@ -59,65 +59,88 @@ async function fetchWorkflowStatus(): Promise<{ wf: N8nWf; dx?: DxWf }[]> {
 /* ── build report text ───────────────────────────────────────────────────── */
 
 function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord: object } {
-  const now   = new Date();
-  const date  = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-  const time  = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const now  = new Date();
+  const date = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
   const active   = rows.filter((r) => r.wf.active);
   const inactive = rows.filter((r) => !r.wf.active);
 
-  // Total time savings from catalog
-  const totalSaves = WORKFLOW_CATALOG.reduce((s, e) => s + e.savesHoursPerWeek, 0);
+  // Total time savings (exclude in-development)
+  const totalSaves = WORKFLOW_CATALOG
+    .filter((e) => !e.inDevelopment)
+    .reduce((s, e) => s + e.savesHoursPerWeek, 0);
 
-  // Scheduled today (DAY = täglich)
+  // In-development workflows
+  const inDevEntries = WORKFLOW_CATALOG.filter((e) => e.inDevelopment);
+
+  // Scheduled today (DAY)
   const scheduledToday = WORKFLOW_CATALOG
-    .filter((e) => e.scheduleKey === 'DAY')
-    .map((e) => `${e.runFrequency}  ${e.newId}  ${e.displayName}`);
+    .filter((e) => e.scheduleKey === 'DAY' && !e.inDevelopment)
+    .map((e) => {
+      const schedTag = SCHEDULE_TAGS[e.scheduleKey];
+      return `${schedTag.icon} \`${e.newId}\`  ${e.displayName}  _(${e.runFrequency})_`;
+    });
 
   // Scheduled this week (WEEK)
   const scheduledWeek = WORKFLOW_CATALOG
-    .filter((e) => e.scheduleKey === 'WEEK')
-    .map((e) => `${e.runFrequency}  ${e.newId}  ${e.displayName}`);
+    .filter((e) => e.scheduleKey === 'WEEK' && !e.inDevelopment)
+    .map((e) => {
+      const schedTag = SCHEDULE_TAGS[e.scheduleKey];
+      return `${schedTag.icon} \`${e.newId}\`  ${e.displayName}  _(${e.runFrequency})_`;
+    });
 
-  // Active workflows with new IDs
-  const activeLines = active
-    .map((r) => {
-      const cat = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
-      const id  = cat?.newId ?? '';
-      return `✅  ${id ? id + '  ' : ''}${cat?.displayName ?? r.wf.name}`;
-    })
-    .join('\n');
+  // Helper: format one workflow line with schedule + top chips
+  const fmtLine = (r: { wf: N8nWf }, prefix: string): string => {
+    const cat      = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
+    const id       = cat?.newId ? `\`${cat.newId}\`` : '';
+    const name     = cat?.displayName ?? r.wf.name;
+    const sched    = cat ? SCHEDULE_TAGS[cat.scheduleKey] : null;
+    const schedStr = sched ? `${sched.icon} ${cat!.runFrequency !== 'on_demand' ? cat!.runFrequency : sched.label}` : '';
+    const chips    = cat?.chips?.slice(0, 3).join(' ') ?? '';
+    const devFlag  = cat?.inDevelopment ? ' 🔧' : '';
+    return `${prefix}  ${id}  ${name}${devFlag}${schedStr ? '  ' + schedStr : ''}${chips ? '  ' + chips : ''}`;
+  };
 
-  const inactiveLines = inactive
-    .map((r) => {
-      const cat = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
-      const id  = cat?.newId ?? '';
-      return `⚪  ${id ? id + '  ' : ''}${cat?.displayName ?? r.wf.name}`;
-    })
-    .join('\n');
+  const activeLines   = active.map((r) => fmtLine(r, '✅')).join('\n');
+  const inactiveLines = inactive.map((r) => fmtLine(r, '⚪')).join('\n');
 
-  /* Plain text (Telegram — MarkdownV2 escaped) */
+  /* Plain text (Telegram Markdown) */
   const plain = [
     `🤖 *AIOS Workflow Report*`,
     `📅 ${date}  🕐 ${time}`,
     ``,
     `📊 Gesamt: ${rows.length}  |  ✅ Aktiv: ${active.length}  |  ⚪ Inaktiv: ${inactive.length}`,
-    `⏱ Automatisierung spart ~${totalSaves}h/Woche`,
+    `⏱ Automatisierung spart ~*${totalSaves}h/Woche*`,
     ``,
     `── AKTIVE WORKFLOWS ──`,
     activeLines || '(keine)',
     ``,
     inactive.length > 0 ? `── INAKTIV ──\n${inactiveLines}\n` : '',
+    inDevEntries.length > 0
+      ? `── IN ENTWICKLUNG 🔧 ──\n${inDevEntries.map((e) => `🔧  \`${e.newId}\`  ${e.displayName}`).join('\n')}\n`
+      : '',
     `── HEUTE GEPLANT ──`,
     scheduledToday.length > 0 ? scheduledToday.join('\n') : '(keine)',
     ``,
     `── DIESE WOCHE ──`,
     scheduledWeek.length > 0 ? scheduledWeek.join('\n') : '(keine)',
     ``,
-    `🔗 Dashboard: https://admin.automation-plus-ki.de/workflows`,
+    `🔗 https://admin.automation-plus-ki.de/workflows`,
   ].filter(Boolean).join('\n');
 
   /* Discord embed */
+  const activeDiscordLines = active
+    .map((r) => {
+      const cat   = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
+      const sched = cat ? SCHEDULE_TAGS[cat.scheduleKey] : null;
+      const freq  = cat?.runFrequency !== 'on_demand' ? ` · ${cat?.runFrequency}` : '';
+      const chips = cat?.chips?.slice(0, 2).join(' ') ?? '';
+      const dev   = cat?.inDevelopment ? ' 🔧' : '';
+      return `\`${cat?.newId ?? '—'}\` **${cat?.displayName ?? r.wf.name}**${dev}${sched ? ' ' + sched.icon + freq : ''}${chips ? '  ' + chips : ''}`;
+    })
+    .join('\n');
+
   const discord = {
     embeds: [
       {
@@ -126,18 +149,13 @@ function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord
         color: 0x22c55e,
         fields: [
           {
-            name: '📊 Status',
-            value: `Gesamt: **${rows.length}** | ✅ Aktiv: **${active.length}** | ⚪ Inaktiv: **${inactive.length}**\n⏱ Spart ~**${totalSaves}h/Woche**`,
+            name: '📊 Übersicht',
+            value: `Gesamt: **${rows.length}** | ✅ Aktiv: **${active.length}** | ⚪ Inaktiv: **${inactive.length}**\n⏱ Spart ~**${totalSaves}h/Woche** durch Automatisierung`,
             inline: false,
           },
           {
             name: '✅ Aktive Workflows',
-            value: active
-              .map((r) => {
-                const cat = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
-                return `\`${cat?.newId ?? '—'}\` ${cat?.displayName ?? r.wf.name}`;
-              })
-              .join('\n') || '—',
+            value: (activeDiscordLines || '—').slice(0, 1024),
             inline: false,
           },
           ...(inactive.length > 0
@@ -148,22 +166,29 @@ function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord
                     const cat = WORKFLOW_CATALOG.find((e) => e.n8nId === r.wf.id);
                     return `\`${cat?.newId ?? '—'}\` ${cat?.displayName ?? r.wf.name}`;
                   })
-                  .join('\n'),
+                  .join('\n').slice(0, 1024),
+                inline: false,
+              }]
+            : []),
+          ...(inDevEntries.length > 0
+            ? [{
+                name: '🔧 In Entwicklung',
+                value: inDevEntries.map((e) => `\`${e.newId}\` ${e.displayName}`).join('\n'),
                 inline: false,
               }]
             : []),
           {
             name: '📅 Heute geplant',
-            value: scheduledToday.join('\n') || '(keine)',
+            value: scheduledToday.map((l) => l.replace(/[_*`]/g, '')).join('\n') || '(keine)',
             inline: true,
           },
           {
             name: '📆 Diese Woche',
-            value: scheduledWeek.join('\n') || '(keine)',
+            value: scheduledWeek.map((l) => l.replace(/[_*`]/g, '')).join('\n') || '(keine)',
             inline: true,
           },
         ],
-        footer: { text: 'AIOS Operations Center' },
+        footer: { text: 'AIOS Operations Center · admin.automation-plus-ki.de/workflows' },
         timestamp: now.toISOString(),
       },
     ],
