@@ -55,11 +55,26 @@ export async function POST() {
         continue;
       }
 
-      // PUT with updated name
+      // PUT with only allowed fields (n8n API v1 rejects extra properties)
+      const ALLOWED_SETTINGS = new Set([
+        'executionOrder','saveManualExecutions','saveExecutionProgress',
+        'saveDataErrorExecution','saveDataSuccessExecution','callerPolicy',
+        'errorWorkflow','timezone',
+      ]);
+      const filteredSettings = Object.fromEntries(
+        Object.entries(wfData.settings ?? {}).filter(([k]) => ALLOWED_SETTINGS.has(k))
+      );
+      const putBody = {
+        name:        newName,
+        nodes:       wfData.nodes,
+        connections: wfData.connections,
+        settings:    filteredSettings,
+        staticData:  wfData.staticData ?? null,
+      };
       const putRes = await fetch(`${N8N_BASE}/api/v1/workflows/${entry.n8nId}`, {
         method:  'PUT',
         headers,
-        body:    JSON.stringify({ ...wfData, name: newName }),
+        body:    JSON.stringify(putBody),
         signal:  AbortSignal.timeout(10000),
       });
 
