@@ -42,10 +42,10 @@ app = FastAPI(
 app.add_middleware(AiosTokenMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,   # via ALLOWED_ORIGINS env-var in Coolify
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "x-aios-token"],
 )
 
 app.include_router(agents.router,      prefix="/api/agents",      tags=["agents"])
