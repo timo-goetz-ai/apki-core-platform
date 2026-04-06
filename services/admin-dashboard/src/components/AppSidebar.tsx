@@ -78,6 +78,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Workflow,
     items: [
       { label: 'Alle Workflows', href: '/workflows', icon: Workflow },
+      { label: 'Zeitplan', href: '/workflows/schedule', icon: CalendarDays },
     ],
   },
   {

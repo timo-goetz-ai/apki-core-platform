@@ -189,8 +189,8 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     description: 'Tägliche Zusammenfassung aller Aktivitäten via Telegram.',
     benefit: 'Vollständiger Überblick ohne Dashboard öffnen — direkt aufs Handy.',
     savesHoursPerWeek: 2,
-    runFrequency: 'tägl. 08:00',
-    chips: ['#täglich', '#zusammenfassung', '#telegram', '#08:00', '#automatisch'],
+    runFrequency: 'tägl. 10:00',
+    chips: ['#täglich', '#zusammenfassung', '#telegram', '#10:00', '#automatisch'],
   },
   {
     n8nId: 'xxBJQVAd3CSB8ytc',
@@ -201,7 +201,7 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     description: 'Wöchentlicher Strategiebericht mit KPIs und Highlights.',
     benefit: 'Wochenrückblick automatisch — keine manuelle Auswertung nötig.',
     savesHoursPerWeek: 1.5,
-    runFrequency: 'Mo. 09:00',
+    runFrequency: 'Mo. 10:30',
     chips: ['#wöchentlich', '#bericht', '#kpis', '#montag', '#strategie'],
   },
   // ── LAYER 6: CONTENT ────────────────────────────────────────────────────
@@ -361,7 +361,7 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     description: 'Wöchentliche Sentiment-Analyse von Markt und Community.',
     benefit: 'Stimmungsbild der Zielgruppe automatisch — bessere Content-Entscheidungen.',
     savesHoursPerWeek: 2,
-    runFrequency: 'Mo. 08:00',
+    runFrequency: 'Mo. 08:30',
     chips: ['#wöchentlich', '#sentiment', '#markt', '#gemini', '#montag'],
   },
   {
