@@ -127,7 +127,7 @@ export default function LogsPage() {
             Logs
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            NocoDB error_logs · {loading ? 'loading…' : `${logs.length} entries`}
+            Directus 230_hooks · {loading ? 'loading…' : `${logs.length} entries`}
             {lastFetch && (
               <span style={{ marginLeft: 10, color: 'var(--text-muted)' }}>
                 · fetched {timeAgo(lastFetch)}
