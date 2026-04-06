@@ -155,6 +155,7 @@ export async function GET() {
       cost:           dx?.kosten ?? 'kostenlos',
       priority:       dx?.prioritaet ?? 'mittel',
       directusStatus: dx?.status ?? '',
+      inDevelopment:  catalog?.inDevelopment ?? false,
       n8nUrl:         `https://n8n.automation-plus-ki.de/workflow/${wf.id}`,
     };
   });

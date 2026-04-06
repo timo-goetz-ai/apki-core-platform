@@ -137,6 +137,8 @@ export interface WorkflowCatalogEntry {
   runFrequency: string;
   /** 4–6 kurze Tags — beschreiben den Workflow ohne Sätze */
   chips: string[];
+  /** Workflow ist noch in Entwicklung / nicht produktionsreif */
+  inDevelopment?: boolean;
 }
 
 export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
@@ -269,11 +271,12 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     categoryKey: 'CONTENT',
     scheduleKey: 'RT',
     displayName: 'Voice AI Agent',
-    description: 'KI-Agent für die Produktion von Audio-Inhalten.',
-    benefit: 'Vollautomatische Voice-Content-Pipeline (noch in Entwicklung).',
+    description: 'KI-Agent für die vollautomatische Produktion von Audio-Inhalten.',
+    benefit: 'Voice-Content ohne Sprechzeit — Podcast & Reels vollständig automatisiert.',
     savesHoursPerWeek: 0,
     runFrequency: 'on_demand',
-    chips: ['#voice', '#ki-agent', '#audio', '#in-entwicklung', '#openrouter'],
+    chips: ['#voice', '#ki-agent', '#audio', '#podcast', '#openrouter'],
+    inDevelopment: true,
   },
   {
     n8nId: 'JiIy6P0XDxT0fq9M',
@@ -286,32 +289,6 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     savesHoursPerWeek: 0.5,
     runFrequency: 'on_demand',
     chips: ['#webhook', '#trigger', '#manuell', '#content-start', '#steuerung'],
-  },
-  // ── LAYER 8: CRM ─────────────────────────────────────────────────────────
-  {
-    n8nId: 'auto-bewerbung-v1',
-    newId: '08_010_CRM',
-    categoryKey: 'CRM',
-    scheduleKey: 'RT',
-    displayName: 'Bewerbungs Creator',
-    description: 'Erstellt KI-optimierte Bewerbungsunterlagen automatisch.',
-    benefit: 'Professionelle Bewerbungen in Minuten statt Stunden.',
-    savesHoursPerWeek: 1,
-    runFrequency: 'on_demand',
-    chips: ['#webhook', '#bewerbung', '#ki', '#job-scout', '#personalisiert'],
-  },
-  // ── LAYER 14: MONITORING ─────────────────────────────────────────────────
-  {
-    n8nId: 's9QO3zVWQQCdeWIY',
-    newId: '14_010_MON',
-    categoryKey: 'MON',
-    scheduleKey: 'MAN',
-    displayName: 'Status Report',
-    description: 'Generiert einen vollständigen System-Status-Report.',
-    benefit: 'Sofortiger Überblick über alle Services ohne manuelles Prüfen.',
-    savesHoursPerWeek: 0.5,
-    runFrequency: 'on_demand',
-    chips: ['#manuell', '#status', '#system', '#report', '#infra'],
   },
   // ── LAYER 16: DEVOPS ─────────────────────────────────────────────────────
   {
@@ -349,18 +326,6 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     savesHoursPerWeek: 0.5,
     runFrequency: 'on_demand',
     chips: ['#webhook', '#discovery', '#services', '#agenten', '#plug-and-play'],
-  },
-  {
-    n8nId: 'o9Bee0DoJoGp3fl9',
-    newId: '16_040_DEVOPS',
-    categoryKey: 'DEVOPS',
-    scheduleKey: 'RT',
-    displayName: 'Workflow Control',
-    description: 'Startet und stoppt Workflows via Telegram-Befehl.',
-    benefit: 'Vollständige Workflow-Steuerung vom Handy aus, jederzeit.',
-    savesHoursPerWeek: 0.5,
-    runFrequency: 'on_demand',
-    chips: ['#webhook', '#telegram', '#steuerung', '#remote', '#devops'],
   },
   // ── LAYER 17: AI ─────────────────────────────────────────────────────────
   {
@@ -474,18 +439,6 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     runFrequency: 'on_demand',
     chips: ['#webhook', '#telegram', '#callback', '#buttons', '#interaktiv'],
   },
-  {
-    n8nId: '1J1wYVB9T7sklbOQ',
-    newId: '21_020_COMM',
-    categoryKey: 'COMM',
-    scheduleKey: 'RT',
-    displayName: 'Telegram Assistant',
-    description: 'KI-gestützter Chat-Assistent direkt in Telegram.',
-    benefit: 'KI-Unterstützung jederzeit per Telegram — kein Browser nötig.',
-    savesHoursPerWeek: 2,
-    runFrequency: 'on_demand',
-    chips: ['#webhook', '#telegram', '#ki-assistent', '#chat', '#24/7'],
-  },
   // ── LAYER 23: APPROVAL ───────────────────────────────────────────────────
   {
     n8nId: 'bzUMo8BENjHRyvbk',
@@ -498,19 +451,6 @@ export const WORKFLOW_CATALOG: WorkflowCatalogEntry[] = [
     savesHoursPerWeek: 1.5,
     runFrequency: 'on_demand',
     chips: ['#webhook', '#freigabe', '#telegram', '#genehmigung', '#mobil'],
-  },
-  // ── LAYER 24: ANALYTICS ──────────────────────────────────────────────────
-  {
-    n8nId: 'r9SjBZvHXrxK2xA2',
-    newId: '24_010_ANALYTICS',
-    categoryKey: 'ANALYTICS',
-    scheduleKey: 'MAN',
-    displayName: 'Research Data',
-    description: 'Aggregiert und visualisiert alle Research-Daten.',
-    benefit: 'Vollständiger Forschungsüberblick auf Abruf — keine manuelle Auswertung.',
-    savesHoursPerWeek: 1,
-    runFrequency: 'on_demand',
-    chips: ['#manuell', '#research', '#daten', '#analytics', '#aggregation'],
   },
 ];
 

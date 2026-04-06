@@ -30,6 +30,7 @@ interface LiveWorkflow {
   cost: string;
   priority: string;
   directusStatus: string;
+  inDevelopment: boolean;
   n8nUrl: string;
 }
 
@@ -141,6 +142,9 @@ export default function WorkflowsPage() {
   const [search, setSearch]         = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryMsg, setSummaryMsg]   = useState('');
+  const [renameLoading, setRenameLoading] = useState(false);
+  const [renameMsg, setRenameMsg]     = useState('');
+  const [showRenameConfirm, setShowRenameConfirm] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -185,6 +189,27 @@ export default function WorkflowsPage() {
     }
     setSummaryLoading(false);
     setTimeout(() => setSummaryMsg(''), 5000);
+  };
+
+  const executeRename = async () => {
+    setShowRenameConfirm(false);
+    setRenameLoading(true);
+    setRenameMsg('');
+    try {
+      const res = await fetch('/api/n8n/rename-bulk', { method: 'POST' });
+      const json = await res.json();
+      if (json.ok) {
+        const { renamed, failed } = json;
+        setRenameMsg(`✅ ${renamed} umbenannt${failed > 0 ? ` · ⚠️ ${failed} Fehler` : ''}`);
+        fetchData();
+      } else {
+        setRenameMsg(`❌ ${json.error ?? 'Fehler beim Umbenennen'}`);
+      }
+    } catch {
+      setRenameMsg('❌ Verbindungsfehler');
+    }
+    setRenameLoading(false);
+    setTimeout(() => setRenameMsg(''), 8000);
   };
 
   /* Filter */
@@ -235,6 +260,16 @@ export default function WorkflowsPage() {
           {summaryLoading ? '⏳ Sende...' : '📤 Summary senden'}
         </button>
 
+        {/* Rename button */}
+        <button
+          onClick={() => setShowRenameConfirm(true)}
+          disabled={renameLoading}
+          style={{ ...S.btn, background: 'var(--layer-3)', color: 'var(--accent-amber)', border: '1px solid var(--accent-amber)', opacity: renameLoading ? 0.6 : 1 }}
+          title="Workflows in n8n auf neues Schema umbenennen"
+        >
+          {renameLoading ? '⏳ Umbenennen...' : '✏️ n8n umbenennen'}
+        </button>
+
         {/* Search */}
         <input
           type="text"
@@ -262,6 +297,35 @@ export default function WorkflowsPage() {
       {summaryMsg && (
         <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 6, background: 'var(--layer-2)', border: '1px solid var(--border)', ...S.mono, fontSize: 13 }}>
           {summaryMsg}
+        </div>
+      )}
+
+      {/* Rename feedback */}
+      {renameMsg && (
+        <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 6, background: 'var(--layer-2)', border: '1px solid var(--accent-amber)', ...S.mono, fontSize: 13 }}>
+          {renameMsg}
+        </div>
+      )}
+
+      {/* Rename confirm modal */}
+      {showRenameConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--layer-2)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, maxWidth: 420, width: '90%' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>✏️ n8n Workflows umbenennen</div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
+              Alle <strong>25 Workflows</strong> werden in n8n auf das neue Schema umbenannt:<br />
+              <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-blue)' }}>17_020_AI — Trend Monitor</code><br /><br />
+              Webhook-URLs bleiben unverändert. Einmalige Aktion.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowRenameConfirm(false)} style={{ ...S.btn, background: 'var(--layer-3)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                Abbrechen
+              </button>
+              <button onClick={executeRename} style={{ ...S.btn, background: 'var(--accent-amber)', color: '#000', border: 'none' }}>
+                Jetzt umbenennen
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -411,6 +475,13 @@ export default function WorkflowsPage() {
                                 {wf.priority}
                               </span>
                             )}
+
+                            {/* In-Development badge */}
+                            {wf.inDevelopment && (
+                              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', padding: '1px 8px', borderRadius: 8, background: 'rgba(251,191,36,0.12)', border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)', fontWeight: 600 }}>
+                                🔧 In Entwicklung
+                              </span>
+                            )}
                           </div>
 
                           {/* Chips */}
@@ -511,6 +582,47 @@ export default function WorkflowsPage() {
           </div>
         );
       })}
+
+      {/* ── Unkategorisiert (in n8n aber nicht im Catalog) ─────────────────── */}
+      {(() => {
+        const uncategorized = filtered.filter((wf) => !wf.newId);
+        if (uncategorized.length === 0) return null;
+        return (
+          <div style={{ marginTop: 10, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--layer-1)', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <span style={{ fontSize: 14 }}>❓</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Unkategorisiert</span>
+              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 8, background: 'var(--layer-0)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                {uncategorized.length} Workflow{uncategorized.length !== 1 ? 's' : ''} — nicht im Catalog
+              </span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginLeft: 4 }}>
+                Füge diese in WORKFLOW_CATALOG ein oder entferne sie in n8n
+              </span>
+            </div>
+            <div style={{ background: 'var(--layer-1)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
+              {uncategorized.map((wf, idx) => (
+                <div key={wf.id} style={{ display: 'grid', gridTemplateColumns: '10px 1fr auto 32px', gap: 8, padding: '8px 14px', borderBottom: idx < uncategorized.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'center' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: wf.active ? 'var(--accent-green)' : 'var(--text-muted)' }} />
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>{wf.name}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginLeft: 8 }}>{wf.id}</span>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+                    {wf.active ? '✅ aktiv' : '⚪ inaktiv'}
+                  </span>
+                  <a href={wf.n8nUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" x2="21" y1="14" y2="3" />
+                    </svg>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Recent Executions ─────────────────────────────────────────────── */}
       {data && data.executions.length > 0 && (
