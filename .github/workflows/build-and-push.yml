@@ -127,17 +127,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Load Coolify secrets from 1Password
-        uses: 1password/load-secrets-action@v2
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          COOLIFY_URL:            op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/url
-          COOLIFY_TOKEN:          op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/token
-          COOLIFY_DASHBOARD_UUID: op://fwl7qdu7q3nvqqjbrljzcdhita/Coolify/dashboard_uuid
-
       - name: Deploy admin-dashboard via Coolify
+        env:
+          COOLIFY_URL:            ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN:          ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_DASHBOARD_UUID: ${{ secrets.COOLIFY_DASHBOARD_UUID }}
         run: |
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${COOLIFY_URL}/api/v1/deploy" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
