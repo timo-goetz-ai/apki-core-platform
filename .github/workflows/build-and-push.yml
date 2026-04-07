@@ -22,7 +22,6 @@ jobs:
   detect-changes:
     name: Detect changed services
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     outputs:
       nexus-core: ${{ steps.filter.outputs.nexus-core }}
       admin-dashboard: ${{ steps.filter.outputs.admin-dashboard }}
