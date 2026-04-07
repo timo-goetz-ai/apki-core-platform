@@ -16,7 +16,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: timogoetz1988
+  OWNER: timo-goetz-ai
 
 jobs:
   detect-changes:
@@ -72,7 +72,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-core
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -112,10 +112,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # Beide Image-Namen: aios-admin-dashboard (kanonisch) + infra-dashboard (Coolify-kompatibel)
-          images: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-admin-dashboard
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/infra-dashboard
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-admin-dashboard
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -182,7 +179,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/crew-api
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-crew
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -221,7 +218,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/aios-landing-page
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-landing
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -260,7 +257,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/telegram-bot
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-telegram
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
