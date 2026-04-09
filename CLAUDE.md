@@ -9,7 +9,7 @@ Monorepo für **Automation+KI / AIOS**: Orchestrierung, Admin-UI, APIs und Landi
 
 | Bereich | Pfad / Rolle |
 |--------|----------------|
-| **Admin-Dashboard** | `services/admin-dashboard` — Next.js 14, App Router, Operations-UI (Agentic OS), API-Integrationen (Directus, n8n, …) |
+| **Admin-Dashboard** | `services/admin-dashboard` — Next.js 14, App Router, Operations-UI (Agentic OS), API-Integrationen (Supabase, n8n, …) |
 | **Landing Page** | `services/landing-page` — Öffentliche Website |
 | **Crew API** | `services/crew-api` — Python-API (siehe CI-/Docker-Context) |
 | **AIOS Core** | `services/aios-core` — Python-Kern-API, DB-Migrationen (Alembic im Deploy-Workflow) |
@@ -18,8 +18,8 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 
 ## Deployment-Pipeline
 
-1. **Push** nach `main` auf `git@github.com:TimoGoetz1988/aios.git`
-2. **GitHub Actions** — Workflow **Build & Push – Docker Images** (`.github/workflows/build-and-push.yml`): baut u. a. Images für `admin-dashboard`, `aios-core`, `crew-api`, `landing-page` → **ghcr.io** (`ghcr.io/timogoetz1988/…`).
+1. **Push** nach `main` auf `git@github.com:timo-goetz-ai/core-platform.git` (ehem. `TimoGoetz1988/aios`)
+2. **GitHub Actions** — Workflow **Build & Push – Docker Images** (`.github/workflows/build-and-push.yml`): baut u. a. Images für `admin-dashboard`, `aios-core`, `crew-api`, `landing-page` → **ghcr.io** (`ghcr.io/timo-goetz-ai/…`).
 3. **Coolify** zieht die neuen Images und rollt die Anwendungen auf dem **Hetzner**-Host aus.
 4. **Einzel-Deploys / Checks**: zusätzliche Workflows unter `.github/workflows/` (z. B. `deploy-prod.yml`, `ci.yml`).
 
@@ -30,13 +30,13 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 | System | Erreichbarkeit |
 |--------|----------------|
 | **n8n** | `http://10.0.1.12:5678` intern / `https://n8n.automation-plus-ki.de` öffentlich |
-| **Directus** | `https://directus.automation-plus-ki.de` (REST + GraphQL + Admin-UI, Coolify App `nks40ko44owgswk880o4ko88`) |
+| **Supabase** | `https://supabase.automation-plus-ki.de` (PostgREST + Studio, self-hosted) |
 
 ## Umgebungsvariablen (Coolify)
 
 Secrets und env-spezifische Werte werden **in Coolify** pro Anwendung/Stack gesetzt (nicht im Repo committen). Typische Kategorien:
 
-- **Next.js / Admin-Dashboard**: `DIRECTUS_URL`, `DIRECTUS_TOKEN`, n8n, Authentik-OIDC, interne Service-URLs (Grafana/Prometheus über Docker-Hostnamen) — jeweils in der Coolify-Ressource für `infra-dashboard` konfigurieren.
+- **Next.js / Admin-Dashboard**: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY`, n8n, Authentik-OIDC, interne Service-URLs (Grafana/Prometheus über Docker-Hostnamen) — jeweils in der Coolify-Ressource für `infra-dashboard` konfigurieren.
 - **Python-Services** (`aios-core`, `crew-api`): DB-URLs, API-Keys, CORS, Service-Discovery — analog in den jeweiligen Coolify-Services.
 
 Für lokale Entwicklung: `.env.example`-Dateien im Repo beachten (falls vorhanden) und nur **nicht-sensible** Defaults dokumentieren.
@@ -81,7 +81,7 @@ So bleiben Exporte, Doku und Dashboard-Zuordnung konsistent.
 | Service | URL | Auth (Quelle) |
 |---------|-----|------|
 | n8n | `http://10.0.1.16:5678` (intern) | `X-N8N-API-KEY` → 1Password: `05_INFRASTRUCTURE > n8n API Key` |
-| Directus | `https://directus.automation-plus-ki.de` | Bearer Token → 1Password: `05_INFRASTRUCTURE > Directus Token` |
+| Supabase | `https://supabase.automation-plus-ki.de` | service_role key → 1Password: `05_INFRASTRUCTURE > Supabase - AIOS Self-Hosted` |
 | NocoDB (legacy) | `https://nocodb.automation-plus-ki.de` (gestoppt, Daten in PG `nocodb` DB als Backup) | xc-token → 1Password: `05_INFRASTRUCTURE > NocoDB Token` |
 | Grafana | `https://grafana.automation-plus-ki.de` | Bearer Token → Coolify Env |
 | Prometheus | `http://10.0.1.15:9090` | kein Auth intern |
@@ -177,7 +177,7 @@ import { exportCsv } from '@/lib/csv-export'        // exportCsv('file.csv', row
 
 **API-Route-Muster:**
 ```
-GET /api/nocodb/agents               // via Directus REST (nocodb.ts als Wrapper)
+GET /api/nocodb/agents               // via Supabase PostgREST (nocodb.ts als Wrapper)
 GET /api/services                    // Service-Health (interne Docker-Hostnamen!)
 GET /api/monitoring/alerts           // Prometheus + Grafana (intern: homestack-prometheus:9090, homestack-grafana:3000)
 POST /api/n8n/trigger/[workflowId]
@@ -239,7 +239,7 @@ Subagenten-Definitionen in `.claude/agents/`:
 - **Authentik + API-Pfade**: Services mit eigener Auth brauchen separaten Traefik-Router (höhere Priorität) OHNE ForwardAuth für `/api/`
 - **Server-zu-Server Calls**: Immer interne Docker-Hostnamen (`homestack-grafana:3000`, `homestack-prometheus:9090`), NIE externe URLs hinter Authentik
 - **Coolify API**: Custom Labels sind base64-encoded; Apps erstellen via `POST /api/v1/applications/dockerimage`; Coolify Token → 1Password: `05_INFRASTRUCTURE > Coolify API Token`
-- **Directus Drop-in**: `nocodb.ts` wurde als Wrapper umgeschrieben — gleiche Exports, intern Directus REST. 46 importierende Dateien blieben unverändert
+- **Supabase Migration (2026-04-09)**: `nocodb.ts` nutzt jetzt Supabase PostgREST (`SUPABASE_URL` + `SUPABASE_SERVICE_KEY`). Tabellennamen ohne Prefix (z.B. `agents` statt `110_agents`). Alle Consumers blieben unverändert. Directus ist abgeschaltet.
 - **Voice Platform** (`voice.automation-plus-ki.de`): OpenAI/Anthropic Keys via OpenRouter (`OPENAI_BASE_URL=https://openrouter.ai/api/v1`)
 - **Postiz S3**: Bucket `postiz-aios` auf Hetzner Object Storage, `STORAGE_PROVIDER=s3`
 - **1Password**: API-Keys in Vault `05_INFRASTRUCTURE`; `AI-APIs` Item hat OpenRouter-Key

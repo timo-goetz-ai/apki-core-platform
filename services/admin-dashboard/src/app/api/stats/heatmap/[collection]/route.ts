@@ -2,12 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BASE  = (process.env.DIRECTUS_URL ?? '').replace(/\/$/, '');
-const TOKEN = process.env.DIRECTUS_TOKEN ?? '';
-
-function authHeaders(): Record<string, string> {
-  return { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
-}
+const BASE  = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+const TOKEN = process.env.SUPABASE_SERVICE_KEY ?? '';
 
 export async function GET(
   req: NextRequest,
@@ -15,71 +11,54 @@ export async function GET(
 ) {
   const { collection } = params;
   const { searchParams } = req.nextUrl;
-  const field = searchParams.get('field') ?? 'date_created';
+  const field = (searchParams.get('field') ?? 'created_at').replace('date_created', 'created_at').replace('date_updated', 'updated_at');
   const days  = Math.min(Number(searchParams.get('days') ?? '365'), 730);
 
   if (!BASE || !TOKEN) {
-    return NextResponse.json({ error: 'Directus nicht konfiguriert' }, { status: 503 });
+    return NextResponse.json({ error: 'Supabase nicht konfiguriert' }, { status: 503 });
   }
 
   try {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const url = new URL(`${BASE}/items/${collection}`);
-    url.searchParams.set('aggregate[count]', 'id');
-    url.searchParams.append('groupBy[]', `year(${field})`);
-    url.searchParams.append('groupBy[]', `month(${field})`);
-    url.searchParams.append('groupBy[]', `day(${field})`);
-    url.searchParams.set(`filter[${field}][_gte]`, since);
-    url.searchParams.append('sort[]', field);
-    url.searchParams.set('limit', String(days));
+    const url = new URL(`${BASE}/rest/v1/${collection}`);
+    url.searchParams.set('select', field);
+    url.searchParams.set(`${field}`, `gte.${since}`);
+    url.searchParams.set('order', `${field}.asc`);
+    url.searchParams.set('limit', '5000');
 
     const res = await fetch(url.toString(), {
-      headers: authHeaders(),
+      headers: { apikey: TOKEN, Authorization: `Bearer ${TOKEN}` },
       signal: AbortSignal.timeout(12000),
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json(
-        { error: `Directus Fehler ${res.status}`, detail: text },
-        { status: res.status }
-      );
+      return NextResponse.json({ error: `Supabase Fehler ${res.status}` }, { status: res.status });
     }
 
-    const json = await res.json();
-    const rows: Record<string, unknown>[] = json?.data ?? [];
+    const rows = (await res.json()) as Record<string, string | null>[];
 
-    // Normalisiere auf { date: 'YYYY-MM-DD', count: number }
-    // ECharts Calendar erwartet genau dieses Format
-    const data = rows
-      .map((row) => {
-        const y = String(row[`year(${field})`]  ?? new Date().getFullYear());
-        const m = String(row[`month(${field})`] ?? 1).padStart(2, '0');
-        const d = String(row[`day(${field})`]   ?? 1).padStart(2, '0');
-        return {
-          date:  `${y}-${m}-${d}`,
-          count: Number((row.count as Record<string, string>)?.id ?? 0),
-        };
-      })
-      .filter((r) => r.count > 0);
+    // Aggregate by date in-memory
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const val = row[field];
+      if (!val) continue;
+      const date = val.slice(0, 10);
+      counts.set(date, (counts.get(date) ?? 0) + 1);
+    }
 
-    // Berechne Max für die Farbskala
-    const max = data.reduce((m, r) => Math.max(m, r.count), 0);
+    const data = Array.from(counts.entries()).map(([date, count]) => ({ date, count }));
+    const max  = data.reduce((m, r) => Math.max(m, r.count), 0);
 
     return NextResponse.json({
       data,
       meta: {
-        collection,
-        field,
-        days,
-        max,
+        collection, field, days, max,
         total: data.reduce((s, r) => s + r.count, 0),
         generated: new Date().toISOString(),
       },
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Fehler' }, { status: 500 });
   }
 }

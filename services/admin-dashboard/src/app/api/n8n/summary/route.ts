@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { WORKFLOW_CATALOG, SCHEDULE_TAGS } from '@/lib/workflow-categories';
 
-const DX_BASE  = (process.env.DIRECTUS_URL  ?? '').replace(/\/$/, '');
-const DX_TOKEN = process.env.DIRECTUS_TOKEN ?? '';
+const SB_BASE  = (process.env.SUPABASE_URL  ?? '').replace(/\/$/, '');
+const SB_KEY   = process.env.SUPABASE_SERVICE_KEY ?? '';
 const N8N_BASE = process.env.N8N_INTERNAL_URL ?? 'http://10.0.1.16:5678';
 const N8N_KEY  = process.env.N8N_API_KEY ?? process.env.N8N_SELF_API_KEY ?? '';
 
@@ -32,9 +32,9 @@ async function fetchWorkflowStatus(): Promise<{ wf: N8nWf; dx?: DxWf }[]> {
 
   const [n8nRes, dxRes] = await Promise.allSettled([
     fetch(`${N8N_BASE}/api/v1/workflows?limit=100`, { headers, signal: AbortSignal.timeout(8000) }),
-    DX_BASE && DX_TOKEN
-      ? fetch(`${DX_BASE}/items/100_workflows?limit=-1&fields=n8n_id,status,intervall,kategorie`, {
-          headers: { Authorization: `Bearer ${DX_TOKEN}` },
+    SB_BASE && SB_KEY
+      ? fetch(`${SB_BASE}/rest/v1/workflows?select=n8n_id,status,intervall,kategorie`, {
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
           signal: AbortSignal.timeout(6000),
         })
       : Promise.resolve(null),
@@ -47,7 +47,7 @@ async function fetchWorkflowStatus(): Promise<{ wf: N8nWf; dx?: DxWf }[]> {
 
   let dxWfs: DxWf[] = [];
   if (dxRes.status === 'fulfilled' && dxRes.value && 'ok' in dxRes.value && (dxRes.value as Response).ok) {
-    dxWfs = ((await (dxRes.value as Response).json()).data ?? []) as DxWf[];
+    dxWfs = ((await (dxRes.value as Response).json()) ?? []) as DxWf[];
   }
 
   const dxMap = new Map<string, DxWf>();
@@ -107,7 +107,7 @@ function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord
 
   /* Plain text (Telegram Markdown) */
   const plain = [
-    `🤖 *AIOS Workflow Report*`,
+    `🤖 *Agent Platform Workflow Report*`,
     `📅 ${date}  🕐 ${time}`,
     ``,
     `📊 Gesamt: ${rows.length}  |  ✅ Aktiv: ${active.length}  |  ⚪ Inaktiv: ${inactive.length}`,
@@ -144,7 +144,7 @@ function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord
   const discord = {
     embeds: [
       {
-        title: '🤖 AIOS Workflow Report',
+        title: '🤖 Agent Platform Workflow Report',
         description: `**${date}** — ${time}`,
         color: 0x22c55e,
         fields: [
@@ -188,7 +188,7 @@ function buildReport(rows: { wf: N8nWf; dx?: DxWf }[]): { plain: string; discord
             inline: true,
           },
         ],
-        footer: { text: 'AIOS Operations Center · admin.automation-plus-ki.de/workflows' },
+        footer: { text: 'Agent Platform Operations Center · admin.automation-plus-ki.de/workflows' },
         timestamp: now.toISOString(),
       },
     ],

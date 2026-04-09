@@ -2,11 +2,11 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 
-const BASE  = (process.env.DIRECTUS_URL ?? process.env.NOCODB_URL ?? '').replace(/\/$/, '');
-const TOKEN = process.env.DIRECTUS_TOKEN ?? process.env.NOCODB_API_TOKEN ?? '';
+const BASE  = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+const TOKEN = process.env.SUPABASE_SERVICE_KEY ?? '';
 
-// Directus collection (ehem. NocoDB table mgnxselg5bkglr8 = 230_hooks)
-const COLLECTION = '230_hooks';
+// Supabase table (ehem. Directus 230_hooks)
+const TABLE = 'hooks';
 
 export interface LogEntry {
   id:       string;
@@ -27,30 +27,29 @@ function normalizeLevel(raw: string | undefined): LogEntry['level'] {
 
 export async function GET() {
   if (!BASE || !TOKEN) {
-    return NextResponse.json({ error: 'DIRECTUS_URL oder DIRECTUS_TOKEN nicht konfiguriert', logs: [] });
+    return NextResponse.json({ error: 'SUPABASE_URL oder SUPABASE_SERVICE_KEY nicht konfiguriert', logs: [] });
   }
 
   try {
-    const url = `${BASE}/items/${COLLECTION}?sort[]=-date_created&limit=200`;
+    const url = `${BASE}/rest/v1/${TABLE}?select=*&order=created_at.desc&limit=200`;
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      headers: { apikey: TOKEN, Authorization: `Bearer ${TOKEN}` },
       signal:  AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) {
       const text = await res.text();
-      return NextResponse.json({ error: `Directus ${res.status}: ${text}`, logs: [] });
+      return NextResponse.json({ error: `Supabase ${res.status}: ${text}`, logs: [] });
     }
 
-    const data = await res.json();
-    const rows: Record<string, unknown>[] = Array.isArray(data?.data) ? data.data : [];
+    const rows: Record<string, unknown>[] = await res.json();
 
     const logs: LogEntry[] = rows.map((row) => ({
-      id:      String(row.id ?? row.Id ?? Math.random()),
-      ts:      String(row.ts ?? row.timestamp ?? row.date_created ?? row.created_at ?? ''),
-      level:   normalizeLevel(String(row.level ?? row.Level ?? '')),
-      service: String(row.service ?? row.Service ?? row.source ?? row.name ?? '—'),
-      message: String(row.message ?? row.Message ?? row.msg ?? row.description ?? ''),
+      id:      String(row.id ?? Math.random()),
+      ts:      String(row.ts ?? row.timestamp ?? row.created_at ?? ''),
+      level:   normalizeLevel(String(row.level ?? '')),
+      service: String(row.service ?? row.source ?? row.name ?? '—'),
+      message: String(row.message ?? row.msg ?? row.description ?? ''),
       details: row.details != null ? String(row.details) : undefined,
     }));
 

@@ -2,73 +2,81 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 
-const BASE  = (process.env.DIRECTUS_URL ?? '').replace(/\/$/, '');
-const TOKEN = process.env.DIRECTUS_TOKEN ?? '';
+const BASE  = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+const TOKEN = process.env.SUPABASE_SERVICE_KEY ?? '';
 
 function authHeaders(): Record<string, string> {
-  return { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+  return {
+    apikey: TOKEN,
+    Authorization: `Bearer ${TOKEN}`,
+    'Content-Type': 'application/json',
+    Prefer: 'count=exact',
+  };
 }
 
 // Collection-Map mit lesbaren Labels — synchron mit src/lib/nocodb.ts `C`
 const COLLECTIONS: { key: string; label: string }[] = [
-  { key: '100_workflows',            label: 'Workflows' },
-  { key: '110_agents',               label: 'Agents' },
-  { key: '120_subagents',            label: 'Subagents' },
-  { key: '130_agent_runs',           label: 'Agent Runs' },
-  { key: '200_prompts',              label: 'Prompts' },
-  { key: '210_rules',                label: 'Rules' },
-  { key: '220_skills',               label: 'Skills' },
-  { key: '230_hooks',                label: 'Hooks' },
-  { key: '240_mcp_configs',          label: 'MCP Configs' },
-  { key: '250_plugins',              label: 'Plugins' },
-  { key: '260_cursor_configs',       label: 'Cursor Configs' },
-  { key: '300_trends',               label: 'Trends' },
-  { key: '310_sentiment',            label: 'Sentiment' },
-  { key: '320_content_opportunities',label: 'Content Opp.' },
-  { key: '330_knowledge_items',      label: 'Knowledge' },
-  { key: '340_regulatory',           label: 'Regulatory' },
-  { key: '350_tools',                label: 'Tools' },
-  { key: '360_social_proof',         label: 'Social Proof' },
-  { key: '400_content_pipeline',     label: 'Content Pipeline' },
-  { key: '410_templates',            label: 'Templates' },
-  { key: '420_media_assets',         label: 'Media Assets' },
-  { key: '430_brand_identity',       label: 'Brand Identity' },
-  { key: '440_publish_log',          label: 'Publish Log' },
-  { key: '500_clients',              label: 'Clients' },
-  { key: '510_tasks',                label: 'Tasks' },
-  { key: '520_mobile_ingest',        label: 'Mobile Ingest' },
+  { key: 'workflows',            label: 'Workflows' },
+  { key: 'agents',               label: 'Agents' },
+  { key: 'subagents',            label: 'Subagents' },
+  { key: 'agent_runs',           label: 'Agent Runs' },
+  { key: 'prompts',              label: 'Prompts' },
+  { key: 'rules',                label: 'Rules' },
+  { key: 'skills',               label: 'Skills' },
+  { key: 'hooks',                label: 'Hooks' },
+  { key: 'mcp_configs',          label: 'MCP Configs' },
+  { key: 'plugins',              label: 'Plugins' },
+  { key: 'cursor_configs',       label: 'Cursor Configs' },
+  { key: 'trends',               label: 'Trends' },
+  { key: 'sentiment',            label: 'Sentiment' },
+  { key: 'content_opportunities',label: 'Content Opp.' },
+  { key: 'knowledge_items',      label: 'Knowledge' },
+  { key: 'regulatory',           label: 'Regulatory' },
+  { key: 'tools',                label: 'Tools' },
+  { key: 'social_proof',         label: 'Social Proof' },
+  { key: 'content_pipeline',     label: 'Content Pipeline' },
+  { key: 'templates',            label: 'Templates' },
+  { key: 'media_assets',         label: 'Media Assets' },
+  { key: 'brand_identity',       label: 'Brand Identity' },
+  { key: 'publish_log',          label: 'Publish Log' },
+  { key: 'clients',              label: 'Clients' },
+  { key: 'tasks',                label: 'Tasks' },
+  { key: 'mobile_ingest',        label: 'Mobile Ingest' },
 ];
 
-interface AggResult { data: { count: { id: string } }[] }
-
-async function fetchCount(collection: string, extraParams = ''): Promise<number> {
+// PostgREST count: HEAD /rest/v1/{table} with Prefer: count=exact
+// → Content-Range: */N in response headers
+async function fetchCount(table: string, extraFilter = ''): Promise<number> {
   if (!BASE || !TOKEN) return 0;
   try {
-    const url = `${BASE}/items/${collection}?aggregate[count]=id&limit=0${extraParams}`;
+    const url = `${BASE}/rest/v1/${table}?select=*&limit=0${extraFilter}`;
     const res = await fetch(url, {
+      method: 'HEAD',
       headers: authHeaders(),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return 0;
-    const json: AggResult = await res.json();
-    return Number(json?.data?.[0]?.count?.id ?? 0);
+    // Content-Range: */123  or  0-0/123
+    const range = res.headers.get('content-range') ?? '';
+    const match = range.match(/\/(\d+)$/);
+    return match ? Number(match[1]) : 0;
   } catch {
     return 0;
   }
 }
 
-async function fetchLastUpdated(collection: string): Promise<string> {
+async function fetchLastUpdated(table: string): Promise<string> {
   if (!BASE || !TOKEN) return '';
   try {
-    const url = `${BASE}/items/${collection}?fields=date_updated,date_created&sort[]=-date_updated&limit=1`;
+    const url = `${BASE}/rest/v1/${table}?select=updated_at,created_at&order=updated_at.desc&limit=1`;
     const res = await fetch(url, {
-      headers: authHeaders(),
+      headers: { apikey: TOKEN, Authorization: `Bearer ${TOKEN}` },
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return '';
-    const json = await res.json();
-    const item = json?.data?.[0];
-    return item?.date_updated ?? item?.date_created ?? '';
+    const rows = (await res.json()) as Record<string, string>[];
+    const item = rows[0];
+    return item?.updated_at ?? item?.created_at ?? '';
   } catch {
     return '';
   }
@@ -77,19 +85,18 @@ async function fetchLastUpdated(collection: string): Promise<string> {
 export async function GET() {
   if (!BASE || !TOKEN) {
     return NextResponse.json(
-      { error: 'DIRECTUS_URL oder DIRECTUS_TOKEN nicht konfiguriert' },
+      { error: 'SUPABASE_URL oder SUPABASE_SERVICE_KEY nicht konfiguriert' },
       { status: 503 }
     );
   }
 
-  // 7 Tage ago ISO string
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const results = await Promise.allSettled(
     COLLECTIONS.map(async ({ key, label }) => {
       const [total, weekCount, lastUpdated] = await Promise.all([
         fetchCount(key),
-        fetchCount(key, `&filter[date_created][_gte]=${sevenDaysAgo}`),
+        fetchCount(key, `&created_at=gte.${sevenDaysAgo}`),
         fetchLastUpdated(key),
       ]);
       return { collection: key, label, total, weekCount, lastUpdated };

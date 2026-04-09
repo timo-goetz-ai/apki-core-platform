@@ -6,8 +6,8 @@ import { inferCategory, inferScheduleTag, getCatalogEntry } from '@/lib/workflow
 const N8N_BASE = process.env.N8N_INTERNAL_URL ?? 'http://10.0.1.16:5678';
 const N8N_KEY  = process.env.N8N_API_KEY ?? process.env.N8N_SELF_API_KEY ?? '';
 
-const DX_BASE  = (process.env.DIRECTUS_URL ?? '').replace(/\/$/, '');
-const DX_TOKEN = process.env.DIRECTUS_TOKEN ?? '';
+const SB_BASE  = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+const SB_KEY   = process.env.SUPABASE_SERVICE_KEY ?? '';
 
 /* ── n8n types ────────────────────────────────────────────────────────────── */
 interface N8nWf {
@@ -56,12 +56,11 @@ export async function GET() {
       headers: n8nHeaders,
       signal: AbortSignal.timeout(8000),
     }),
-    DX_BASE && DX_TOKEN
+    SB_BASE && SB_KEY
       ? fetch(
-          `${DX_BASE}/items/100_workflows?limit=-1` +
-          `&fields=id,n8n_id,name,kategorie,intervall,zweck,status,kosten,prioritaet,trigger`,
+          `${SB_BASE}/rest/v1/workflows?select=id,n8n_id,name,kategorie,intervall,zweck,status,kosten,prioritaet,trigger`,
           {
-            headers: { Authorization: `Bearer ${DX_TOKEN}` },
+            headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
             signal: AbortSignal.timeout(6000),
           },
         )
@@ -80,14 +79,13 @@ export async function GET() {
       ? ((await exRes.value.json()).data ?? [])
       : [];
 
-  /* Parse Directus workflows */
+  /* Parse Supabase workflows (returns array directly) */
   let dxWfs: DxWorkflow[] = [];
-  if (dxRes.status === 'fulfilled' && dxRes.value && 'ok' in dxRes.value && dxRes.value.ok) {
-    const body = await (dxRes.value as Response).json();
-    dxWfs = body.data ?? [];
+  if (dxRes.status === 'fulfilled' && dxRes.value && 'ok' in dxRes.value && (dxRes.value as Response).ok) {
+    dxWfs = (await (dxRes.value as Response).json()) as DxWorkflow[];
   }
 
-  /* Build lookup: n8n_id → Directus row */
+  /* Build lookup: n8n_id → DB row */
   const dxMap = new Map<string, DxWorkflow>();
   for (const d of dxWfs) {
     if (d.n8n_id) dxMap.set(d.n8n_id, d);
