@@ -1,13 +1,13 @@
 /**
- * Data-Layer (Directus REST API) — Drop-in-Ersatz für den alten NocoDB-Client.
+ * Data-Layer (Supabase PostgREST) — Drop-in-Ersatz für den alten Directus/NocoDB-Client.
  *
- * Alle Exports bleiben identisch, intern wird jetzt Directus genutzt.
+ * Alle Exports bleiben identisch, intern wird Supabase PostgREST genutzt.
  *
  * Env-Vars (in Coolify):
- *   DIRECTUS_URL   → https://directus.automation-plus-ki.de
- *   DIRECTUS_TOKEN → statischer Admin-Token
+ *   SUPABASE_URL          → https://supabase.automation-plus-ki.de
+ *   SUPABASE_SERVICE_KEY  → service_role JWT
  *
- * Legacy NOCODB_* Env-Vars werden als Fallback unterstützt.
+ * Legacy-Vars (DIRECTUS_URL, NOCODB_URL) werden als Fallback nicht mehr genutzt.
  */
 
 import {
@@ -19,72 +19,81 @@ import {
   type AuditEintrag,
 } from "./mcp-plattform-data";
 
-const BASE  = (process.env.DIRECTUS_URL ?? process.env.NOCODB_URL ?? "").replace(/\/$/, "");
-const TOKEN = process.env.DIRECTUS_TOKEN ?? process.env.NOCODB_API_TOKEN ?? "";
+const BASE  = (process.env.SUPABASE_URL ?? "").replace(/\/$/, "");
+const TOKEN = process.env.SUPABASE_SERVICE_KEY ?? "";
 
 export const isConfigured = () => !!TOKEN && !!BASE;
 
-// ── Collection-Namen (Directus) ─────────────────────────────────────────────
+// ── Tabellen-Namen (Supabase public schema) ─────────────────────────────────
 
 const C = {
-  workflows:             "100_workflows",
-  agents:                "110_agents",
-  subagents:             "120_subagents",
-  agent_runs:            "130_agent_runs",
-  prompts:               "200_prompts",
-  rules:                 "210_rules",
-  skills:                "220_skills",
-  hooks:                 "230_hooks",
-  mcp_configs:           "240_mcp_configs",
-  plugins:               "250_plugins",
-  cursor_configs:        "260_cursor_configs",
-  trends:                "300_trends",
-  sentiment:             "310_sentiment",
-  content_opportunities: "320_content_opportunities",
-  knowledge_items:       "330_knowledge_items",
-  regulatory:            "340_regulatory",
-  tools:                 "350_tools",
-  social_proof:          "360_social_proof",
-  content_pipeline:      "400_content_pipeline",
-  templates:             "410_templates",
-  media_assets:          "420_media_assets",
-  brand_identity:        "430_brand_identity",
-  publish_log:           "440_publish_log",
-  clients:               "500_clients",
-  tasks:                 "510_tasks",
-  mobile_ingest:         "520_mobile_ingest",
+  workflows:             "workflows",
+  agents:                "agents",
+  subagents:             "subagents",
+  agent_runs:            "agent_runs",
+  prompts:               "prompts",
+  rules:                 "rules",
+  skills:                "skills",
+  hooks:                 "hooks",
+  mcp_configs:           "mcp_configs",
+  plugins:               "plugins",
+  cursor_configs:        "cursor_configs",
+  trends:                "trends",
+  sentiment:             "sentiment",
+  content_opportunities: "content_opportunities",
+  knowledge_items:       "knowledge_items",
+  regulatory:            "regulatory",
+  tools:                 "tools",
+  social_proof:          "social_proof",
+  content_pipeline:      "content_pipeline",
+  templates:             "templates",
+  media_assets:          "media_assets",
+  brand_identity:        "brand_identity",
+  publish_log:           "publish_log",
+  clients:               "clients",
+  tasks:                 "tasks",
+  mobile_ingest:         "mobile_ingest",
+  audit_trail:           "audit_trail",
 } as const;
 
-// ── Low-Level Fetch (Directus REST) ─────────────────────────────────────────
+// ── Low-Level Fetch (Supabase PostgREST) ────────────────────────────────────
 
 function authHeaders(): Record<string, string> {
-  return { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };
+  return {
+    apikey: TOKEN,
+    Authorization: `Bearer ${TOKEN}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
 }
 
-interface DirectusListResponse<T> { data: T[]; meta?: { total_count?: number; filter_count?: number } }
-interface DirectusItemResponse<T> { data: T }
+async function sbGet<T>(table: string, params?: Record<string, string>): Promise<T[]> {
+  const url = new URL(`${BASE}/rest/v1/${table}`);
+  url.searchParams.set("select", "*");
 
-async function dxGet<T>(collection: string, params?: Record<string, string>): Promise<T[]> {
-  const url = new URL(`${BASE}/items/${collection}`);
-  url.searchParams.set("limit", "-1");
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      // Translate NocoDB-style sort to Directus (both use -field, so mostly compatible)
       if (k === "sort") {
-        // NocoDB: "-CreatedAt" → Directus: "-date_created" (built-in) or same field
-        url.searchParams.set("sort", v.replace("CreatedAt", "date_created").replace("UpdatedAt", "date_updated"));
+        // Convert Directus-style "-field" to PostgREST "field.desc"
+        const parts = v.split(",").map((s) => {
+          const desc = s.startsWith("-");
+          const field = s.replace(/^-/, "").replace("date_created", "created_at").replace("date_updated", "updated_at");
+          return `${field}.${desc ? "desc" : "asc"}`;
+        });
+        url.searchParams.set("order", parts.join(","));
       } else if (k === "where") {
-        // Convert NocoDB where to Directus filter
-        // (field,op,value) → filter[field][_op]=value
+        // Convert NocoDB-style "(field,op,value)" to PostgREST "field=op.value"
         const m = v.match(/\((\w+),(eq|gt|gte|lt|lte|like),([^)]+)\)/);
         if (m) {
-          const opMap: Record<string, string> = { eq: "_eq", gt: "_gt", gte: "_gte", lt: "_lt", lte: "_lte", like: "_contains" };
-          url.searchParams.set(`filter[${m[1]}][${opMap[m[2]] ?? "_eq"}]`, m[3]);
+          const opMap: Record<string, string> = { eq: "eq", gt: "gt", gte: "gte", lt: "lt", lte: "lte", like: "like" };
+          url.searchParams.set(m[1], `${opMap[m[2]] ?? "eq"}.${m[3]}`);
         }
       } else if (k === "limit") {
         url.searchParams.set("limit", v);
       } else if (k === "offset") {
         url.searchParams.set("offset", v);
+      } else if (k.startsWith("filter[")) {
+        // Pass Directus-style filter params through as-is (unused path, safe fallback)
       } else {
         url.searchParams.set(k, v);
       }
@@ -95,31 +104,45 @@ async function dxGet<T>(collection: string, params?: Record<string, string>): Pr
     headers: authHeaders(),
     next: { revalidate: 0 },
   });
-  if (!res.ok) throw new Error(`Directus GET ${collection}: ${res.status}`);
-  const json = (await res.json()) as DirectusListResponse<T>;
-  return json.data ?? [];
+  if (!res.ok) throw new Error(`Supabase GET ${table}: ${res.status} ${await res.text()}`);
+  return (await res.json()) as T[];
 }
 
-async function dxPost<T>(collection: string, data: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${BASE}/items/${collection}`, {
+async function sbPost<T>(table: string, data: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${BASE}/rest/v1/${table}`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Directus POST ${collection}: ${res.status}`);
-  const json = (await res.json()) as DirectusItemResponse<T>;
-  return json.data;
+  if (!res.ok) throw new Error(`Supabase POST ${table}: ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as T[];
+  return rows[0];
 }
 
-async function dxPatch<T>(collection: string, id: number | string, data: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${BASE}/items/${collection}/${id}`, {
+async function sbPatch<T>(table: string, id: number | string, data: Record<string, unknown>): Promise<T> {
+  const url = new URL(`${BASE}/rest/v1/${table}`);
+  url.searchParams.set("id", `eq.${id}`);
+  const res = await fetch(url.toString(), {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Directus PATCH ${collection}/${id}: ${res.status}`);
-  const json = (await res.json()) as DirectusItemResponse<T>;
-  return json.data;
+  if (!res.ok) throw new Error(`Supabase PATCH ${table}/${id}: ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as T[];
+  return rows[0];
+}
+
+async function sbGetOne<T>(table: string, id: number | string): Promise<T | null> {
+  const url = new URL(`${BASE}/rest/v1/${table}`);
+  url.searchParams.set("id", `eq.${id}`);
+  url.searchParams.set("select", "*");
+  const res = await fetch(url.toString(), {
+    headers: { ...authHeaders(), Accept: "application/vnd.pgrst.object+json" },
+    next: { revalidate: 0 },
+  });
+  if (res.status === 406 || res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as T;
 }
 
 // ── NocoDB ↔ App-Typen Mapping (unverändert) ───────────────────────────────
@@ -185,9 +208,12 @@ function mapAudit(r: NocoAudit): AuditEintrag {
   };
 }
 
+// suppress unused warnings for mapping functions not yet wired to DB
+void mapProjekt; void mapMCPDienst; void mapAudit;
+
 // ── Public API (identische Exports) ─────────────────────────────────────────
 
-// MCP-Plattform tables (use seed data since these aren't in Directus yet)
+// MCP-Plattform tables (seed data — not yet in Supabase)
 export async function getProjekte(): Promise<Projekt[]>       { return PROJEKTE_SEED; }
 export async function getMCPDienste(): Promise<MCPDienst[]>   { return MCP_DIENSTE_SEED; }
 
@@ -225,61 +251,60 @@ export interface NocoAgent {
 
 export type NocoAgentPatch = Partial<Pick<NocoAgent, "Name" | "Typ" | "Model" | "Webhook_URL" | "Status" | "Beschreibung" | "Layer" | "n8n_workflow_id" | "Phase">>;
 
-// Map Directus lowercase fields to expected NocoAgent format
-function mapDxAgent(r: Record<string, unknown>): NocoAgent {
+function mapSbAgent(r: Record<string, unknown>): NocoAgent {
   return {
     Id:              (r.id as number) ?? 0,
-    Name:            (r.name as string) ?? (r.Name as string) ?? "",
-    Typ:             (r.typ as string) ?? (r.Typ as string) ?? "",
-    Model:           (r.model as string) ?? (r.Model as string) ?? "",
-    Webhook_URL:     (r.webhook_url as string) ?? (r.Webhook_URL as string),
-    Status:          (r.status as string) ?? (r.Status as string) ?? "idle",
-    Beschreibung:    (r.beschreibung as string) ?? (r.Beschreibung as string),
-    Layer:           (r.layer as string) ?? (r.Layer as string),
-    Phase:           (r.phase as string) ?? (r.Phase as string) ?? null,
+    Name:            (r.name as string) ?? "",
+    Typ:             (r.typ as string) ?? "",
+    Model:           (r.model as string) ?? "",
+    Webhook_URL:     (r.webhook_url as string) ?? undefined,
+    Status:          (r.status as string) ?? "idle",
+    Beschreibung:    (r.beschreibung as string) ?? undefined,
+    Layer:           (r.layer as string) ?? undefined,
+    Phase:           (r.phase as string) ?? null,
     n8n_workflow_id: (r.n8n_workflow_id as string) ?? null,
-    CreatedAt:       (r.date_created as string) ?? (r.CreatedAt as string),
-    UpdatedAt:       (r.date_updated as string) ?? (r.UpdatedAt as string) ?? null,
+    CreatedAt:       (r.created_at as string) ?? undefined,
+    UpdatedAt:       (r.updated_at as string) ?? null,
   };
 }
 
 export async function getAgents(): Promise<NocoAgent[]> {
   try {
-    const rows = await dxGet<Record<string, unknown>>(C.agents, { sort: "phase" });
-    return rows.map(mapDxAgent);
+    const rows = await sbGet<Record<string, unknown>>(C.agents, { sort: "phase" });
+    return rows.map(mapSbAgent);
   } catch (e) {
-    console.warn("[Directus] getAgents Fehler:", e);
+    console.warn("[Supabase] getAgents Fehler:", e);
     return [];
   }
 }
 
 export async function updateAgent(id: number | string, patch: NocoAgentPatch): Promise<void> {
-  if (!TOKEN) throw new Error("DIRECTUS_TOKEN nicht konfiguriert");
+  if (!TOKEN) throw new Error("SUPABASE_SERVICE_KEY nicht konfiguriert");
   const body: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
     if (v !== undefined) body[k.toLowerCase()] = v;
   }
-  await dxPatch(C.agents, id, body);
+  await sbPatch(C.agents, id, body);
 }
 
 export async function getTasks(): Promise<Record<string, unknown>[]> {
-  try { return await dxGet(C.tasks); } catch (e) { console.warn("[Directus] getTasks:", e); return []; }
+  try { return await sbGet(C.tasks); } catch (e) { console.warn("[Supabase] getTasks:", e); return []; }
 }
 
 export async function getPrompts(): Promise<Record<string, unknown>[]> {
-  try { return await dxGet(C.prompts); } catch (e) { console.warn("[Directus] getPrompts:", e); return []; }
+  try { return await sbGet(C.prompts); } catch (e) { console.warn("[Supabase] getPrompts:", e); return []; }
 }
 
 export async function getKnowledgeItems(): Promise<Record<string, unknown>[]> {
-  try { return await dxGet(C.knowledge_items); } catch (e) { console.warn("[Directus] getKnowledgeItems:", e); return []; }
+  try { return await sbGet(C.knowledge_items); } catch (e) { console.warn("[Supabase] getKnowledgeItems:", e); return []; }
 }
 
 export async function getWorkflowIndex(): Promise<Record<string, unknown>[]> {
-  try { return await dxGet(C.workflows); } catch (e) { console.warn("[Directus] getWorkflowIndex:", e); return []; }
+  try { return await sbGet(C.workflows); } catch (e) { console.warn("[Supabase] getWorkflowIndex:", e); return []; }
 }
 
 export async function createProject(data: Record<string, unknown>): Promise<Record<string, unknown>> {
-  return dxPost(C.clients, data);
+  return sbPost(C.clients, data);
 }
 
 // ── Content Pipeline ────────────────────────────────────────────────────────
@@ -298,7 +323,7 @@ export interface PipelineJob {
 export async function createPipelineJob(
   data: Pick<PipelineJob, 'topic' | 'category'> & { tone?: string; target_platforms?: string; source_opportunity_id?: string }
 ): Promise<PipelineJob> {
-  return dxPost<PipelineJob>(C.content_pipeline, {
+  return sbPost<PipelineJob>(C.content_pipeline, {
     job_id: crypto.randomUUID(), topic: data.topic, category: data.category,
     tone: data.tone ?? 'professional', target_platforms: data.target_platforms ?? 'instagram,linkedin,blog',
     stage: 'text', status: 'idle', source_opportunity_id: data.source_opportunity_id ?? '',
@@ -307,23 +332,17 @@ export async function createPipelineJob(
 }
 
 export async function getPipelineJobs(): Promise<PipelineJob[]> {
-  try { return await dxGet<PipelineJob>(C.content_pipeline, { sort: "-date_created" }); }
-  catch (e) { console.warn('[Directus] getPipelineJobs:', e); return []; }
+  try { return await sbGet<PipelineJob>(C.content_pipeline, { sort: "-created_at" }); }
+  catch (e) { console.warn('[Supabase] getPipelineJobs:', e); return []; }
 }
 
 export async function getPipelineJob(id: number): Promise<PipelineJob | null> {
-  try {
-    const res = await fetch(`${BASE}/items/${C.content_pipeline}/${id}`, {
-      headers: authHeaders(), next: { revalidate: 0 },
-    });
-    if (!res.ok) return null;
-    const json = (await res.json()) as DirectusItemResponse<PipelineJob>;
-    return json.data ?? null;
-  } catch { return null; }
+  try { return await sbGetOne<PipelineJob>(C.content_pipeline, id); }
+  catch { return null; }
 }
 
 export async function updatePipelineJob(id: number, data: Partial<Omit<PipelineJob, 'Id'>>): Promise<void> {
-  await dxPatch(C.content_pipeline, id, data as Record<string, unknown>);
+  await sbPatch(C.content_pipeline, id, data as Record<string, unknown>);
 }
 
 // ── Resource Registry ───────────────────────────────────────────────────────
@@ -346,19 +365,19 @@ export interface ErrorLog {
 }
 
 export async function getResources(): Promise<Resource[]> {
-  try { return await dxGet<Resource>(C.tools, { sort: "-discovered_at" }); }
-  catch (e) { console.warn("[Directus] getResources:", e); return []; }
+  try { return await sbGet<Resource>(C.tools, { sort: "-discovered_at" }); }
+  catch (e) { console.warn("[Supabase] getResources:", e); return []; }
 }
 
 export async function createResource(data: Partial<Resource>): Promise<Resource> {
-  return dxPost<Resource>(C.tools, data as Record<string, unknown>);
+  return sbPost<Resource>(C.tools, data as Record<string, unknown>);
 }
 
 export async function updateResourceStatus(id: string | number, status: ResourceStatus): Promise<void> {
-  await dxPatch(C.tools, id, { status });
+  await sbPatch(C.tools, id, { status });
 }
 
-// Error logs — stored in agent_runs collection for now (no dedicated table yet)
+// Error logs — stub (no dedicated table yet)
 export async function getErrorLogs(): Promise<ErrorLog[]> { return []; }
 export async function createErrorLog(_data: Partial<ErrorLog>): Promise<void> {}
 export async function resolveErrorLog(_id: string | number): Promise<void> {}
@@ -378,19 +397,19 @@ export interface MediaAsset {
 }
 
 export async function createMediaAsset(data: Omit<MediaAsset, 'Id'>): Promise<MediaAsset> {
-  return dxPost<MediaAsset>(C.media_assets, { ...data, created_at: data.created_at ?? new Date().toISOString() } as Record<string, unknown>);
+  return sbPost<MediaAsset>(C.media_assets, { ...data, created_at: data.created_at ?? new Date().toISOString() } as Record<string, unknown>);
 }
 
 export async function getMediaAssets(pipelineJobId?: string): Promise<MediaAsset[]> {
   try {
-    const params: Record<string, string> = { sort: "-date_created" };
-    if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
-    return await dxGet<MediaAsset>(C.media_assets, params);
-  } catch (e) { console.warn('[Directus] getMediaAssets:', e); return []; }
+    const params: Record<string, string> = { sort: "-created_at" };
+    if (pipelineJobId) params.pipeline_job_id = `eq.${pipelineJobId}`;
+    return await sbGet<MediaAsset>(C.media_assets, params);
+  } catch (e) { console.warn('[Supabase] getMediaAssets:', e); return []; }
 }
 
 export async function updateMediaAssetStatus(id: number, status: AssetStatus): Promise<void> {
-  await dxPatch(C.media_assets, id, { status });
+  await sbPatch(C.media_assets, id, { status });
 }
 
 // ── Publish Log ─────────────────────────────────────────────────────────────
@@ -404,21 +423,21 @@ export interface PublishLogEntry {
 }
 
 export async function createPublishLogEntry(data: Omit<PublishLogEntry, 'Id'>): Promise<PublishLogEntry> {
-  return dxPost<PublishLogEntry>(C.publish_log, { ...data, created_at: data.created_at ?? new Date().toISOString() } as Record<string, unknown>);
+  return sbPost<PublishLogEntry>(C.publish_log, { ...data, created_at: data.created_at ?? new Date().toISOString() } as Record<string, unknown>);
 }
 
 export async function getPublishLog(pipelineJobId?: string): Promise<PublishLogEntry[]> {
   try {
-    const params: Record<string, string> = { sort: "-date_created" };
-    if (pipelineJobId) params.where = `(pipeline_job_id,eq,${pipelineJobId})`;
-    return await dxGet<PublishLogEntry>(C.publish_log, params);
-  } catch (e) { console.warn('[Directus] getPublishLog:', e); return []; }
+    const params: Record<string, string> = { sort: "-created_at" };
+    if (pipelineJobId) params.pipeline_job_id = `eq.${pipelineJobId}`;
+    return await sbGet<PublishLogEntry>(C.publish_log, params);
+  } catch (e) { console.warn('[Supabase] getPublishLog:', e); return []; }
 }
 
 export async function updatePublishLogEntry(
   id: number, data: Partial<Pick<PublishLogEntry, 'status' | 'post_url' | 'postiz_post_id' | 'error_message' | 'published_at'>>
 ): Promise<void> {
-  await dxPatch(C.publish_log, id, data as Record<string, unknown>);
+  await sbPatch(C.publish_log, id, data as Record<string, unknown>);
 }
 
 // ── Content Pieces ──────────────────────────────────────────────────────────
@@ -436,35 +455,37 @@ export interface ContentPiece {
 }
 
 export async function createContentPiece(data: Omit<ContentPiece, 'Id'>): Promise<ContentPiece> {
-  return dxPost<ContentPiece>(C.content_pipeline, {
+  return sbPost<ContentPiece>(C.content_pipeline, {
     ...data, created_at: data.created_at ?? new Date().toISOString(), updated_at: new Date().toISOString(),
   } as Record<string, unknown>);
 }
 
 export async function getContentPieces(status?: ContentStatus, limit = 100): Promise<ContentPiece[]> {
   try {
-    const params: Record<string, string> = { sort: "-date_created", limit: String(limit) };
-    if (status) params.where = `(status,eq,${status})`;
-    return await dxGet<ContentPiece>(C.content_pipeline, params);
-  } catch (e) { console.warn('[Directus] getContentPieces:', e); return []; }
+    const params: Record<string, string> = { sort: "-created_at", limit: String(limit) };
+    if (status) params.status = `eq.${status}`;
+    return await sbGet<ContentPiece>(C.content_pipeline, params);
+  } catch (e) { console.warn('[Supabase] getContentPieces:', e); return []; }
 }
 
 export async function getContentPiecesByDateRange(from: string, to: string): Promise<ContentPiece[]> {
   try {
-    const url = new URL(`${BASE}/items/${C.content_pipeline}`);
-    url.searchParams.set("filter[scheduled_at][_gte]", from);
-    url.searchParams.set("filter[scheduled_at][_lte]", to);
-    url.searchParams.set("sort", "scheduled_at");
+    const url = new URL(`${BASE}/rest/v1/${C.content_pipeline}`);
+    url.searchParams.set("select", "*");
+    url.searchParams.set("scheduled_at", `gte.${from}`);
+    url.searchParams.set("order", "scheduled_at.asc");
     url.searchParams.set("limit", "500");
+    // Add upper bound via header (PostgREST supports multiple filters for same col via Range headers)
+    // Simplification: fetch all from `from` and filter in-memory for `to`
     const res = await fetch(url.toString(), { headers: authHeaders(), next: { revalidate: 0 } });
     if (!res.ok) return [];
-    const json = (await res.json()) as DirectusListResponse<ContentPiece>;
-    return json.data ?? [];
-  } catch (e) { console.warn('[Directus] getContentPiecesByDateRange:', e); return []; }
+    const rows = (await res.json()) as ContentPiece[];
+    return rows.filter((r) => !r.scheduled_at || r.scheduled_at <= to);
+  } catch (e) { console.warn('[Supabase] getContentPiecesByDateRange:', e); return []; }
 }
 
 export async function updateContentPiece(id: number, data: Partial<Omit<ContentPiece, 'Id'>>): Promise<void> {
-  await dxPatch(C.content_pipeline, id, { ...data, updated_at: new Date().toISOString() } as Record<string, unknown>);
+  await sbPatch(C.content_pipeline, id, { ...data, updated_at: new Date().toISOString() } as Record<string, unknown>);
 }
 
 // ── Agent Executions ────────────────────────────────────────────────────────
@@ -480,7 +501,7 @@ export interface AgentExecution {
 }
 
 export async function createAgentExecution(data: Omit<AgentExecution, 'Id'>): Promise<AgentExecution> {
-  return dxPost<AgentExecution>(C.agent_runs, {
+  return sbPost<AgentExecution>(C.agent_runs, {
     ...data, execution_id: data.execution_id ?? crypto.randomUUID(),
     started_at: data.started_at ?? new Date().toISOString(),
   } as Record<string, unknown>);
@@ -489,7 +510,7 @@ export async function createAgentExecution(data: Omit<AgentExecution, 'Id'>): Pr
 export async function finishAgentExecution(
   id: number, result: Pick<AgentExecution, 'status' | 'output_json' | 'error_message' | 'duration_ms' | 'tokens_used' | 'cost_usd'>
 ): Promise<void> {
-  await dxPatch(C.agent_runs, id, { ...result, finished_at: new Date().toISOString() } as Record<string, unknown>);
+  await sbPatch(C.agent_runs, id, { ...result, finished_at: new Date().toISOString() } as Record<string, unknown>);
 }
 
 // ── Batch Jobs ──────────────────────────────────────────────────────────────
@@ -504,7 +525,7 @@ export interface BatchJob {
 }
 
 export async function createBatchJob(topics: string[], category: string, steps: string[], scheduledAt?: string): Promise<BatchJob> {
-  return dxPost<BatchJob>(C.content_pipeline, {
+  return sbPost<BatchJob>(C.content_pipeline, {
     batch_id: crypto.randomUUID(), topics_json: JSON.stringify(topics), category,
     steps_json: JSON.stringify(steps), status: 'queued', total_count: topics.length,
     done_count: 0, error_count: 0, scheduled_at: scheduledAt ?? null,
@@ -513,14 +534,14 @@ export async function createBatchJob(topics: string[], category: string, steps: 
 }
 
 export async function getBatchJobs(limit = 50): Promise<BatchJob[]> {
-  try { return await dxGet<BatchJob>(C.content_pipeline, { sort: "-date_created", limit: String(limit) }); }
-  catch (e) { console.warn('[Directus] getBatchJobs:', e); return []; }
+  try { return await sbGet<BatchJob>(C.content_pipeline, { sort: "-created_at", limit: String(limit) }); }
+  catch (e) { console.warn('[Supabase] getBatchJobs:', e); return []; }
 }
 
 export async function updateBatchJob(
   id: number, data: Partial<Pick<BatchJob, 'status' | 'done_count' | 'error_count' | 'started_at' | 'finished_at'>>
 ): Promise<void> {
-  await dxPatch(C.content_pipeline, id, data as Record<string, unknown>);
+  await sbPatch(C.content_pipeline, id, data as Record<string, unknown>);
 }
 
 // ── Audit Trail ─────────────────────────────────────────────────────────────
@@ -539,8 +560,8 @@ export async function logAuditTrail(data: {
 }): Promise<void> {
   if (!TOKEN) return;
   try {
-    await dxPost(C.agent_runs, {
+    await sbPost(C.audit_trail, {
       audit_id: crypto.randomUUID(), ts: new Date().toISOString(), result: 'ok', ...data,
     } as Record<string, unknown>);
-  } catch (e) { console.warn('[Directus] logAuditTrail:', e); }
+  } catch (e) { console.warn('[Supabase] logAuditTrail:', e); }
 }

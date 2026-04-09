@@ -21,7 +21,7 @@ const AI_PROVIDERS = [
 
 const SERVICES = [
   { id: 'n8n',        label: 'n8n Workflows',   url: 'https://n8n.automation-plus-ki.de',         desc: 'Workflow Automation',    color: 'var(--accent-amber)' },
-  { id: 'directus',   label: 'Directus',        url: 'https://directus.automation-plus-ki.de',    desc: 'Headless CMS & API',     color: 'var(--accent-blue)' },
+  { id: 'supabase',   label: 'Supabase',        url: 'https://supabase.automation-plus-ki.de',    desc: 'Database & REST API',    color: 'var(--accent-green)' },
   { id: 'grafana',    label: 'Grafana',         url: 'https://grafana.automation-plus-ki.de',     desc: 'Monitoring & Dashboards',color: 'var(--accent-amber)' },
   { id: 'prometheus', label: 'Prometheus',      url: 'https://prometheus.automation-plus-ki.de',  desc: 'Metriken & Alerting',    color: 'var(--accent-red)' },
   { id: 'authentik',  label: 'Authentik SSO',   url: 'https://auth.automation-plus-ki.de',        desc: 'SSO & Identity Provider',color: 'var(--accent-green)' },
@@ -34,7 +34,7 @@ const INTEGRATIONS = [
   { key: 'telegram',   label: 'Telegram Bot',        envVar: 'TELEGRAM_BOT_TOKEN',    desc: 'Notifications & Alerts',   icon: '✈️' },
   { key: 'cloudflare', label: 'Cloudflare',          envVar: 'CLOUDFLARE_API_TOKEN',  desc: 'DNS & Tunnels',            icon: '☁️' },
   { key: 'n8n',        label: 'n8n API',             envVar: 'N8N_API_KEY',           desc: 'Workflow Automation',      icon: '⚙️' },
-  { key: 'directus',   label: 'Directus',            envVar: 'DIRECTUS_TOKEN',        desc: 'Headless CMS & API',       icon: '🗄️' },
+  { key: 'supabase',   label: 'Supabase',            envVar: 'SUPABASE_SERVICE_KEY',  desc: 'Database & REST API',      icon: '🗄️' },
   { key: 's3',         label: 'Hetzner S3 Storage',  envVar: 'S3_ACCESS_KEY',         desc: 'Object Storage Bucket',    icon: '🪣' },
   { key: 'discord',    label: 'Discord',             envVar: 'DISCORD_WEBHOOK_URL',   desc: 'Server Notifications',     icon: '💬' },
   { key: 'mailtrap',   label: 'Mailtrap / Mailpit',  envVar: 'MAILTRAP_API_TOKEN',    desc: 'E-Mail Testing & Sending', icon: '📧' },
