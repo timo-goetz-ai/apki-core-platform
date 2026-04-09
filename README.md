@@ -1,72 +1,88 @@
+<div align="center">
+
 # Core Platform (AIOS)
 
-AI automation platform monorepo — admin dashboard, APIs, agents, and infrastructure for automation-plus-ki.de.
+**AI Automation Monorepo — Admin Dashboard, Core Engine, Crew API**
 
-**Account:** admin@timo-goetz-ai.de  
-**Repo:** [timo-goetz-ai/core-platform](https://github.com/timo-goetz-ai/core-platform) (private)  
-**Hosting:** Coolify on Hetzner (46.224.145.109)
+[![Build](https://img.shields.io/github/actions/workflow/status/timo-goetz-ai/core-platform/deploy.yml?branch=main&label=Deploy)](https://github.com/timo-goetz-ai/core-platform/actions)
+[![Coolify](https://img.shields.io/badge/Hosting-Coolify%20%2F%20Hetzner-5C4EFF?logo=docker)](https://coolify.io)
+[![License](https://img.shields.io/badge/License-Private-lightgrey)](.)
 
-## Services
+**Admin Dashboard:** [admin.automation-plus-ki.de](https://admin.automation-plus-ki.de) &nbsp;|&nbsp; **Auth:** Authentik SSO
 
-| Service | Path | URL | Stack |
+</div>
+
+---
+
+## Was ist Core Platform?
+
+Core Platform ist das operative Herzstück der `automation-plus-ki.de` Infrastruktur. Als Monorepo bündelt es das Admin-Dashboard, die AIOS Core Engine und die Crew API — alles was nötig ist, um KI-Agenten, Automationen und Daten zentral zu verwalten und zu überwachen.
+
+---
+
+## Services im Monorepo
+
+| Service | Pfad | URL | Stack |
 |---------|------|-----|-------|
 | Admin Dashboard | `services/admin-dashboard` | [admin.automation-plus-ki.de](https://admin.automation-plus-ki.de) | Next.js 14 |
-| AIOS Core | `services/aios-core` | internal | Python + FastAPI |
-| Crew API | `services/crew-api` | internal | Python |
+| AIOS Core | `services/aios-core` | intern | Python + FastAPI |
+| Crew API | `services/crew-api` | intern | Python |
 
-## Deploy
+---
 
-Push to `main` → GitHub Actions builds Docker images → Coolify deploys.
+## Deployment
 
-**Rule:** Always verify a successful build for the affected service before pushing.
+```
+Push → main
+  └→ GitHub Actions: Docker Build + Push → ghcr.io/timo-goetz-ai/core-platform-*
+       └→ Coolify: Auto-Deploy auf Hetzner CX42 (46.224.145.109)
+```
+
+Alle Images: `ghcr.io/timo-goetz-ai/core-platform-{admin-dashboard,aios-core,crew-api}:latest`
+
+---
+
+## Infrastruktur
+
+- **Server:** Hetzner CX42, Frankfurt — SSH: `root@46.224.145.109`
+- **Orchestrierung:** Coolify (self-hosted)
+- **Auth:** Authentik Forward Auth (SSO für alle Services)
+- **Secrets:** 1Password Vault `03_INFRA_HETZNER_SERV`, Tag `homestack`
+
+---
+
+## Lokale Entwicklung
 
 ```bash
 # Admin Dashboard
-cd services/admin-dashboard && npm run build
+cd services/admin-dashboard
+npm install
+npm run dev  # → http://localhost:3000
+
+# AIOS Core / Crew API
+cd services/aios-core
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
-No local Docker required. All deployments through CI/CD.
+---
 
-## Images
-
-```
-ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest
-ghcr.io/timo-goetz-ai/core-platform-aios-core:latest
-ghcr.io/timo-goetz-ai/core-platform-crew-api:latest
-```
-
-## Coolify
-
-- **Admin Dashboard UUID:** `gsc8oscgw0kswsooc484swcw`
-- **Coolify:** [coolify.automation-plus-ki.de](https://coolify.automation-plus-ki.de)
-
-## Auth
-
-Authentik SSO — all services behind Forward Auth at [auth.automation-plus-ki.de](https://auth.automation-plus-ki.de).
-
-## Secrets
-
-All secrets in 1Password Vault `05_INFRASTRUCTURE`. Never in repo or env files.
-
-## Structure
+## Architektur-Überblick
 
 ```
-services/
-├── admin-dashboard/    # Next.js 14 ops UI
-├── aios-core/          # Python core API
-└── crew-api/           # Python agent orchestration
-agents/                 # Agent definitions
-infra/                  # Infrastructure config
-docs/                   # Operations documentation
-.github/workflows/      # CI/CD pipelines
+Core Platform
+├── services/
+│   ├── admin-dashboard/    # Next.js Frontend
+│   ├── aios-core/          # FastAPI Core Engine
+│   └── crew-api/           # CrewAI Agent Orchestration
+├── .github/workflows/      # CI/CD Pipelines
+└── docker-compose.yml      # Lokales Dev Setup
 ```
 
-## n8n Workflows (Layer Architecture)
+---
 
-| Layer | Range | Purpose |
-|-------|-------|---------|
-| INGEST | 100–199 | Data ingestion (webhook, mobile) |
-| BRAIN | 200–299 | AI routing, logging, discovery |
-| RESEARCH | 300–399 | Trends, sentiment, content opportunities |
-| CONTENT | 400–499 | Content pipeline, TTS, templates |
-| HUMAN | 500–599 | Telegram, approvals, reports |
+<div align="center">
+
+Maintainer: [Timo Goetz](https://timo-goetz-ai.de) &nbsp;·&nbsp; [automation-plus-ki.de](https://automation-plus-ki.de)
+
+</div>
