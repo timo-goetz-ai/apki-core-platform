@@ -8,7 +8,7 @@ import {
   Database, Settings, ScrollText,
   Layers, CalendarDays, BarChart3,
   ChevronRight, Activity, Globe, FileText,
-  Gauge, BellRing, Terminal, Mic,
+  Gauge, BellRing, Terminal, Mic, GitBranch,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -87,6 +87,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Cpu,
     items: [
       { label: 'Deployments', href: '/fabrik', icon: Cpu },
+      { label: 'Repositories', href: '/repositories', icon: GitBranch },
       { label: 'MCP Server', href: '/mcp-plattform', icon: Globe },
       { label: 'API Explorer', href: '/api-explorer', icon: Terminal },
       { label: 'Services', href: '/services', icon: Database },
