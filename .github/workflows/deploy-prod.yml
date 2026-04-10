@@ -19,7 +19,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: timogoetz1988
+  OWNER: timo-goetz-ai
 
 jobs:
   # ──────────────────────────────────────────────
@@ -165,6 +165,24 @@ jobs:
           }
           set_env "AIOS_TOKEN" "$AIOS_TOKEN"
           echo "✓ Coolify AIOS_TOKEN gesetzt (nexus-core)"
+
+      - name: Update Coolify Image – nexus-core
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          curl -s -X PATCH "${COOLIFY_URL}/api/v1/applications/${COOLIFY_NEXUS_CORE_UUID}" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"docker_image":"ghcr.io/timo-goetz-ai/core-platform-core:latest"}'
+          echo "✓ Coolify Image nexus-core aktualisiert"
+
+      - name: Update Coolify Image – admin-dashboard
+        if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'admin-dashboard' || startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          curl -s -X PATCH "${COOLIFY_URL}/api/v1/applications/${COOLIFY_DASHBOARD_UUID}" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"docker_image":"ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest"}'
+          echo "✓ Coolify Image admin-dashboard aktualisiert"
 
       - name: Deploy nexus-core
         if: ${{ github.event.inputs.service == 'all' || github.event.inputs.service == 'nexus-core' || startsWith(github.ref, 'refs/tags/') }}
