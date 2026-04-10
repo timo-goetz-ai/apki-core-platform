@@ -1,14 +1,14 @@
 version: '3.8'
 # ─────────────────────────────────────────────────────────────────────────────
 # AIOS – Production Stack (Coolify / Hetzner)
-# Images kommen von ghcr.io/timogoetz1988/ (via GitHub Actions gebaut)
+# Images kommen von ghcr.io/timo-goetz-ai/ (via GitHub Actions gebaut)
 # Kein Hot-Reload, keine lokalen Volume-Mounts, Worker-Mode
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
 
   aios-core:
-    image: ghcr.io/timogoetz1988/aios-core:latest
+    image: ghcr.io/timo-goetz-ai/core-platform-core:latest
     container_name: aios-core
     restart: unless-stopped
     ports:
@@ -41,7 +41,7 @@ services:
         max-file: "3"
 
   admin-dashboard:
-    image: ghcr.io/timogoetz1988/aios-admin-dashboard:latest
+    image: ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest
     container_name: aios-admin-dashboard
     restart: unless-stopped
     ports:
