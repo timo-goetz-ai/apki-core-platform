@@ -13,7 +13,15 @@ class AiosTokenMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if not settings.aios_token:
-            # Token not configured — allow through (dev mode)
+            env = (settings.environment or "").lower()
+            if env in ("production", "prod"):
+                return JSONResponse(
+                    {
+                        "detail": "Server misconfigured — set aios_token for production (header x-aios-token)",
+                    },
+                    status_code=503,
+                )
+            # development / andere Umgebungen: ohne Token durchlassen
             return await call_next(request)
 
         token = request.headers.get("x-aios-token")
