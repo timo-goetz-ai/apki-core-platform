@@ -185,7 +185,7 @@ function FileTree({ files }: { files: RepoFile[] }) {
             href={f.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-4 py-2 hover:bg-white/3 transition-colors"
+            className="group flex items-center gap-2.5 px-4 py-2 hover:bg-white/3 transition-colors"
             style={{ textDecoration: 'none' }}
           >
             {f.type === 'dir' ? (
