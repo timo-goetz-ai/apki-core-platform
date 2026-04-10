@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIOS Deploy Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+      background: #0d1117;
+      color: #c9d1d9;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-bottom: 24px;
+    }
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th {
+      text-align: left;
+      padding: 6px 12px;
+      font-size: 0.72rem;
+      color: #8b949e;
+      font-weight: 500;
+      border-bottom: 1px solid #21262d;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #161b22;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #161b22; }
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .dot-ok    { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+    .dot-error { background: #f85149; box-shadow: 0 0 6px #f85149; }
+    .dot-warn  { background: #d29922; box-shadow: 0 0 6px #d29922; }
+    .dot-checking { background: #8b949e; animation: pulse 1s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .status-cell { display: flex; align-items: center; }
+    .http-badge {
+      font-size: 0.7rem;
+      color: #8b949e;
+      margin-left: 4px;
+    }
+    a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .badge-img { height: 18px; vertical-align: middle; }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #21262d;
+      color: #8b949e;
+    }
+    .tag-infra { background: #1f3550; color: #58a6ff; }
+    .tag-app   { background: #1f2d1f; color: #3fb950; }
+    .tag-mon   { background: #2d1f2d; color: #a371f7; }
+    .refresh-btn {
+      float: right;
+      font-size: 0.75rem;
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: #30363d; }
+    .last-refresh {
+      font-size: 0.72rem;
+      color: #8b949e;
+      margin-top: 8px;
+      text-align: right;
+    }
+    .gh-actions-section { margin-bottom: 32px; }
+    .workflow-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #161b22;
+      font-size: 0.85rem;
+    }
+    .workflow-row:last-child { border-bottom: none; }
+    .workflow-name { flex: 1; }
+  </style>
+</head>
+<body>
+
+<h1>AIOS Deploy Dashboard</h1>
+<p class="subtitle">automation-plus-ki.de &nbsp;·&nbsp; Hetzner CPX42 &nbsp;·&nbsp; Coolify &nbsp;·&nbsp; <span id="last-refresh">–</span></p>
+
+<div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+  <button class="refresh-btn" onclick="checkAll()">&#8635; Refresh</button>
+</div>
+
+<!-- GitHub Actions -->
+<div class="section gh-actions-section">
+  <div class="section-title">GitHub Actions — timo-goetz-ai/core-platform</div>
+  <div class="workflow-row">
+    <span class="workflow-name">Build &amp; Push – Docker Images</span>
+    <img class="badge-img"
+      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/build-and-push.yml/badge.svg"
+      alt="Build status">
+    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/build-and-push.yml" target="_blank">Actions →</a>
+  </div>
+  <div class="workflow-row">
+    <span class="workflow-name">Deploy – Production</span>
+    <img class="badge-img"
+      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-prod.yml/badge.svg"
+      alt="Deploy prod status">
+    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-prod.yml" target="_blank">Actions →</a>
+  </div>
+  <div class="workflow-row">
+    <span class="workflow-name">Deploy – Staging</span>
+    <img class="badge-img"
+      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-staging.yml/badge.svg"
+      alt="Deploy staging status">
+    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-staging.yml" target="_blank">Actions →</a>
+  </div>
+  <div class="workflow-row">
+    <span class="workflow-name">CI</span>
+    <img class="badge-img"
+      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/ci.yml/badge.svg"
+      alt="CI status">
+    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/ci.yml" target="_blank">Actions →</a>
+  </div>
+</div>
+
+<!-- Application Services -->
+<div class="section">
+  <div class="section-title">Application Services</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Health</th>
+        <th>Image</th>
+        <th>Live URL</th>
+        <th>Coolify</th>
+      </tr>
+    </thead>
+    <tbody id="app-services">
+      <!-- filled by JS -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Infrastructure Services -->
+<div class="section">
+  <div class="section-title">Infrastructure &amp; Platform</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Health</th>
+        <th>Type</th>
+        <th>Live URL</th>
+      </tr>
+    </thead>
+    <tbody id="infra-services">
+    </tbody>
+  </table>
+</div>
+
+<!-- Monitoring -->
+<div class="section">
+  <div class="section-title">Monitoring</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Health</th>
+        <th>Live URL</th>
+      </tr>
+    </thead>
+    <tbody id="mon-services">
+    </tbody>
+  </table>
+</div>
+
+<script>
+const COOLIFY_BASE = 'https://coolify.automation-plus-ki.de';
+
+const APP_SERVICES = [
+  {
+    name: 'nexus-core (API)',
+    healthUrl: 'https://api.aios.automation-plus-ki.de/health',
+    liveUrl: 'https://api.aios.automation-plus-ki.de',
+    image: 'ghcr.io/timo-goetz-ai/core-platform-core:latest',
+    coolifyUuid: null, // set via COOLIFY_NEXUS_CORE_UUID if known
+  },
+  {
+    name: 'admin-dashboard',
+    healthUrl: 'https://admin.automation-plus-ki.de',
+    liveUrl: 'https://admin.automation-plus-ki.de',
+    image: 'ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest',
+    coolifyUuid: null,
+  },
+];
+
+const INFRA_SERVICES = [
+  { name: 'n8n', healthUrl: 'https://n8n.automation-plus-ki.de/healthz', liveUrl: 'https://n8n.automation-plus-ki.de', tag: 'infra' },
+  { name: 'Supabase', healthUrl: 'https://supabase.automation-plus-ki.de', liveUrl: 'https://supabase.automation-plus-ki.de', tag: 'infra' },
+  { name: 'Coolify', healthUrl: 'https://coolify.automation-plus-ki.de', liveUrl: 'https://coolify.automation-plus-ki.de', tag: 'infra' },
+  { name: 'Authentik SSO', healthUrl: 'https://auth.automation-plus-ki.de', liveUrl: 'https://auth.automation-plus-ki.de', tag: 'infra' },
+  { name: 'Postiz', healthUrl: 'https://postiz.automation-plus-ki.de', liveUrl: 'https://postiz.automation-plus-ki.de', tag: 'infra' },
+];
+
+const MON_SERVICES = [
+  { name: 'Grafana', healthUrl: 'https://grafana.automation-plus-ki.de/api/health', liveUrl: 'https://grafana.automation-plus-ki.de' },
+  { name: 'Uptime Kuma', healthUrl: 'https://uptime.automation-plus-ki.de', liveUrl: 'https://uptime.automation-plus-ki.de' },
+];
+
+function dotHtml(id) {
+  return `<span class="dot dot-checking" id="dot-${id}"></span>`;
+}
+
+function statusCell(id) {
+  return `<div class="status-cell">${dotHtml(id)}<span id="label-${id}">checking…</span><span class="http-badge" id="http-${id}"></span></div>`;
+}
+
+function buildAppRows() {
+  const tbody = document.getElementById('app-services');
+  APP_SERVICES.forEach((s, i) => {
+    const id = `app-${i}`;
+    const coolifyLink = s.coolifyUuid
+      ? `<a href="${COOLIFY_BASE}/application/${s.coolifyUuid}" target="_blank">Open →</a>`
+      : `<a href="${COOLIFY_BASE}" target="_blank">Coolify →</a>`;
+    tbody.innerHTML += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${statusCell(id)}</td>
+      <td><code style="font-size:0.72rem;color:#8b949e">${s.image}</code></td>
+      <td><a href="${s.liveUrl}" target="_blank">${s.liveUrl.replace('https://', '')}</a></td>
+      <td>${coolifyLink}</td>
+    </tr>`;
+  });
+}
+
+function buildInfraRows() {
+  const tbody = document.getElementById('infra-services');
+  INFRA_SERVICES.forEach((s, i) => {
+    const id = `infra-${i}`;
+    tbody.innerHTML += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${statusCell(id)}</td>
+      <td><span class="tag tag-infra">infra</span></td>
+      <td><a href="${s.liveUrl}" target="_blank">${s.liveUrl.replace('https://', '')}</a></td>
+    </tr>`;
+  });
+}
+
+function buildMonRows() {
+  const tbody = document.getElementById('mon-services');
+  MON_SERVICES.forEach((s, i) => {
+    const id = `mon-${i}`;
+    tbody.innerHTML += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${statusCell(id)}</td>
+      <td><a href="${s.liveUrl}" target="_blank">${s.liveUrl.replace('https://', '')}</a></td>
+    </tr>`;
+  });
+}
+
+async function checkHealth(id, url) {
+  const dot   = document.getElementById(`dot-${id}`);
+  const label = document.getElementById(`label-${id}`);
+  const http  = document.getElementById(`http-${id}`);
+
+  dot.className = 'dot dot-checking';
+  label.textContent = 'checking…';
+  http.textContent = '';
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(url, { method: 'GET', mode: 'no-cors', signal: ctrl.signal });
+    clearTimeout(timer);
+    // no-cors → opaque response, status is always 0 but no exception = reachable
+    dot.className = 'dot dot-ok';
+    label.textContent = 'reachable';
+    http.textContent = '';
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      dot.className = 'dot dot-warn';
+      label.textContent = 'timeout';
+    } else {
+      dot.className = 'dot dot-error';
+      label.textContent = 'unreachable';
+    }
+  }
+}
+
+async function checkAll() {
+  document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('de-DE');
+  const checks = [];
+
+  APP_SERVICES.forEach((s, i) => checks.push(checkHealth(`app-${i}`, s.healthUrl)));
+  INFRA_SERVICES.forEach((s, i) => checks.push(checkHealth(`infra-${i}`, s.healthUrl)));
+  MON_SERVICES.forEach((s, i) => checks.push(checkHealth(`mon-${i}`, s.healthUrl)));
+
+  await Promise.allSettled(checks);
+}
+
+// Init
+buildAppRows();
+buildInfraRows();
+buildMonRows();
+checkAll();
+</script>
+</body>
+</html>
