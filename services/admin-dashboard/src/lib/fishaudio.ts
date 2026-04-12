@@ -6,8 +6,8 @@
 const FISH_API = "https://api.fish.audio/v1";
 
 function getApiKey(): string {
-  const key = process.env.FISH_AUDIO_API_KEY;
-  if (!key) throw new Error("FISH_AUDIO_API_KEY not set");
+  const key = process.env.FISHAUDIO_API_KEY ?? process.env.FISH_AUDIO_API_KEY;
+  if (!key) throw new Error("FISHAUDIO_API_KEY nicht gesetzt");
   return key;
 }
 
