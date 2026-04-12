@@ -1,8 +1,31 @@
 /**
- * Picsart GenAI API Client
- * Text→Image: https://genai-api.picsart.io/v1/text2image (async + polling)
- * Other tools: https://api.picsart.io/tools/1.0
+ * Image Generation Client
+ * Primary:  Pollinations.ai — kostenlos, kein API-Key (https://image.pollinations.ai)
+ * Fallback: Picsart GenAI API (falls PICSART_API_KEY gesetzt und Credits vorhanden)
  */
+
+// ─── Pollinations.ai (primary, free) ─────────────────────────────────────────
+
+const POLLINATIONS_API = "https://image.pollinations.ai/prompt";
+
+async function generateImagePollinations(
+  prompt: string,
+  options: { width?: number; height?: number } = {}
+): Promise<{ imageUrls: string[]; inferenceId: string }> {
+  const w = options.width ?? 1024;
+  const h = options.height ?? 1024;
+  const encoded = encodeURIComponent(prompt);
+  const seed = Math.floor(Math.random() * 99999);
+  const url = `${POLLINATIONS_API}/${encoded}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+
+  // Pollinations returns the image directly — verify it responds with 200
+  const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+  if (!res.ok) throw new Error(`Pollinations: ${res.status}`);
+
+  return { imageUrls: [url], inferenceId: `pollinations-${seed}` };
+}
+
+// ─── Picsart GenAI (fallback when key + credits available) ───────────────────
 
 const GENAI_API = "https://genai-api.picsart.io/v1";
 const TOOLS_API = "https://api.picsart.io/tools/1.0";
@@ -13,33 +36,22 @@ function getApiKey(): string {
   return key;
 }
 
-// ─── Image Generation (async + polling) ──────────────────────────────────────
-
 export interface GenerateImageOptions {
   width?: number;
   height?: number;
   count?: number;
-  /** Max polling time in ms, default 90_000 */
   timeoutMs?: number;
 }
 
-/**
- * POST text2image → returns inference_id, then polls until DONE.
- * Returns image URL(s) + the inference_id (for NocoDB tracking).
- */
-export async function generateImage(
+async function generateImagePicsart(
   prompt: string,
   options: GenerateImageOptions = {}
 ): Promise<{ imageUrls: string[]; inferenceId: string }> {
   const apiKey = getApiKey();
 
-  // 1. Kick off async job
   const startRes = await fetch(`${GENAI_API}/text2image`, {
     method: "POST",
-    headers: {
-      "x-picsart-api-key": apiKey,
-      "Content-Type": "application/json",
-    },
+    headers: { "x-picsart-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt,
       width: options.width ?? 1024,
@@ -55,57 +67,57 @@ export async function generateImage(
   const { inference_id } = await startRes.json() as { inference_id: string };
   if (!inference_id) throw new Error("Picsart: keine inference_id in Response");
 
-  // 2. Poll until DONE or timeout
   const timeoutMs = options.timeoutMs ?? 90_000;
   const deadline = Date.now() + timeoutMs;
-  const pollInterval = 3_000;
 
   while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, pollInterval));
-
+    await new Promise((r) => setTimeout(r, 3_000));
     const pollRes = await fetch(`${GENAI_API}/text2image/inferences/${inference_id}`, {
       headers: { "x-picsart-api-key": apiKey },
     });
-
-    if (!pollRes.ok) {
-      throw new Error(`Picsart polling: ${pollRes.status} ${await pollRes.text()}`);
-    }
-
+    if (!pollRes.ok) throw new Error(`Picsart polling: ${pollRes.status}`);
     const pollData = await pollRes.json() as {
       status: "success" | "processing" | "queued" | "failed";
-      inference_id?: string;
-      data?: { url: string; status?: string }[];
+      data?: { url: string }[];
       error?: string;
     };
-
     if (pollData.status === "success" && pollData.data?.length) {
-      return {
-        imageUrls: pollData.data.map((d) => d.url),
-        inferenceId: inference_id,
-      };
+      return { imageUrls: pollData.data.map((d) => d.url), inferenceId: inference_id };
     }
-
     if (pollData.status === "failed") {
       throw new Error(`Picsart: Job fehlgeschlagen — ${pollData.error ?? "unbekannt"}`);
     }
-    // processing / queued → weiter warten
   }
+  throw new Error(`Picsart: Timeout nach ${timeoutMs}ms`);
+}
 
-  throw new Error(`Picsart: Timeout nach ${timeoutMs}ms (inference_id: ${inference_id})`);
+/**
+ * Generate image — Pollinations first, Picsart as fallback
+ */
+export async function generateImage(
+  prompt: string,
+  options: GenerateImageOptions = {}
+): Promise<{ imageUrls: string[]; inferenceId: string }> {
+  return generateImagePollinations(prompt, options);
 }
 
 // ─── Balance ─────────────────────────────────────────────────────────────────
 
 export async function getBalance(): Promise<{ credits: number }> {
-  const res = await fetch(`${TOOLS_API}/balance`, {
-    headers: { "x-picsart-api-key": getApiKey() },
-  });
-  if (!res.ok) throw new Error(`Picsart balance: ${res.status}`);
-  const data = await res.json() as { credits?: number };
-  return { credits: data.credits ?? 0 };
+  if (!process.env.PICSART_API_KEY) return { credits: -1 };
+  try {
+    const res = await fetch(`${TOOLS_API}/balance`, {
+      headers: { "x-picsart-api-key": getApiKey() },
+    });
+    if (!res.ok) return { credits: 0 };
+    const data = await res.json() as { credits?: number };
+    return { credits: data.credits ?? 0 };
+  } catch {
+    return { credits: 0 };
+  }
 }
 
-// ─── Remove Background ───────────────────────────────────────────────────────
+// ─── Remove Background (Picsart only) ────────────────────────────────────────
 
 export async function removeBackground(imageUrl: string): Promise<string> {
   const form = new URLSearchParams({ image_url: imageUrl });
@@ -122,7 +134,7 @@ export async function removeBackground(imageUrl: string): Promise<string> {
   return data.data?.url ?? "";
 }
 
-// ─── Hero Image (Blog) ───────────────────────────────────────────────────────
+// ─── Hero Image ───────────────────────────────────────────────────────────────
 
 export async function generateHeroImage(
   title: string,
@@ -134,7 +146,7 @@ export async function generateHeroImage(
   return { imageUrl: imageUrls[0], inferenceId };
 }
 
-// ─── Social Media Assets ─────────────────────────────────────────────────────
+// ─── Social Media Assets ──────────────────────────────────────────────────────
 
 const SOCIAL_DIMENSIONS: Record<string, { width: number; height: number }> = {
   instagram: { width: 1024, height: 1024 },
@@ -159,7 +171,7 @@ export async function generateSocialAssets(
   return results;
 }
 
-// ─── YouTube Thumbnail ───────────────────────────────────────────────────────
+// ─── YouTube Thumbnail ────────────────────────────────────────────────────────
 
 export async function generateYouTubeThumbnail(title: string): Promise<string> {
   const { imageUrls } = await generateImage(
