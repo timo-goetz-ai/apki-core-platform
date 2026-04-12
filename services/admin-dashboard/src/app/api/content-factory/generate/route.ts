@@ -21,22 +21,28 @@ export async function POST(req: NextRequest) {
   const result: Record<string, unknown> = { title: blogTitle, category, steps: {} };
   const errors: Record<string, string> = {};
 
-  // ── STEP 1: Blog Post via LLM (AnythingLLM) ───────────────────────────────
+  // ── STEP 1: Blog Post via Anthropic Claude ────────────────────────────────
   if (steps.includes("blog")) {
     try {
-      const llmRes = await fetch(
-        `${process.env.INTERNAL_BASE_URL ?? "http://localhost:3000"}/api/chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            modelKey: "allm-aios",
-            messages: [
-              {
-                role: "user",
-                content: `Schreibe einen professionellen Blogpost auf Deutsch zum Thema: "${blogTitle}".
+      const anthropicKey = process.env.ANTHROPIC_API_KEY ?? "";
+      if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY nicht gesetzt");
+
+      const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1500,
+          messages: [
+            {
+              role: "user",
+              content: `Schreibe einen professionellen Blogpost auf Deutsch zum Thema: "${blogTitle}".
 Kontext: ${blogSummary}
-Keywords: ${keywords.join(", ")}
+Keywords: ${keywords.join(", ") || "KI, Automatisierung"}
 
 Format:
 # [Titel]
@@ -46,43 +52,28 @@ Format:
 ---
 SEO-Keywords: ...
 Excerpt (1 Satz): ...`,
-              },
-            ],
-          }),
-        }
-      );
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
 
-      if (llmRes.ok) {
-        // Read SSE stream
-        const reader = llmRes.body?.getReader();
-        let blogContent = "";
-        const decoder = new TextDecoder();
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value);
-            const lines = chunk.split("\n");
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const json = JSON.parse(line.slice(6));
-                  if (json.content) blogContent += json.content;
-                } catch {}
-              }
-            }
-          }
-        }
-        const excerptMatch = blogContent.match(/Excerpt[^:]*:\s*(.+)/i);
-        result.steps = {
-          ...(result.steps as object),
-          blog: {
-            content: blogContent,
-            excerpt: excerptMatch?.[1]?.trim() ?? blogContent.slice(0, 160),
-            title: blogTitle,
-          },
-        };
+      if (!anthropicRes.ok) {
+        const err = await anthropicRes.text();
+        throw new Error(`Anthropic ${anthropicRes.status}: ${err.slice(0, 200)}`);
       }
+
+      const anthropicData = await anthropicRes.json();
+      const blogContent = anthropicData.content?.[0]?.text ?? "";
+      const excerptMatch = blogContent.match(/Excerpt[^:]*:\s*(.+)/i);
+      result.steps = {
+        ...(result.steps as object),
+        blog: {
+          content: blogContent,
+          excerpt: excerptMatch?.[1]?.trim() ?? blogContent.slice(0, 200),
+          title: blogTitle,
+        },
+      };
     } catch (e) {
       errors.blog = String(e);
     }
