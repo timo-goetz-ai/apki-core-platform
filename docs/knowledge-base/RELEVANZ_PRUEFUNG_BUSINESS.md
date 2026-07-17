@@ -14,7 +14,7 @@ _Heuristische Markierung von prüfungs- und businessrelevanten Inhalten_
 |  `Journal/AppleJournalEntries/Entries/2026-02-07_ENV_MUSTER.html`  | niedrig | aktuelle Datei |
 |  `Journal/AppleJournalEntries/Entries/2026-02-12_https___n8n.automation-plus-ki.de.html`  | niedrig | aktuelle Datei |
 |  `Journal/AppleJournalEntries/Entries/2026-02-03.html`  | niedrig | aktuelle Datei |
-|  `Journal/AppleJournalEntries/Entries/2026-02-06_HETZNER_SERVER___——————————————————————————————————————————————-_ROOT-PASSWORT_Zugangsdaten__hetzner__46.224.145.109__2a01_4f8_1c1f_b58e___64___roo.html`  | niedrig | aktuelle Datei |
+|  `Journal/AppleJournalEntries/Entries/2026-02-06_HETZNER_SERVER___——————————————————————————————————————————————-_ROOT-PASSWORT_Zugangsdaten__hetzner__<HETZNER_HOST>__2a01_4f8_1c1f_b58e___64___roo.html`  | niedrig | aktuelle Datei |
 |  `Journal/AppleJournalEntries/Entries/2026-02-08_(1).html`  | niedrig | aktuelle Datei |
 |  `Journal/AppleJournalEntries/Entries/2026-02-03_CLAUDFLARE.html`  | niedrig | aktuelle Datei |
 |  `Journal/AppleJournalEntries/Entries/2026-02-25_(1).html`  | niedrig | aktuelle Datei |

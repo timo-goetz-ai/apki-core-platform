@@ -4,7 +4,7 @@
 
 | Zugang | Methode |
 |--------|---------|
-| Hetzner Server | `ssh deploy@46.224.145.109` |
+| Hetzner Server | `ssh deploy@<HETZNER_HOST>` |
 | Coolify Dashboard | [coolify.automation-plus-ki.de](https://coolify.automation-plus-ki.de) |
 | n8n | [n8n.automation-plus-ki.de](https://n8n.automation-plus-ki.de) |
 
@@ -20,7 +20,7 @@
 # -> coolify.automation-plus-ki.de -> Stacks -> Service -> Restart
 
 # Via SSH (Notfall)
-ssh deploy@46.224.145.109
+ssh deploy@<HETZNER_HOST>
 docker restart <container-name>
 ```
 
@@ -31,7 +31,7 @@ docker restart <container-name>
 # -> Claude Code: "zeig mir die Logs von n8n"
 
 # Via SSH
-ssh deploy@46.224.145.109
+ssh deploy@<HETZNER_HOST>
 docker logs n8n --tail 100 -f
 ```
 
@@ -39,7 +39,7 @@ docker logs n8n --tail 100 -f
 
 ```bash
 # PostgreSQL Backup (n8n)
-ssh deploy@46.224.145.109
+ssh deploy@<HETZNER_HOST>
 docker exec n8n-db pg_dump -U n8n n8n > /tmp/n8n_backup_$(date +%Y%m%d).sql
 
 # PostgreSQL Backup (saas_production)
@@ -67,9 +67,9 @@ terraform apply    # Anwenden (mit Bestaetigung)
 ### Service nicht erreichbar
 
 1. DNS pruefen: `dig <subdomain>.automation-plus-ki.de`
-2. Server erreichbar? `ping 46.224.145.109`
-3. Container laeuft? `ssh deploy@46.224.145.109 "docker ps"`
-4. Traefik-Logs: `ssh deploy@46.224.145.109 "docker logs coolify-proxy --tail 50"`
+2. Server erreichbar? `ping <HETZNER_HOST>`
+3. Container laeuft? `ssh deploy@<HETZNER_HOST> "docker ps"`
+4. Traefik-Logs: `ssh deploy@<HETZNER_HOST> "docker logs coolify-proxy --tail 50"`
 5. SSL-Zertifikat? `curl -vI https://<subdomain>.automation-plus-ki.de`
 
 ### Datenbank-Verbindung fehlgeschlagen

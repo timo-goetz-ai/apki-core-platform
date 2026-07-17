@@ -392,7 +392,7 @@ export default function SettingsPage() {
                 {[
                   { label: 'Framework',  value: 'Next.js 14.2 · App Router' },
                   { label: 'UI',         value: 'shadcn/ui + Tailwind CSS 3.4' },
-                  { label: 'Server',     value: 'Hetzner CPX42 · 46.224.145.109' },
+                  { label: 'Server',     value: 'Hetzner CPX42 · <HETZNER_HOST>' },
                   { label: 'Domain',     value: '*.automation-plus-ki.de' },
                   { label: 'MCP Server', value: '19 aktive MCP-Verbindungen' },
                 ].map(row => (

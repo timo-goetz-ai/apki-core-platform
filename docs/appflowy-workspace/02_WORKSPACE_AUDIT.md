@@ -25,7 +25,7 @@
 
 ## Phase 2 — Server-Infrastruktur
 
-**Hetzner 46.224.145.109 (Coolify)**
+**Hetzner <HETZNER_HOST> (Coolify)**
 
 | Stack | Services |
 |-------|----------|

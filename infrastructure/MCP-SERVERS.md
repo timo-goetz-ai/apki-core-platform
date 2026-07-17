@@ -112,7 +112,7 @@ npx @google-cloud/gcloud-mcp --project tgai-core-prod
 ### hetzner-ssh
 
 ```bash
-npx ssh-mcp --host=46.224.145.109 --user=root --key=~/.ssh/id_ed25519_hetzner_coolify
+npx ssh-mcp --host=<HETZNER_HOST> --user=root --key=~/.ssh/id_ed25519_hetzner_coolify
 ```
 
 **Status:** Deaktiviert (Sicherheit - nur bei Bedarf aktivieren)

@@ -89,7 +89,7 @@ Ich arbeite am AIOS Admin Dashboard (`services/admin-dashboard`, Next.js 14 App 
 - CSS: Nur CSS-Variablen, keine freien Hex-Werte
 - Styling: Inline CSS-in-JS mit `var(--layer-2)` etc. (Pattern aus monitoring/page.tsx)
 - Deploy: Push → GitHub Actions baut nur geaenderte Services → Coolify zieht Image
-- Wenn Coolify-Deploy haengt: `ssh root@46.224.145.109` → `docker pull` + `docker restart`
+- Wenn Coolify-Deploy haengt: `ssh root@<HETZNER_HOST>` → `docker pull` + `docker restart`
 
 ### Starte mit Sprint [NUMMER HIER EINSETZEN].
 

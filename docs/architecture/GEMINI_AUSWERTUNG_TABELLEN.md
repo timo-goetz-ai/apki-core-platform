@@ -7,7 +7,7 @@
 
 ## 1. Services — automation-plus-ki.de (konsolidiert)
 
-**Server:** `46.224.145.109` (Hetzner) | HTTPS: Cloudflare + Traefik
+**Server:** `<HETZNER_HOST>` (Hetzner) | HTTPS: Cloudflare + Traefik
 
 ### 1.1 Alle Services in einer Tabelle
 
@@ -66,7 +66,7 @@
 
 | Typ        | Befehl / URL |
 |------------|--------------|
-| SSH        | `ssh -i ~/.ssh/id_ed25519_hetzner_coolify root@46.224.145.109` |
+| SSH        | `ssh -i ~/.ssh/id_ed25519_hetzner_coolify root@<HETZNER_HOST>` |
 | Coolify API| Bearer-Token in Header; Basis-URL: `https://coolify.automation-plus-ki.de/api/v1/` |
 
 ---

@@ -35,7 +35,7 @@ Core Platform ist das operative Herzstück der `automation-plus-ki.de` Infrastru
 ```
 Push → main
   └→ GitHub Actions: Docker Build + Push → ghcr.io/timo-goetz-ai/core-platform-*
-       └→ Coolify: Auto-Deploy auf Hetzner CX42 (46.224.145.109)
+       └→ Coolify: Auto-Deploy auf Hetzner CX42
 ```
 
 Alle Images: `ghcr.io/timo-goetz-ai/core-platform-{admin-dashboard,aios-core,crew-api}:latest`
@@ -44,7 +44,7 @@ Alle Images: `ghcr.io/timo-goetz-ai/core-platform-{admin-dashboard,aios-core,cre
 
 ## Infrastruktur
 
-- **Server:** Hetzner CX42, Frankfurt — SSH: `root@46.224.145.109`
+- **Server:** Hetzner CX42, Frankfurt — SSH via 1Password / privaten Deploy-Key (IP nicht im Repo)
 - **Orchestrierung:** Coolify (self-hosted)
 - **Auth:** Authentik Forward Auth (SSO für alle Services)
 - **Secrets:** 1Password Vault `03_INFRA_HETZNER_SERV`, Tag `homestack`

@@ -46,5 +46,5 @@
 
 ## Host
 
-- **Hetzner:** 46.224.145.109
+- **Hetzner:** <HETZNER_HOST>
 - **Orchestrierung:** Coolify

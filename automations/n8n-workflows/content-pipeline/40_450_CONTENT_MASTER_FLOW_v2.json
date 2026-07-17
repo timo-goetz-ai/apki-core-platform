@@ -76,7 +76,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io/crews/content_generation_crew/run",
+        "url": "http://s0k444ck0w4cgc400skwkos0.<HETZNER_HOST>.sslip.io/crews/content_generation_crew/run",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

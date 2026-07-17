@@ -59,7 +59,7 @@ Security      [██████████████████░░░�
 
 ```
 Wir arbeiten am AIOS Projekt (https://aios.automation-plus-ki.de).
-Server: Hetzner CPX42 · 46.224.145.109 · automation-plus-ki.de
+Server: Hetzner CPX42 · <HETZNER_HOST> · automation-plus-ki.de
 Fortschritt: {{PROGRESS_TOTAL}}% gesamt
 
 Letzter Stand: {{DATE}}

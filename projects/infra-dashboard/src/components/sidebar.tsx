@@ -44,7 +44,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-zinc-800">
         <div className="flex items-center gap-2 text-xs text-zinc-500">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          Server: 46.224.145.109
+          Server: <HETZNER_HOST>
         </div>
       </div>
     </aside>

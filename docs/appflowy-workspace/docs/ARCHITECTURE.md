@@ -31,7 +31,7 @@ Selbst-verwaltetes AI-Engineering-Ökosystem: eigene Infrastruktur, MCP-Anbindun
 └─────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────┐
-│  HOST: Hetzner 46.224.145.109 (Coolify)                 │
+│  HOST: Hetzner <HETZNER_HOST> (Coolify)                 │
 └─────────────────────────────────────────────────────────┘
 ```
 

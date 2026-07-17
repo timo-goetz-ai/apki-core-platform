@@ -167,7 +167,7 @@ const TOOLS = [
 
 const SYSTEM_PROMPT = `Du bist AIOS — der KI-Assistent für die Infrastruktur von automation-plus-ki.de.
 
-Server: Hetzner CPX42 (46.224.145.109), Ubuntu 22.04, 8 vCPU, 16GB RAM
+Server: Hetzner CPX42 (<HETZNER_HOST>), Ubuntu 22.04, 8 vCPU, 16GB RAM
 Stack: Docker + Coolify, Traefik reverse proxy
 
 Dienste:

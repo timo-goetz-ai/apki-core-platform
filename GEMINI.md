@@ -32,7 +32,7 @@ Speichere sie als `GEMINI.md` im Root jedes Repos.
 | Automation | n8n (self-hosted) |
 | LLM Provider | OpenRouter (primär) + Google Gemini (fallback) — **NIE** OpenAI direkt |
 | Voice/TTS | FishAudio |
-| Deployment | Coolify auf Hetzner CPX42 (`46.224.145.109`) |
+| Deployment | Coolify auf Hetzner CPX42 (`<HETZNER_HOST>`) |
 | CI/CD | GitHub Actions → GHCR → Coolify Auto-Deploy |
 | Container Registry | `ghcr.io/timo-goetz-ai/<repo>:latest` |
 | Observability | Prometheus + Grafana + Loki (Homestack) |

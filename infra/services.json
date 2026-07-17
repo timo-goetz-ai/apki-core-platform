@@ -4,7 +4,7 @@
   "server": {
     "provider": "Hetzner",
     "type": "CPX42",
-    "ip": "46.224.145.109",
+    "ip": "<HETZNER_HOST>",
     "os": "Ubuntu 22.04 LTS",
     "cpu": "8 vCPU",
     "ram": "16 GB",
@@ -13,7 +13,7 @@
   "dns": {
     "provider": "Cloudflare",
     "zone": "automation-plus-ki.de",
-    "pattern": "*.automation-plus-ki.de → A → 46.224.145.109"
+    "pattern": "*.automation-plus-ki.de → A → <HETZNER_HOST>"
   },
   "proxy": {
     "type": "Traefik",

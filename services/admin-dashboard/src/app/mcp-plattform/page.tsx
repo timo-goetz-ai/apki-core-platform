@@ -114,7 +114,7 @@ export default function MCPPlattformPage() {
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>MCP Plattform</h1>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              {MCP_SERVERS.length} Server · Hetzner 46.224.145.109 · Coolify
+              {MCP_SERVERS.length} Server · Hetzner <HETZNER_HOST> · Coolify
             </p>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function MCPPlattformPage() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
           {[
-            { label: 'Host',       value: 'Hetzner VPS',         sub: '46.224.145.109' },
+            { label: 'Host',       value: 'Hetzner VPS',         sub: '<HETZNER_HOST>' },
             { label: 'Proxy',      value: 'Traefik v3',          sub: 'via Coolify' },
             { label: 'Auth',       value: 'Authentik OIDC',      sub: 'SSO / Forward Auth' },
             { label: 'Registry',   value: 'ghcr.io',             sub: 'TimoGoetz1988' },

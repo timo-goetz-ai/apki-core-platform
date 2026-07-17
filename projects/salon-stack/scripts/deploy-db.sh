@@ -8,7 +8,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-SERVER_IP="46.224.145.109"
+SERVER_IP="<HETZNER_HOST>"
 SERVER_USER="root"
 DB_NAME="salon_db"
 

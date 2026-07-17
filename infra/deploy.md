@@ -19,7 +19,7 @@ This guide covers a complete redeploy from a fresh Hetzner server to a fully run
 ## Step 1: Initial Server Setup
 
 ```bash
-ssh root@46.224.145.109
+ssh root@<HETZNER_HOST>
 
 # System updates
 apt-get update && apt-get upgrade -y
@@ -50,8 +50,8 @@ After installation, Coolify is available at `http://<server-ip>:8000`.
 Add a wildcard A record in Cloudflare:
 
 ```
-*.automation-plus-ki.de  →  A  →  46.224.145.109  (proxied: false / DNS only)
-automation-plus-ki.de    →  A  →  46.224.145.109
+*.automation-plus-ki.de  →  A  →  <HETZNER_HOST>  (proxied: false / DNS only)
+automation-plus-ki.de    →  A  →  <HETZNER_HOST>
 ```
 
 Or use the Cloudflare MCP / API to batch-create records.

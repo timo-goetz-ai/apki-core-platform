@@ -1,5 +1,5 @@
 # AIOS – Service Referenz
-> Hetzner Server: `46.224.145.109` | Tailscale: `100.124.39.4`
+> Hetzner Server: `<HETZNER_HOST>` | Tailscale: `100.124.39.4`
 > Dashboard live: https://dashboard.automation-plus-ki.de
 
 ---

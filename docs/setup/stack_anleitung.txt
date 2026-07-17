@@ -8,9 +8,9 @@ Uptime Kuma). Schritt für Schritt.
 | Was | Wert |
 |-----|------|
 | **Server** | Hetzner (root) |
-| **IPv4** | 46.224.145.109 |
+| **IPv4** | <HETZNER_HOST> |
 | **IPv6** | 2a01:4f8:1c1f:b58e::/64 |
-| **SSH** | `ssh root@46.224.145.109` (mit deinem Passwort oder SSH-Key) |
+| **SSH** | `ssh root@<HETZNER_HOST>` (mit deinem Passwort oder SSH-Key) |
 | **Domain** | automation-plus-ki.de |
 | **Subdomains** | n8n, crm, auth, status (alle → automation-plus-ki.de) |
 | **Cloudflare** | Account: timo.goetz1988@gmail.com – DNS für automation-plus-
@@ -32,7 +32,7 @@ nur 22, 80, 443; es ist nichts weiter zu öﬀnen.
 | Uptime Kuma | https://status.automation-plus-ki.de |
 ### Cloudflare-Hinweis
 - DNS-Einträge für **n8n**, **crm**, **auth**, **status** auf die Server-IP
-**46.224.145.109** zeigen lassen (A-Record).
+**<HETZNER_HOST>** zeigen lassen (A-Record).
 - Für Let’s Encrypt (HTTP-Challenge) die Subdomains zunächst auf **„DNS only“**
 (graue Wolke) stellen. Orange Wolke (Proxy) später möglich, dann SSL/TLS auf
 „Full“ oder „Full (strict)“ stellen.
@@ -64,7 +64,7 @@ sync)
 | **Watchtower** | Container-Updates | – (intern) |
 | **GitHub-Sync** | n8n-Backup nach Git | – (optional) |
 ### Was du brauchst (bei dir erledigt)
-- **Server:** Hetzner, IP 46.224.145.109, root-Zugang.
+- **Server:** Hetzner, IP <HETZNER_HOST>, root-Zugang.
 - **Domain:** automation-plus-ki.de mit Subdomains n8n, crm, auth, status.
 - **DNS:** Cloudflare (timo.goetz1988@gmail.com).
 - **Firewall:** Ports 22, 80, 443 oﬀen (Hetzner Cloud Firewall bereits so
@@ -78,7 +78,7 @@ plus-ki.de usw.
 ## 2. Server vorbereiten
 ### 2.1 Server-Zugang prüfen
 ```bash
-ssh root@46.224.145.109
+ssh root@<HETZNER_HOST>
 ```
 Anmelden mit Passwort oder SSH-Key (z. B. aus `~/.ssh/authorized_keys`). Wenn
 die Verbindung steht, bist du auf dem Server.
@@ -134,7 +134,7 @@ Ab jetzt arbeiten wir in `/opt/stack`.
 - **Eintrag in .env:** `DOMAIN=automation-plus-ki.de` (ohne https:// und ohne
 www).
 ### 3.2 Subdomains für die Dienste
-Alle zeigen auf die **gleiche Server-IP** 46.224.145.109:
+Alle zeigen auf die **gleiche Server-IP** <HETZNER_HOST>:
 | Subdomain | Dienst | FQDN |
 |-----------|-------------|------|
 | n8n | n8n | n8n.automation-plus-ki.de |
@@ -146,10 +146,10 @@ Im Cloudflare-Dashboard (timo.goetz1988@gmail.com) → Zone **automation-plus-
 ki.de** → DNS → Einträge:
 | Typ | Name | Inhalt (IPv4) | Proxy-Status |
 |-----|-------|------------------|--------------|
-| A | n8n | 46.224.145.109 | DNS only (grau) |
-| A | crm | 46.224.145.109 | DNS only (grau) |
-| A | auth | 46.224.145.109 | DNS only (grau) |
-| A | status| 46.224.145.109 | DNS only (grau) |
+| A | n8n | <HETZNER_HOST> | DNS only (grau) |
+| A | crm | <HETZNER_HOST> | DNS only (grau) |
+| A | auth | <HETZNER_HOST> | DNS only (grau) |
+| A | status| <HETZNER_HOST> | DNS only (grau) |
 - **TTL:** Auto oder 300.
 - Für Let’s Encrypt HTTP-Challenge: Subdomains zunächst **„DNS only“** (graue
 Wolke). Später kannst du auf „Proxied“ (orange) wechseln und SSL/TLS auf „Full“
@@ -160,7 +160,7 @@ oder „Full (strict)“ stellen.
 ping n8n.automation-plus-ki.de
 ping crm.automation-plus-ki.de
 ```
-Die angezeigte IP sollte **46.224.145.109** sein.
+Die angezeigte IP sollte **<HETZNER_HOST>** sein.
 ---
 ## 4. Projekt auf den Server bringen
 Du brauchst auf dem Server in einem Ordner (z. B. `/opt/stack`):
@@ -171,12 +171,12 @@ Du brauchst auf dem Server in einem Ordner (z. B. `/opt/stack`):
 **Von deinem Mac** (nicht auf dem Server):
 ```bash
 cd /Volumes/TIMO_GOETZ/40_Projekte/03_INFRASTRUKTUR/stack
-scp docker-compose.yml init-db.sql .env.example root@46.224.145.109:/opt/
+scp docker-compose.yml init-db.sql .env.example root@<HETZNER_HOST>:/opt/
 stack/
 ```
 Dann **auf dem Server**:
 ```bash
-ssh root@46.224.145.109
+ssh root@<HETZNER_HOST>
 cd /opt/stack
 cp .env.example .env
 nano .env # Werte eintragen (Abschnitt 5)
@@ -193,7 +193,7 @@ nano .env
 git clone https://github.com/DEIN_USER/DEIN_REPO.git stack
 ### Option C: Dateien per Editor auf dem Server anlegen
 ```bash
-ssh root@46.224.145.109
+ssh root@<HETZNER_HOST>
 cd /opt/stack
 nano docker-compose.yml # Inhalt einfügen, Strg+O, Enter, Strg+X
 nano init-db.sql # Inhalt einfügen
@@ -358,9 +358,9 @@ anbinden.
 Benachrichtigungen).
 ---
 ## 8. Prüfliste & URLs testen
-- [ ] Server: `ssh root@46.224.145.109` funktioniert; Docker + Docker Compose
+- [ ] Server: `ssh root@<HETZNER_HOST>` funktioniert; Docker + Docker Compose
 installiert; `docker compose config` fehlerfrei.
-- [ ] DNS (Cloudflare): n8n, crm, auth, status → A-Record auf **46.224.145.109**;
+- [ ] DNS (Cloudflare): n8n, crm, auth, status → A-Record auf **<HETZNER_HOST>**;
 für TLS-Start „DNS only“.
 - [ ] `.env`: DOMAIN=automation-plus-ki.de, TRAEFIK_EMAIL, alle Passwörter/
 Secrets gesetzt.
@@ -385,9 +385,9 @@ wie in `.env`.
 prüfen.
 - **traefik:** Ports 80/443 frei? `sudo ss -tlnp | grep -E ':80|:443'`
 ### TLS-Zertifikat wird nicht ausgestellt
-- Let’s Encrypt braucht von außen erreichbaren Port 80 auf **46.224.145.109**.
+- Let’s Encrypt braucht von außen erreichbaren Port 80 auf **<HETZNER_HOST>**.
 - In Cloudflare: Subdomains n8n, crm, auth, status auf **„DNS only“** (graue
-Wolke), Ziel **46.224.145.109**.
+Wolke), Ziel **<HETZNER_HOST>**.
 - Traefik-Logs: `docker compose logs traefik` (ACME-Fehler stehen dort).
 ### 502 Bad Gateway / Service Unavailable
 - Backend-Container laufen? `docker compose ps`.
@@ -428,10 +428,10 @@ haben.
 - System-Updates: `sudo apt update && sudo apt upgrade -y`.
 ---
 ## Kurz: Schrittfolge mit deinen Werten
-1. **Server:** `ssh root@46.224.145.109` → System updaten, Docker installieren, `/
+1. **Server:** `ssh root@<HETZNER_HOST>` → System updaten, Docker installieren, `/
 opt/stack` anlegen.
 2. **Firewall:** Bereits erledigt (Hetzner: 22, 80, 443).
-3. **DNS (Cloudflare):** n8n, crm, auth, status → A auf **46.224.145.109**, „DNS
+3. **DNS (Cloudflare):** n8n, crm, auth, status → A auf **<HETZNER_HOST>**, „DNS
 only“.
 4. **Projekt:** `docker-compose.yml`, `init-db.sql`, `.env.example` nach `/opt/stack`
 (z. B. per SCP von deinem Mac).

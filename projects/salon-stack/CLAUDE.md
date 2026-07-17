@@ -8,7 +8,7 @@ Kernprodukt: Terminbuchung, CRM, Reminder, Voicebot, Marketing-Flows.
 Zielgruppe: Friseursalons (1–10 Mitarbeiter) in DACH.
 
 ### Infrastruktur
-- **Server:** Hetzner CPX32 (46.224.145.109)
+- **Server:** Hetzner CPX32 (<HETZNER_HOST>)
 - **Domain:** automation-plus-ki.de
 - **n8n:** n8n.automation-plus-ki.de (Automations-Engine)
 - **Monitoring:** status.automation-plus-ki.de (Uptime Kuma)

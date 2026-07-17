@@ -18,7 +18,7 @@
 
 - **Homestack:** n8n, NocoDB, Authentik, Vaultwarden, Qdrant, Redis, Prometheus, Grafana, Loki, PostgreSQL
 - **MCP Stack:** github, cloudflare, hetzner, coolify, n8n, postgres, nocodb, qdrant, grafana...
-- **Host:** Hetzner 46.224.145.109 (Coolify)
+- **Host:** Hetzner <HETZNER_HOST> (Coolify)
 
 ---
 

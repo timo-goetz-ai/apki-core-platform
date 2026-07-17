@@ -7,7 +7,7 @@
 
 🚀 **Service-Masterliste: automation-plus-ki.de**
 
-**Server:** 46.224.145.109 (Hetzner) | **Status:** 04.03.2026
+**Server:** <HETZNER_HOST> (Hetzner) | **Status:** 04.03.2026
 
 | Kategorie | Service | URL / Zugang | Zugriff / Credentials | Hauptnutzen |
 | :---- | :---- | :---- | :---- | :---- |

@@ -14,10 +14,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-# --- Configuration ---
-SSH_HOST = "root@46.224.145.109"
-N8N_API_BASE = "http://10.0.11.5:5678/api/v1"
-N8N_API_KEY = "n8n_api_4ed4f888ccff51c643056ab462f87b5d905546ffbab01bec"
+# --- Configuration (env only — never hardcode secrets or LAN IPs) ---
+SSH_HOST = os.environ.get("N8N_SSH_HOST", "root@YOUR_SERVER")
+N8N_API_BASE = os.environ.get("N8N_API_BASE", "http://127.0.0.1:5678/api/v1")
+N8N_API_KEY = os.environ.get("N8N_API_KEY", "")
+if not N8N_API_KEY:
+    raise SystemExit("Set N8N_API_KEY in the environment before running this script.")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Live n8n workflows: id -> name

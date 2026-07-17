@@ -17,7 +17,7 @@
 │                      Cloudflare                          │
 │                                                          │
 │  DNS Zone: automation-plus-ki.de                         │
-│  13 A-Records -> 46.224.145.109                          │
+│  13 A-Records -> <HETZNER_HOST>                          │
 │  TXT: SPF + DMARC                                       │
 └──────────────────────┬───────────────────────────────────┘
                        │

@@ -2,7 +2,7 @@
 
 **Projekt:** Dashboard für automation-plus-ki.de — **NICHT Streamlit**, sondern **Agenten-Plattform mit Live-Observability**  
 **URL:** https://dashboard.automation-plus-ki.de  
-**Server:** Hetzner 46.224.145.109 | Coolify | Authentik SSO
+**Server:** Hetzner <HETZNER_HOST> | Coolify | Authentik SSO
 
 ---
 

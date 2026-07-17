@@ -15,7 +15,7 @@
 | CPU | 8 vCPU (AMD) |
 | RAM | 16 GB |
 | Disk | 240 GB SSD |
-| IPv4 | 46.224.145.109 |
+| IPv4 | <HETZNER_HOST> |
 | OS | Ubuntu 22.04 LTS |
 | Runtime | Docker + Coolify |
 
@@ -28,7 +28,7 @@ Internet
    │
    ▼
 Cloudflare (DNS + CDN)
-   │  All subdomains → A → 46.224.145.109
+   │  All subdomains → A → <HETZNER_HOST>
    ▼
 Traefik (reverse proxy, managed by Coolify)
    │  /data/coolify/proxy/dynamic/  (custom routes)
@@ -141,7 +141,7 @@ Used by: AI agents, vector search, semantic memory
 All subdomains use a single A record pointing to the server IP.
 
 ```
-*.automation-plus-ki.de  →  A  →  46.224.145.109
+*.automation-plus-ki.de  →  A  →  <HETZNER_HOST>
 ```
 
 Managed via Cloudflare API. Token required with `Zone:DNS:Edit` permission.

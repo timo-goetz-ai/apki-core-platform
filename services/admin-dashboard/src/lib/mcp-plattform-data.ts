@@ -74,7 +74,7 @@ export const PROJEKTE_SEED: Projekt[] = [
     id: "infrastruktur",
     name: "Infrastruktur",
     emoji: "🏗️",
-    beschreibung: "Hetzner 46.224.145.109 · Coolify · Authentik SSO · Grafana/Prometheus Monitoring",
+    beschreibung: "Hetzner <HETZNER_HOST> · Coolify · Authentik SSO · Grafana/Prometheus Monitoring",
     url: "https://coolify.automation-plus-ki.de",
     status: "online",
     mcpServer: ["mcp-hetzner", "mcp-authentik", "mcp-grafana", "mcp-prometheus", "mcp-nocodb", "mcp-cloudflare", "mcp-nextcloud", "mcp-vaultwarden"],
@@ -320,7 +320,7 @@ export const AUDIT_SEED: AuditEintrag[] = [
     akteur: "Timo Götz",
     ressource: "mcp-postgres/connection-string",
     ergebnis: "OK",
-    details: "Verbindungsstring auf Hetzner-IP 46.224.145.109 aktualisiert",
+    details: "Verbindungsstring auf Hetzner-IP <HETZNER_HOST> aktualisiert",
   },
   {
     id: "a005",

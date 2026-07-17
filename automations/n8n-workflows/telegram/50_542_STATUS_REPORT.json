@@ -116,7 +116,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://s0k444ck0w4cgc400skwkos0.46.224.145.109.sslip.io/crews/",
+        "url": "http://s0k444ck0w4cgc400skwkos0.<HETZNER_HOST>.sslip.io/crews/",
         "authentication": "none",
         "options": {
           "timeout": 10000

@@ -47,7 +47,7 @@ alwaysApply: true
 
 ## mcp-hetzner
 
-- Server 46.224.145.109 (hetzner)
+- Server <HETZNER_HOST> (hetzner)
 - Ressourcen, Firewall
 
 ## Konfiguration

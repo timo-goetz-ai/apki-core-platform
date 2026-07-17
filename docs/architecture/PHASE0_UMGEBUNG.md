@@ -1,7 +1,7 @@
 # Phase 0: Server-Umgebung (abgeschlossen)
 
 **Datum:** 2025-03-06  
-**SSH-Host:** hetzner (46.224.145.109)
+**SSH-Host:** hetzner (<HETZNER_HOST>)
 
 ## Ergebnis
 

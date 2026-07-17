@@ -9,7 +9,7 @@ Basierend auf deiner bestehenden Infrastruktur erstelle ich dir einen **vollstä
 ### Dein aktuelles Setup
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    HETZNER SERVER (46.224.145.109)          │
+│                    HETZNER SERVER (<HETZNER_HOST>)          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────────────────────────────────────────────┐   │
@@ -1226,7 +1226,7 @@ access_control:
 ### Schritt 1: Infrastructure Setup
 ```bash
 # 1. SSH in Hetzner Server
-ssh root@46.224.145.109
+ssh root@<HETZNER_HOST>
 
 # 2. Clone repositories
 git clone https://github.com/TimoGoetz1988/ai-control-center.git

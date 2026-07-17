@@ -15,7 +15,7 @@
  *     NOCODB_API_URL=http://homestack-nocodb:8080   ← interner Docker-Name
  *
  *   Option B: Tunnel via SSH (lokal entwickeln)
- *     ssh -L 8181:homestack-nocodb:8080 root@46.224.145.109 -N &
+ *     ssh -L 8181:homestack-nocodb:8080 root@<HETZNER_HOST> -N &
  *     NOCODB_API_URL=http://localhost:8181
  *
  * .env:
