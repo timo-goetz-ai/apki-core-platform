@@ -32,6 +32,11 @@ npm-debug.log*
 *.env
 !*.env.example
 
+# MCP / local tooling (never commit real tokens)
+.mcp.json
+!/.mcp.json.example
+tools/op-secrets/env.op.all
+
 # Secrets
 secrets/
 *.pem
@@ -56,3 +61,6 @@ logs/
 content/personas/private/
 content/personas/*.private.*
 content/personas/*FULL*
+
+# Test coverage
+coverage/

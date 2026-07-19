@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "directus": {
+      "command": "npx",
+      "args": ["-y", "directus-mcp-server@latest"],
+      "env": {
+        "DIRECTUS_URL": "https://directus.example.com",
+        "DIRECTUS_TOKEN": "YOUR_DIRECTUS_TOKEN"
+      }
+    },
+    "mcp-anythingllm": {
+      "type": "url",
+      "url": "https://mcp-anythingllm.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_BEARER_TOKEN"
+      }
+    },
+    "mcp-aios-ops": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "./infrastructure/mcp-servers/mcp-aios-ops", "mcp-aios-ops"],
+      "env": {
+        "COOLIFY_URL": "https://coolify.example.com",
+        "COOLIFY_TOKEN": "YOUR_COOLIFY_API_TOKEN",
+        "AUTHENTIK_URL": "https://auth.example.com",
+        "AUTHENTIK_TOKEN": "YOUR_AUTHENTIK_API_TOKEN",
+        "BASE_DOMAIN": "example.com"
+      }
+    }
+  }
+}
