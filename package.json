@@ -1,0 +1,26 @@
+{
+  "name": "apki-core-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AIOS monorepo — nexus-core, crew-api, admin-dashboard",
+  "scripts": {
+    "dev": "docker compose up nexus-core admin-dashboard crew-api",
+    "admin:dev": "npm run dev --prefix services/admin-dashboard",
+    "admin:build": "npm run build --prefix services/admin-dashboard",
+    "admin:lint": "npm run lint --prefix services/admin-dashboard",
+    "build": "npm run admin:build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:python": "pytest services/nexus-core/tests services/crew-api/tests -v --tb=short",
+    "lint": "npm run admin:lint",
+    "lint:fix": "npm run admin:lint -- --fix"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.17.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  }
+}
