@@ -162,8 +162,8 @@ Die Exporte nutzen **Webhook-Nodes `typeVersion: 1`** (klassische Registrierung)
 
 ### AIOS-Core von n8n aus
 
-**Variante A — intern (Docker, empfohlen):** Basis-URL `http://aios-core:8000`  
-Voraussetzung: n8n- und Nexus-Container hängen am **gleichen Docker-Netzwerk**; Hostname `aios-core` löst auf (ggf. Netzwerk-Alias am Nexus-Container).
+**Variante A — intern (Docker, empfohlen):** Basis-URL `http://nexus-core:8000`  
+Voraussetzung: n8n- und Nexus-Container hängen am **gleichen Docker-Netzwerk**; Hostname `nexus-core` löst auf (ggf. Netzwerk-Alias am Nexus-Container).
 
 **Variante B — öffentlich:** Basis-URL `https://api.automation-plus-ki.de` (oder eure Traefik-URL).
 
@@ -176,7 +176,7 @@ AIOS-Core prüft **`x-aios-token`** (Middleware `AiosTokenMiddleware`). In n8n m
 | Feld | Wert |
 |------|------|
 | Header Name | `x-aios-token` |
-| Header Value | identisch zu `AIOS_TOKEN` / `aios_token` in **aios-core** (Coolify-Env) |
+| Header Value | identisch zu `AIOS_TOKEN` / `aios_token` in **nexus-core** (Coolify-Env) |
 
 Ohne Übereinstimmung: **401** auf allen Jarvis-Routen (Health `/health` bleibt ohne Token erreichbar).
 
@@ -184,11 +184,11 @@ Ohne Übereinstimmung: **401** auf allen Jarvis-Routen (Health `/health` bleibt 
 
 ```bash
 # Health (ohne Token)
-wget -qO- http://aios-core:8000/health
+wget -qO- http://nexus-core:8000/health
 
 # Jarvis mit Token
 wget -qO- --header="x-aios-token: <DEIN_TOKEN>" \
-  http://aios-core:8000/api/jarvis/tasks
+  http://nexus-core:8000/api/jarvis/tasks
 ```
 
 ### Telegram-Callback-URL im Code-Node (550)

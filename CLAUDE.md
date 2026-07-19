@@ -18,7 +18,7 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 
 ## Deployment-Pipeline
 
-1. **Push** nach `main` auf `git@github.com:timo-goetz-ai/core-platform.git` (ehem. `TimoGoetz1988/aios`)
+1. **Push** nach `main` auf `git@github.com:timo-goetz-ai/apki-core-platform.git` (ehem. `TimoGoetz1988/aios`, `core-platform`)
 2. **GitHub Actions** — Workflow **Build & Push – Docker Images** (`.github/workflows/build-and-push.yml`): baut u. a. Images für `admin-dashboard`, `nexus-core`, `crew-api`, `landing-page` → **ghcr.io** (`ghcr.io/timo-goetz-ai/…`).
 3. **Coolify** zieht die neuen Images und rollt die Anwendungen auf dem **Hetzner**-Host aus.
 4. **Einzel-Deploys / Checks**: zusätzliche Workflows unter `.github/workflows/` (z. B. `deploy-prod.yml`, `ci.yml`).

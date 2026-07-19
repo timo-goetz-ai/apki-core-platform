@@ -4,7 +4,7 @@
 
 **Zentrales Operations-Hub für automation-plus-ki.de**
 
-[![Build](https://img.shields.io/github/actions/workflow/status/timo-goetz-ai/core-platform/deploy.yml?branch=main&label=Deploy)](https://github.com/timo-goetz-ai/core-platform/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/timo-goetz-ai/apki-core-platform/deploy.yml?branch=main&label=Deploy)](https://github.com/timo-goetz-ai/apki-core-platform/actions)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
 [![Coolify](https://img.shields.io/badge/Hosting-Coolify%20%2F%20Hetzner-5C4EFF)](https://coolify.io)
 
@@ -333,6 +333,6 @@ services/admin-dashboard/
 
 <div align="center">
 
-Teil von [Core Platform](https://github.com/timo-goetz-ai/core-platform) &nbsp;·&nbsp; Maintainer: [Timo Goetz](https://timo-goetz-ai.de)
+Teil von [Core Platform](https://github.com/timo-goetz-ai/apki-core-platform) &nbsp;·&nbsp; Maintainer: [Timo Goetz](https://timo-goetz-ai.de)
 
 </div>

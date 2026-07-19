@@ -16,7 +16,7 @@ Skripte/API von außen: wo möglich **interne** Basis-URL oder Tailscale nutzen;
 - HTTP-Header: **`x-aios-token`**
 - Wert: nur in **Coolify** (n8n-Workflow / Umgebung) oder **1Password** — nicht in Git, nicht in Chat-Logs.
 
-Siehe auch: `docs/AIOS_CORE_ZUGRIFF.md` (gleicher Header-Name für AIOS-Core; je Route können unterschiedliche Geheimnisse gelten).
+Siehe auch: `docs/NEXUS_CORE_ZUGRIFF.md` (gleicher Header-Name für Nexus Core; je Route können unterschiedliche Geheimnisse gelten).
 
 ## Beispiel `curl` (Platzhalter)
 

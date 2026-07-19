@@ -62,7 +62,7 @@ const KEY_SERVICES = [
   { id: 'grafana',    label: 'Grafana'    },
   { id: 'prometheus', label: 'Prometheus' },
   { id: 'authentik',  label: 'Authentik'  },
-  { id: 'aios-core', label: 'AIOS Core' },
+  { id: 'nexus-core', label: 'Nexus Core' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

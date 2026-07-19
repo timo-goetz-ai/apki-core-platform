@@ -2,7 +2,7 @@ const BASE = process.env.NEXT_PUBLIC_AIOS_CORE_API_URL ?? "http://localhost:8000
 
 export async function fetchHealth() {
   const res = await fetch(`${BASE}/health`, { next: { revalidate: 0 } });
-  if (!res.ok) throw new Error("aios-core unreachable");
+  if (!res.ok) throw new Error("nexus-core unreachable");
   return res.json();
 }
 

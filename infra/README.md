@@ -2,7 +2,7 @@
 
 > Last updated: 2026-03-17
 > Platform: automation-plus-ki.de
-> Repo: github.com/TimoGoetz1988/aios (private)
+> Repo: github.com/timo-goetz-ai/apki-core-platform (private)
 
 ---
 

@@ -546,7 +546,7 @@
       <div class="arch-services">
         <div class="arch-service">
           <div class="dot dot-green"></div>
-          aios-core (FastAPI :8000)
+          nexus-core (FastAPI :8000)
           <span class="badge badge-green">DEPLOYED</span>
         </div>
         <div class="arch-service">
@@ -677,7 +677,7 @@
       <div class="row-list">
         <div class="row-item">
           <div class="row-item-left">
-            <span>aios-core</span>
+            <span>nexus-core</span>
           </div>
           <span class="badge badge-green">→ ghcr.io</span>
         </div>
@@ -710,7 +710,7 @@
 
   <div class="grid-4">
     <div class="card green">
-      <div class="card-title">aios-core</div>
+      <div class="card-title">nexus-core</div>
       <div class="card-sub">FastAPI Backend</div>
       <span class="badge badge-green">:latest</span>
     </div>
@@ -773,7 +773,7 @@
         <div class="card-title">📁 01_AI/</div>
         <div class="card-sub">Haupt-Entwicklungsordner</div>
         <div class="row-list">
-          <div class="row-item"><div class="row-item-left"><span>apps/aios-core/</span></div><span class="badge badge-green">PRIMÄR-BACKEND</span></div>
+          <div class="row-item"><div class="row-item-left"><span>services/nexus-core/</span></div><span class="badge badge-green">PRIMÄR-BACKEND</span></div>
           <div class="row-item"><div class="row-item-left"><span>apps/admin-dashboard/</span></div><span class="badge badge-green">DEPLOYED</span></div>
           <div class="row-item"><div class="row-item-left"><span>agents/coder-agent/</span></div><span class="badge badge-blue">AKTIV</span></div>
           <div class="row-item"><div class="row-item-left"><span>ai-control-center/</span></div><span class="badge badge-orange">DUPLIKAT</span></div>
@@ -805,7 +805,7 @@
         <div class="card-title">📁 ~/aios/ (Monorepo)</div>
         <div class="card-sub">Ein Repo, klare Struktur</div>
         <div class="row-list">
-          <div class="row-item"><div class="row-item-left"><span>services/aios-core/</span></div><span class="badge badge-green">Primär-Backend</span></div>
+          <div class="row-item"><div class="row-item-left"><span>services/nexus-core/</span></div><span class="badge badge-green">Primär-Backend</span></div>
           <div class="row-item"><div class="row-item-left"><span>services/admin-dashboard/</span></div><span class="badge badge-green">Next.js UI</span></div>
           <div class="row-item"><div class="row-item-left"><span>services/crew-api/</span></div><span class="badge badge-blue">N8N+NocoDB</span></div>
           <div class="row-item"><div class="row-item-left"><span>agents/coder-agent/</span></div><span class="badge badge-blue">CrewAI</span></div>
@@ -852,8 +852,8 @@
   <div class="problem-item critical">
     <div class="problem-icon">🔴</div>
     <div class="problem-text">
-      <h4>aios-core vs ai-control-center (Duplikat)</h4>
-      <p>Beide FastAPI-Backends haben identische API-Struktur (api/agents.py, api/automations.py, api/models.py, api/prompts.py, api/tasks.py). Nur aios-core hat Production-Deps. Welche wird aktiv entwickelt?</p>
+      <h4>nexus-core vs ai-control-center (Duplikat)</h4>
+      <p>Beide FastAPI-Backends haben identische API-Struktur (api/agents.py, api/automations.py, api/models.py, api/prompts.py, api/tasks.py). Nur nexus-core hat Production-Deps. Welche wird aktiv entwickelt?</p>
     </div>
   </div>
 

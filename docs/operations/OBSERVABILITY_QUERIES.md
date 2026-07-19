@@ -8,7 +8,7 @@ Ziel: reproduzierbare Queries und Sprungmarken für den Homestack (Coolify, Trae
 
 ```promql
 # Erreichbarkeit (job-Namen anpassen)
-up{job=~".*crew-api.*|.*aios-core.*|.*admin.*"}
+up{job=~".*crew-api.*|.*nexus-core.*|.*admin.*"}
 
 # Request-Rate crew-api (falls vorhanden)
 rate(http_requests_total{job=~".*crew-api.*"}[5m])

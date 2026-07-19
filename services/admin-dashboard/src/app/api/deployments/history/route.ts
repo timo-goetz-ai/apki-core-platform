@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? process.env.GITHUB_PAT ?? '';
-const REPO         = 'TimoGoetz1988/aios';
+const REPO         = 'timo-goetz-ai/apki-core-platform';
 
 export interface DeploymentEntry {
   id: string;
@@ -21,7 +21,7 @@ function detectServices(message: string): string[] {
   const services: string[] = [];
   if (msg.includes('dashboard') || msg.includes('admin'))      services.push('admin-dashboard');
   if (msg.includes('telegram') || msg.includes('bot'))         services.push('telegram-bot');
-  if (msg.includes('aios-core'))                             services.push('aios-core');
+  if (msg.includes('nexus-core'))                             services.push('nexus-core');
   if (msg.includes('crew') || msg.includes('crew-api'))        services.push('crew-api');
   if (msg.includes('landing'))                                  services.push('landing-page');
   if (msg.includes('n8n') || msg.includes('workflow'))         services.push('n8n');

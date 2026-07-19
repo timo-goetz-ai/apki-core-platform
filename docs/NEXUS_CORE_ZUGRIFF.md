@@ -1,6 +1,6 @@
-# AIOS Core — Zugriffspunkte und URLs
+# Nexus Core — Zugriffspunkte und URLs
 
-**Begriff:** **AIOS Core** ist der zentrale FastAPI-Orchestrierungsdienst (Agents, Tasks, Models, Prompts, Automations, Jarvis). Er ist **nicht** [CrewAI](https://www.crewai.com/) und **nicht** identisch mit **Crew API** (`services/crew-api`).
+**Begriff:** **Nexus Core** ist der zentrale FastAPI-Orchestrierungsdienst (Agents, Tasks, Models, Prompts, Automations, Jarvis). Er ist **nicht** [CrewAI](https://www.crewai.com/) und **nicht** identisch mit **Crew API** (`services/crew-api`).
 
 ---
 
@@ -19,11 +19,11 @@
 
 | Von | Nach | Basis-URL |
 |-----|------|-----------|
-| `admin-dashboard` | AIOS Core | `http://aios-core:8000` |
-| `crew-api` | AIOS Core | `http://aios-core:8000` (`AIOS_CORE_URL` in Compose) |
+| `admin-dashboard` | Nexus Core | `http://nexus-core:8000` |
+| `crew-api` | Nexus Core | `http://nexus-core:8000` (`AIOS_CORE_URL` in Compose) |
 | Lokal | Dev | `http://localhost:8000` |
 
-**Image (GHCR):** `ghcr.io/timogoetz1988/aios-core`
+**Image (GHCR):** `ghcr.io/timo-goetz-ai/nexus-core`
 
 ---
 
@@ -72,7 +72,7 @@ Vault **AIOS**, Item **`Core`** (anlegen mit `tools/op-secrets/setup-vault.sh` o
 | Feld (Label) | `op://`-Referenz | Verwendung |
 |--------------|------------------|------------|
 | `aios_token` | `op://AIOS/Core/aios_token` | Core + Dashboard + Coolify |
-| `aios_core_url` | `op://AIOS/Core/aios_core_url` | z. B. `http://aios-core:8000` |
+| `aios_core_url` | `op://AIOS/Core/aios_core_url` | z. B. `http://nexus-core:8000` |
 | `next_public_aios_core_api_url` | `op://AIOS/Core/next_public_aios_core_api_url` | öffentliche API-URL |
 | `next_public_ws_url` | `op://AIOS/Core/next_public_ws_url` | öffentliche WS-URL |
 | `postgres_password` | `op://AIOS/Core/postgres_password` | laut `env.op.all` |
@@ -94,7 +94,7 @@ op run --env-file=tools/op-secrets/env.op.all -- <dein-befehl>
 
 ## Coolify (Prod-Deploy)
 
-- **aios-core:** Image `ghcr.io/timogoetz1988/aios-core`, Env mindestens `DATABASE_URL`, `REDIS_URL`, **`AIOS_TOKEN`** (gleicher Wert wie im 1Password-Feld `aios_token`).
+- **nexus-core:** Image `ghcr.io/timo-goetz-ai/nexus-core`, Env mindestens `DATABASE_URL`, `REDIS_URL`, **`AIOS_TOKEN`** (gleicher Wert wie im 1Password-Feld `aios_token`).
 - **admin-dashboard:** `NEXT_PUBLIC_AIOS_CORE_API_URL`, `NEXT_PUBLIC_WS_URL`, **`AIOS_CORE_URL`**, **`AIOS_TOKEN`**.
 
 Workflow **Deploy – Production** patcht diese Keys per API, sofern 1Password-Service-Account die `op://AIOS/Core/...`-Referenzen auflösen kann.
@@ -105,7 +105,7 @@ Workflow **Deploy – Production** patcht diese Keys per API, sofern 1Password-S
 
 | Service | Pfad | Rolle |
 |---------|------|--------|
-| **AIOS Core** | `services/aios-core` | Orchestrierung, Jarvis, Metrics |
+| **Nexus Core** | `services/nexus-core` | Orchestrierung, Jarvis, Metrics |
 | **Crew API** | `services/crew-api` | eigener Dienst, nicht CrewAI-Framework |
 
 ---
@@ -116,7 +116,7 @@ Workflow **Deploy – Production** patcht diese Keys per API, sofern 1Password-S
 
 | Item | Zweck |
 |------|--------|
-| `Coolify` | `url`, `token`, `aios_core_uuid`, `dashboard_uuid`, `coder_agent_uuid` |
+| `Coolify` | `url`, `token`, `nexus_core_uuid`, `dashboard_uuid`, `coder_agent_uuid` |
 | `NocoDB` | `url`, `api_key`, `db_password`, MCP-Tabellen-IDs |
 | `N8N` | `url`, `api_key`, `encryption_key`, `db_password` |
 | `AI-APIs` | `anthropic_api_key`, `openai_api_key`, `openrouter_api_key` |

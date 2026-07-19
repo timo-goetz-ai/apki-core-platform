@@ -8,7 +8,7 @@ This guide covers a complete redeploy from a fresh Hetzner server to a fully run
 
 - [ ] Hetzner CPX42 server with Ubuntu 22.04 LTS (IP assigned)
 - [ ] Domain `automation-plus-ki.de` DNS pointing to server IP in Cloudflare
-- [ ] GitHub repo access: `TimoGoetz1988/aios` (private, PAT token ready)
+- [ ] GitHub repo access: `timo-goetz-ai/apki-core-platform` (private, PAT token ready)
 - [ ] GHCR write access for `ghcr.io/timogoetz1988/`
 - [ ] Cloudflare API token (`Zone:DNS:Edit`)
 - [ ] All secrets from `infra/env-template.md` prepared

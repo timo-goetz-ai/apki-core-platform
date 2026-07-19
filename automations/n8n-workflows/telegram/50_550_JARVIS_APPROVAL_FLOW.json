@@ -20,7 +20,7 @@
     },
     {
       "id": "550-plan",
-      "name": "AIOS Core: Plan erstellen",
+      "name": "Nexus Core: Plan erstellen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -120,7 +120,7 @@
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ \"status\": \"ok\", \"task_id\": {{ $('AIOS Core: Plan erstellen').item.json.task_id }} }"
+        "responseBody": "={ \"status\": \"ok\", \"task_id\": {{ $('Nexus Core: Plan erstellen').item.json.task_id }} }"
       }
     }
   ],
@@ -129,14 +129,14 @@
       "main": [
         [
           {
-            "node": "AIOS Core: Plan erstellen",
+            "node": "Nexus Core: Plan erstellen",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "AIOS Core: Plan erstellen": {
+    "Nexus Core: Plan erstellen": {
       "main": [
         [
           {

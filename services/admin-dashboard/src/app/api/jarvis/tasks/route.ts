@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const AIOS_CORE_BASE = process.env.AIOS_CORE_URL ?? 'http://aios-core:8000';
+const AIOS_CORE_BASE = process.env.AIOS_CORE_URL ?? 'http://nexus-core:8000';
 const AIOS_TOKEN = process.env.AIOS_TOKEN ?? '';
 
 /** GET /api/jarvis/tasks?status=pending&limit=50 */
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: `AIOS Core returned ${res.status}` },
+        { error: `Nexus Core returned ${res.status}` },
         { status: res.status }
       );
     }
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json(
-      { error: `AIOS Core not reachable: ${err}` },
+      { error: `Nexus Core not reachable: ${err}` },
       { status: 502 }
     );
   }

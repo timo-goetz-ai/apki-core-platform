@@ -43,7 +43,7 @@ Ein neues konsolidiertes Repository wurde unter `~/Projects/01_Active_Projects/a
 - Alle Komponenten kategorisiert und korrekt abgelegt
 
 ### Phase 4 – GitHub Repository eingerichtet
-- Neues **privates** Repository erstellt: `https://github.com/TimoGoetz1988/aios`
+- Neues **privates** Repository erstellt: `https://github.com/timo-goetz-ai/apki-core-platform`
 - Kompletter Code gepusht (`main` Branch)
 - GitHub Actions CI/CD Pipelines aktiviert
 
@@ -95,9 +95,9 @@ Nach dem ersten Push kamen Fehler-E-Mails von GitHub. Folgende Probleme wurden s
 
 | Ressource | URL |
 |-----------|-----|
-| **Repository** | https://github.com/TimoGoetz1988/aios |
-| **CI/CD Workflows** | https://github.com/TimoGoetz1988/aios/actions |
-| **Container Registry** | https://github.com/TimoGoetz1988/aios/packages |
+| **Repository** | https://github.com/timo-goetz-ai/apki-core-platform |
+| **CI/CD Workflows** | https://github.com/timo-goetz-ai/apki-core-platform/actions |
+| **Container Registry** | https://github.com/timo-goetz-ai/apki-core-platform/packages |
 
 ---
 
@@ -238,7 +238,7 @@ INTERNET
          ↕ CI/CD via GitHub Actions
 ┌─────────────────────────────────────────────┐
 │  GITHUB                                     │
-│  TimoGoetz1988/aios                         │
+│  timo-goetz-ai/apki-core-platform                         │
 │  → ghcr.io (Docker Image Registry)         │
 └─────────────────────────────────────────────┘
          ↕ Lokale Entwicklung
@@ -358,9 +358,9 @@ docker compose exec aios-db psql -U aios_user -d aios_db
 
 | Ressource | Link/Info |
 |-----------|-----------|
-| **GitHub Repository** | https://github.com/TimoGoetz1988/aios |
-| **CI/CD Status** | https://github.com/TimoGoetz1988/aios/actions |
-| **Docker Images** | https://github.com/TimoGoetz1988/aios/packages |
+| **GitHub Repository** | https://github.com/timo-goetz-ai/apki-core-platform |
+| **CI/CD Status** | https://github.com/timo-goetz-ai/apki-core-platform/actions |
+| **Docker Images** | https://github.com/timo-goetz-ai/apki-core-platform/packages |
 | **Coolify Docs** | https://coolify.io/docs |
 | **FastAPI Docs** | https://fastapi.tiangolo.com |
 | **CrewAI Docs** | https://docs.crewai.com |
@@ -463,4 +463,4 @@ Nach dem kompletten Scan des Workspace wurden folgende Inhalte in das Monorepo i
 ---
 
 *Dokument erstellt: 12. März 2026 | Zuletzt aktualisiert: 12. März 2026 nach vollständigem Workspace-Scan*
-*Monorepo: ~/Projects/01_Active_Projects/aios | GitHub: TimoGoetz1988/aios | Status: CI/CD grün ✅*
+*Monorepo: ~/Projects/01_Active_Projects/aios | GitHub: timo-goetz-ai/apki-core-platform | Status: CI/CD grün ✅*

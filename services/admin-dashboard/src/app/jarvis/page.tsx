@@ -188,7 +188,7 @@ export default function JarvisPage() {
           color: 'var(--accent-red)',
           fontSize: 13,
         }}>
-          ⚠️ AIOS Core nicht erreichbar: {error}
+          ⚠️ Nexus Core nicht erreichbar: {error}
         </div>
       )}
 

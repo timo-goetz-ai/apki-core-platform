@@ -73,14 +73,14 @@ echo ""
 echo "🔧 Coolify"
 prompt COOLIFY_URL               "  URL (https://coolify.automation-plus-ki.de)"
 prompt COOLIFY_TOKEN             "  API Token (Coolify → Settings → API Tokens)"
-prompt COOLIFY_AIOS_CORE_UUID   "  aios-core Application UUID (Coolify UI → App → UUID)"
+prompt COOLIFY_NEXUS_CORE_UUID   "  nexus-core Application UUID (Coolify UI → App → UUID)"
 prompt COOLIFY_DASHBOARD_UUID    "  admin-dashboard Application UUID"
 prompt COOLIFY_CODER_AGENT_UUID  "  coder-agent Application UUID"
 
 upsert_item "Coolify" \
   "url[text]=$COOLIFY_URL" \
   "token[password]=$COOLIFY_TOKEN" \
-  "aios_core_uuid[text]=$COOLIFY_AIOS_CORE_UUID" \
+  "nexus_core_uuid[text]=$COOLIFY_NEXUS_CORE_UUID" \
   "dashboard_uuid[text]=$COOLIFY_DASHBOARD_UUID" \
   "coder_agent_uuid[text]=$COOLIFY_CODER_AGENT_UUID"
 
@@ -169,16 +169,16 @@ upsert_item "AI-APIs" \
 
 # ── 8. Datenbank / Core Services ──────────────────────────────────────────────
 echo ""
-echo "🔧 Core Services (Postgres, Redis, JWT, AIOS Core API)"
+echo "🔧 Core Services (Postgres, Redis, JWT, Nexus Core API)"
 prompt POSTGRES_PASSWORD "  Postgres Passwort (AIOS DB)"
 prompt JWT_SECRET        "  JWT Secret (min. 32 Zeichen)"
 prompt DASHBOARD_API_KEY "  Dashboard API Key (langer Zufallsstring)"
 echo ""
-echo "  AIOS Core (Coolify / Dashboard: x-aios-token & URLs)"
+echo "  Nexus Core (Coolify / Dashboard: x-aios-token & URLs)"
 read -rp "  AIOS_TOKEN (leer = zufällig generieren): " AIOS_TOKEN
 AIOS_TOKEN=${AIOS_TOKEN:-$(openssl rand -hex 32)}
-read -rp "  AIOS_CORE_URL [http://aios-core:8000]: " AIOS_CORE_URL
-AIOS_CORE_URL=${AIOS_CORE_URL:-http://aios-core:8000}
+read -rp "  AIOS_CORE_URL [http://nexus-core:8000]: " AIOS_CORE_URL
+AIOS_CORE_URL=${AIOS_CORE_URL:-http://nexus-core:8000}
 read -rp "  NEXT_PUBLIC_AIOS_CORE_API_URL [https://api.aios.automation-plus-ki.de]: " NEXT_PUBLIC_AIOS_CORE_API_URL
 NEXT_PUBLIC_AIOS_CORE_API_URL=${NEXT_PUBLIC_AIOS_CORE_API_URL:-https://api.aios.automation-plus-ki.de}
 read -rp "  NEXT_PUBLIC_WS_URL [wss://api.aios.automation-plus-ki.de]: " NEXT_PUBLIC_WS_URL
@@ -236,7 +236,7 @@ echo " Nächster Schritt: GitHub Secret setzen"
 echo ""
 echo "   gh secret set OP_SERVICE_ACCOUNT_TOKEN \\"
 echo "     --body \"$OP_SERVICE_ACCOUNT_TOKEN\" \\"
-echo "     --repo TimoGoetz1988/aios"
+echo "     --repo timo-goetz-ai/apki-core-platform"
 echo ""
 echo " Dann können alle CI-Workflows automatisch Secrets laden."
 echo ""

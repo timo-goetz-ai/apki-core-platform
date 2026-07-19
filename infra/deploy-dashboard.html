@@ -135,34 +135,34 @@
 
 <!-- GitHub Actions -->
 <div class="section gh-actions-section">
-  <div class="section-title">GitHub Actions — timo-goetz-ai/core-platform</div>
+  <div class="section-title">GitHub Actions — timo-goetz-ai/apki-core-platform</div>
   <div class="workflow-row">
     <span class="workflow-name">Build &amp; Push – Docker Images</span>
     <img class="badge-img"
-      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/build-and-push.yml/badge.svg"
+      src="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/build-and-push.yml/badge.svg"
       alt="Build status">
-    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/build-and-push.yml" target="_blank">Actions →</a>
+    <a href="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/build-and-push.yml" target="_blank">Actions →</a>
   </div>
   <div class="workflow-row">
     <span class="workflow-name">Deploy – Production</span>
     <img class="badge-img"
-      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-prod.yml/badge.svg"
+      src="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/deploy-prod.yml/badge.svg"
       alt="Deploy prod status">
-    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-prod.yml" target="_blank">Actions →</a>
+    <a href="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/deploy-prod.yml" target="_blank">Actions →</a>
   </div>
   <div class="workflow-row">
     <span class="workflow-name">Deploy – Staging</span>
     <img class="badge-img"
-      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-staging.yml/badge.svg"
+      src="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/deploy-staging.yml/badge.svg"
       alt="Deploy staging status">
-    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/deploy-staging.yml" target="_blank">Actions →</a>
+    <a href="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/deploy-staging.yml" target="_blank">Actions →</a>
   </div>
   <div class="workflow-row">
     <span class="workflow-name">CI</span>
     <img class="badge-img"
-      src="https://github.com/timo-goetz-ai/core-platform/actions/workflows/ci.yml/badge.svg"
+      src="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/ci.yml/badge.svg"
       alt="CI status">
-    <a href="https://github.com/timo-goetz-ai/core-platform/actions/workflows/ci.yml" target="_blank">Actions →</a>
+    <a href="https://github.com/timo-goetz-ai/apki-core-platform/actions/workflows/ci.yml" target="_blank">Actions →</a>
   </div>
 </div>
 
@@ -226,14 +226,14 @@ const APP_SERVICES = [
     name: 'nexus-core (API)',
     healthUrl: 'https://api.aios.automation-plus-ki.de/health',
     liveUrl: 'https://api.aios.automation-plus-ki.de',
-    image: 'ghcr.io/timo-goetz-ai/core-platform-core:latest',
+    image: 'ghcr.io/timo-goetz-ai/nexus-core:latest',
     coolifyUuid: null, // set via COOLIFY_NEXUS_CORE_UUID if known
   },
   {
     name: 'admin-dashboard',
     healthUrl: 'https://admin.automation-plus-ki.de',
     liveUrl: 'https://admin.automation-plus-ki.de',
-    image: 'ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest',
+    image: 'ghcr.io/timo-goetz-ai/nexus-admin-dashboard:latest',
     coolifyUuid: null,
   },
 ];

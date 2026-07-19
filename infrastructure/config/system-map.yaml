@@ -103,7 +103,7 @@ systems:
     notes:
       - "Kein Login-Tracker im klassischen Sinne – Loki aggregiert Anwendungs-Logs (stdout/stderr aller Container)"
       - "Promtail leitet Logs an Loki weiter"
-      - "In Grafana: Dashboard 'Explore' → Log-Suche über Labels (service=aios-core etc.)"
+      - "In Grafana: Dashboard 'Explore' → Log-Suche über Labels (service=nexus-core etc.)"
       - "Authentik ist der eigentliche Login/SSO-Tracker (Auth-Events, Sessions)"
 
   # Platzhalter für AI Control Center / API

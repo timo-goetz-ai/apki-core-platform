@@ -7,7 +7,7 @@ GitHub Actions baut jedes Image mit zwei Tags:
 - `ghcr.io/timogoetz1988/<service>:sha-<SHORT_SHA>` — spezifischer Commit
 
 Alle SHA-Tags sind im GitHub Container Registry sichtbar:
-`https://github.com/TimoGoetz1988/aios/pkgs/container/<service>`
+`https://github.com/timo-goetz-ai/apki-core-platform/pkgs/container/<service>`
 
 ## Rollback-Verfahren (Coolify)
 
@@ -44,7 +44,7 @@ curl -f https://admin.automation-plus-ki.de/api/health
 | Service | Image |
 |---------|-------|
 | Admin Dashboard | `ghcr.io/timogoetz1988/aios-admin-dashboard` |
-| AIOS Core | `ghcr.io/timogoetz1988/aios-core` |
+| Nexus Core | `ghcr.io/timo-goetz-ai/nexus-core` |
 | Crew API | `ghcr.io/timogoetz1988/crew-api` |
 | Landing Page | `ghcr.io/timogoetz1988/landing-page` |
 

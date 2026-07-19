@@ -33,7 +33,7 @@
       "category": "core",
       "status": "active",
       "port": 3000,
-      "source": "github:TimoGoetz1988/aios"
+      "source": "github:timo-goetz-ai/apki-core-platform"
     },
     {
       "name": "AIOS-Core API",
@@ -45,7 +45,7 @@
       "category": "core",
       "status": "active",
       "port": 8000,
-      "source": "github:TimoGoetz1988/aios services/nexus-core"
+      "source": "github:timo-goetz-ai/apki-core-platform services/nexus-core"
     },
     {
       "name": "Crew API",
@@ -57,7 +57,7 @@
       "category": "core",
       "status": "active",
       "port": 8001,
-      "source": "github:TimoGoetz1988/aios services/crew-api"
+      "source": "github:timo-goetz-ai/apki-core-platform services/crew-api"
     },
     {
       "name": "n8n",

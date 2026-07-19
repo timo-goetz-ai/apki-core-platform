@@ -122,7 +122,7 @@ OLLAMA_ORIGINS=*
 # No auth by default — keep internal, do not expose publicly
 ```
 
-### AIOS Core API (FastAPI, früher „Nexus Core“)
+### Nexus Core API (FastAPI, früher „Nexus Core“)
 
 Variablennamen entsprechen `pydantic-settings` (`database_url` → `DATABASE_URL`, usw.).
 

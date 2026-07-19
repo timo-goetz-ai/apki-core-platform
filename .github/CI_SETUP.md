@@ -1,4 +1,4 @@
-# CI/CD Setup – TimoGoetz1988/aios
+# CI/CD Setup – timo-goetz-ai/apki-core-platform
 
 ## 1Password Service Account (GitHub Actions)
 
@@ -34,7 +34,7 @@ Diese Pfade werden in `.github/workflows/*.yml` genutzt; sie müssen im Tresor e
 | AI-APIs | `anthropic_api_key`, `openai_api_key`, `openrouter_api_key` |
 | AgenticOS | `base_path` |
 | Cloudflare-API | `account_id`, `api_token` |
-| Coolify | `url`, `token`, `aios_core_uuid`, `dashboard_uuid`, `coder_agent_uuid` |
+| Coolify | `url`, `token`, `nexus_core_uuid`, `dashboard_uuid`, `coder_agent_uuid` |
 | Core | `jwt_secret`, `dashboard_api_key`, `aios_core_url`, `aios_token`, `next_public_aios_core_api_url`, `next_public_ws_url` |
 | Hetzner | `ip`, `token`, `ssh_private_key` |
 | NocoDB | `url`, `api_key`, `mcp_projekte_table_id`, `mcp_dienste_table_id`, `mcp_audit_table_id` |

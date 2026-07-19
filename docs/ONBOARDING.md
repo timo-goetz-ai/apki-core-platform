@@ -78,6 +78,7 @@ Secrets: **1Password Vault** — nie in Git committen.
 
 ## Weitere Docs
 
+- [Nexus Core Zugriff](./NEXUS_CORE_ZUGRIFF.md)
 - [Architecture](../infrastructure/ARCHITECTURE.md)
 - [Operations](./OPERATIONS.md)
 - [Costs](./COSTS.md)

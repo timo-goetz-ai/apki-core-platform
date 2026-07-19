@@ -55,7 +55,7 @@ if ! item_exists "Coolify"; then
   op item create --vault "$VAULT" --category "API Credential" --title "Coolify" \
     "url[text]=${CH_URL}" \
     "token[password]=${CTOK}" \
-    "aios_core_uuid[text]=SET_UUID_FROM_COOLIFY_APP_aios-core" \
+    "nexus_core_uuid[text]=SET_UUID_FROM_COOLIFY_APP_nexus-core" \
     "dashboard_uuid[text]=SET_UUID_FROM_COOLIFY_APP_admin-dashboard" \
     "coder_agent_uuid[text]=SET_UUID_FROM_COOLIFY_APP_coder-agent" \
     >/dev/null

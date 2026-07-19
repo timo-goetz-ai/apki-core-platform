@@ -48,7 +48,7 @@ const QUICK_LINKS = [
 const API_ENDPOINTS = [
   { label: 'n8n API',          url: 'https://n8n.automation-plus-ki.de/api/v1',    desc: 'Workflows & Executions',    auth: 'X-N8N-API-KEY' },
   { label: 'NocoDB API',       url: 'https://nocodb.automation-plus-ki.de/api/v1', desc: 'Tabellen & Datensätze',     auth: 'xc-token' },
-  { label: 'AIOS Core API',   url: 'https://api.automation-plus-ki.de',           desc: 'Python FastAPI Backend',    auth: 'Bearer Token' },
+  { label: 'Nexus Core API',   url: 'https://api.automation-plus-ki.de',           desc: 'Python FastAPI Backend',    auth: 'Bearer Token' },
   { label: 'Dashboard API',    url: '/api/nocodb/table?id=TABLE_ID',               desc: 'Interne Next.js Routen',    auth: 'Session' },
   { label: 'Prometheus API',   url: 'https://prometheus.automation-plus-ki.de/api/v1', desc: 'Metriken & Queries',    auth: 'Authentik' },
   { label: 'Grafana API',      url: 'https://grafana.automation-plus-ki.de/api',   desc: 'Dashboards & Alerting',     auth: 'Bearer Token' },
