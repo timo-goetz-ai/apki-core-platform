@@ -65,7 +65,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-core
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-core
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -105,7 +105,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-admin-dashboard
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-admin-dashboard
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
@@ -167,7 +167,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/core-platform-crew
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/nexus-crew-api
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}

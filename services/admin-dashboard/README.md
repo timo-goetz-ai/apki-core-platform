@@ -219,9 +219,9 @@ OPENROUTER_API_KEY=
 GOOGLE_AI_API_KEY=
 FABRIK_EMBED_MODEL=openai/text-embedding-3-small
 
-# Backend API (AIOS Core)
-NEXT_PUBLIC_AIOS_CORE_API_URL=http://aios-core:8000
-NEXT_PUBLIC_WS_URL=ws://aios-core:8000
+# Backend API (nexus-core)
+NEXT_PUBLIC_AIOS_CORE_API_URL=http://nexus-core:8000
+NEXT_PUBLIC_WS_URL=ws://nexus-core:8000
 
 # Auth
 DASHBOARD_API_KEY=
@@ -270,7 +270,7 @@ API-Routen: Bearer Token (DASHBOARD_API_KEY)
 ```
 Push → main
   └→ GitHub Actions: Docker Build
-       └→ Push → ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest
+       └→ Push → ghcr.io/timo-goetz-ai/nexus-admin-dashboard:latest
             └→ Coolify Webhook → Deploy
                  UUID: gsc8oscgw0kswsooc484swcw
 ```

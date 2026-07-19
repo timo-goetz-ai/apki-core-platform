@@ -7,9 +7,9 @@ version: '3.8'
 
 services:
 
-  aios-core:
-    image: ghcr.io/timo-goetz-ai/core-platform-core:latest
-    container_name: aios-core
+  nexus-core:
+    image: ghcr.io/timo-goetz-ai/nexus-core:latest
+    container_name: aios-nexus-core
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -29,8 +29,8 @@ services:
       - BROWSERLESS_TOKEN=${BROWSERLESS_TOKEN}
       - N8N_BASE_URL=${N8N_BASE_URL:-https://n8n.automation-plus-ki.de}
     networks:
-      - frontend-net   # admin-dashboard → aios-core
-      - data-net       # aios-core → db, redis, browserless
+      - frontend-net   # admin-dashboard → nexus-core
+      - data-net       # nexus-core → db, redis, browserless
     depends_on:
       - aios-db
       - aios-redis
@@ -41,7 +41,7 @@ services:
         max-file: "3"
 
   admin-dashboard:
-    image: ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest
+    image: ghcr.io/timo-goetz-ai/nexus-admin-dashboard:latest
     container_name: aios-admin-dashboard
     restart: unless-stopped
     ports:
@@ -58,9 +58,9 @@ services:
       - NEXT_PUBLIC_AIOS_CORE_API_URL=https://api.aios.automation-plus-ki.de
       - NEXT_PUBLIC_WS_URL=wss://api.aios.automation-plus-ki.de
     networks:
-      - frontend-net   # only aios-core visible, not db/redis
+      - frontend-net   # only nexus-core visible, not db/redis
     depends_on:
-      - aios-core
+      - nexus-core
     logging:
       driver: json-file
       options:
@@ -78,7 +78,7 @@ services:
     volumes:
       - aios-db-data:/var/lib/postgresql/data
     networks:
-      - data-net       # only aios-core can reach this
+      - data-net       # only nexus-core can reach this
 
   aios-redis:
     image: redis:7-alpine
@@ -92,7 +92,7 @@ services:
         limits:
           memory: 256M
     networks:
-      - data-net       # only aios-core can reach this
+      - data-net       # only nexus-core can reach this
 
   aios-browserless:
     image: browserless/chrome:latest
@@ -103,15 +103,15 @@ services:
       - MAX_CONCURRENT_SESSIONS=5
       - TOKEN=${BROWSERLESS_TOKEN}
     networks:
-      - data-net       # only aios-core can reach this
+      - data-net       # only nexus-core can reach this
     shm_size: 1gb
 
 networks:
-  # admin-dashboard can only reach aios-core, not data services
+  # admin-dashboard can only reach nexus-core, not data services
   frontend-net:
     driver: bridge
     internal: false
-  # db, redis, browserless: only reachable from aios-core, no direct internet
+  # db, redis, browserless: only reachable from nexus-core, no direct internet
   data-net:
     driver: bridge
     internal: true

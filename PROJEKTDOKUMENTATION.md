@@ -23,7 +23,7 @@ Ein neues konsolidiertes Repository wurde unter `~/Projects/01_Active_Projects/a
 ~/Projects/01_Active_Projects/aios/
 ├── .github/workflows/      → CI/CD Pipelines (GitHub Actions)
 ├── agents/                 → KI-Agenten (coder-agent, service-agents)
-├── services/               → Haupt-Services (aios-core, admin-dashboard, crew-api)
+├── services/               → Haupt-Services (nexus-core, admin-dashboard, crew-api)
 ├── automations/            → N8N Workflows, Prompts-Registry, Storage-Guardian
 ├── infrastructure/         → Coolify-Configs, Docker, Monitoring, MCP-Server
 │   ├── coolify/            → Deployment-YAML für jeden Service
@@ -49,7 +49,7 @@ Ein neues konsolidiertes Repository wurde unter `~/Projects/01_Active_Projects/a
 
 ### Phase 5 – Lokale Entwicklungsumgebung gestartet
 Docker Compose lokal gestartet – 4 Core-Services laufen:
-- `aios-core` (FastAPI Backend)
+- `nexus-core` (FastAPI Backend)
 - `admin-dashboard` (Next.js Frontend)
 - PostgreSQL Datenbank
 - Redis Cache
@@ -60,7 +60,7 @@ Nach dem ersten Push kamen Fehler-E-Mails von GitHub. Folgende Probleme wurden s
 | # | Problem | Ursache | Lösung |
 |---|---------|---------|--------|
 | 1 | Legacy-Workflows schlugen fehl | Alte `deploy.yml`/`guardian.yml` hatten falsche Pfade | Komplett entfernt und durch neue ersetzt |
-| 2 | Build mit `./apps/aios-core` | Pfad aus alter Struktur | Auf `services/aios-core` korrigiert |
+| 2 | Build mit `./apps/nexus-core` | Pfad aus alter Struktur | Auf `services/nexus-core` korrigiert |
 | 3 | `package-lock.json` fehlte | Beim Kopieren nicht mitgenommen | `npm install --legacy-peer-deps` ausgeführt, Lock-File committed |
 | 4 | eslint lief interaktiv und hing | Keine `.eslintrc.json` vorhanden | `.eslintrc.json` mit `next/core-web-vitals` erstellt |
 | 5 | Python Lint-Fehler `E402`/`F401` | Import-Reihenfolge und ungenutzter Import in `crew-api` | Code in `main.py` und `event_stream.py` bereinigt |
@@ -77,7 +77,7 @@ Nach dem ersten Push kamen Fehler-E-Mails von GitHub. Folgende Probleme wurden s
 | Service | URL | Zugangsdaten |
 |---------|-----|-------------|
 | **Admin Dashboard** (Next.js UI) | http://localhost:3000 | – |
-| **AIOS Core API** (FastAPI) | http://localhost:8000 | – |
+| **nexus-core API** (FastAPI) | http://localhost:8000 | – |
 | **API Dokumentation** (Swagger) | http://localhost:8000/docs | – |
 | **API Dokumentation** (ReDoc) | http://localhost:8000/redoc | – |
 | **PostgreSQL** | localhost:5432 | siehe `.env` |
@@ -106,7 +106,7 @@ Nach dem ersten Push kamen Fehler-E-Mails von GitHub. Folgende Probleme wurden s
 | Workflow | Trigger | Was passiert |
 |----------|---------|-------------|
 | **CI – Lint, Test & Build** | Jeder Push (alle Branches) | Python Lint (ruff) + Tests, Node Lint (eslint) + Build, Docker-Build-Validation |
-| **Build & Push – Docker Images** | Push auf `main` | Baut Docker Images für aios-core, admin-dashboard, crew-api und pusht zu `ghcr.io` |
+| **Build & Push – Docker Images** | Push auf `main` | Baut Docker Images für nexus-core, admin-dashboard, crew-api und pusht zu `ghcr.io` |
 | **Deploy Staging** | Push auf `staging` Branch | Deployed auf Hetzner Staging via Coolify API, führt Smoke-Tests durch |
 | **Deploy Production** | Tag `v*` Push + manuelle Bestätigung | Blue-Green Deployment, DB-Migrations, Rollback bei Fehler, Slack-Notification |
 
@@ -126,8 +126,8 @@ docker compose up -d
 # Status prüfen
 docker compose ps
 
-# Logs anschauen (z.B. aios-core)
-docker compose logs -f aios-core
+# Logs anschauen (z.B. nexus-core)
+docker compose logs -f nexus-core
 
 # Services stoppen
 docker compose down
@@ -227,7 +227,7 @@ INTERNET
 ├─────────────────┬───────────────────────────┤
 │  Coolify        │  Services                 │
 │  (Deployment)   ├── Admin Dashboard         │
-│                 ├── AIOS Core API          │
+│                 ├── nexus-core API          │
 │  Authentik      ├── Crew API               │
 │  (SSO / Login)  ├── PostgreSQL             │
 │                 ├── MySQL                  │
@@ -254,9 +254,9 @@ INTERNET
 
 ## 7. SERVICES IM DETAIL
 
-### aios-core (FastAPI Backend)
+### nexus-core (FastAPI Backend)
 - **Lokal**: http://localhost:8000
-- **Pfad**: `~/Projects/01_Active_Projects/aios/services/aios-core/`
+- **Pfad**: `~/Projects/01_Active_Projects/aios/services/nexus-core/`
 - **Stack**: Python 3.12, FastAPI, PostgreSQL, Redis, CrewAI
 - **Hauptfunktion**: Zentrale REST-API für das gesamte System
 
@@ -313,7 +313,7 @@ INTERNET
 docker --version
 
 # Logs prüfen
-docker compose logs aios-core
+docker compose logs nexus-core
 docker compose logs admin-dashboard
 
 # Alles neu bauen
@@ -410,7 +410,7 @@ Nach dem kompletten Scan des Workspace wurden folgende Inhalte in das Monorepo i
 │   ├── prompts/                → Prompt-Vorlagen & Agent-Prompts
 │   └── service-agents/         → Service-Monitoring-Agenten
 ├── services/
-│   ├── aios-core/             → FastAPI Haupt-Backend [läuft: localhost:8000]
+│   ├── nexus-core/             → FastAPI Haupt-Backend [läuft: localhost:8000]
 │   ├── admin-dashboard/        → Next.js Frontend [läuft: localhost:3000]
 │   │   └── src/components/     → 9 Komponenten inkl. MCPHealth, Kanban, S3, Crew
 │   └── crew-api/               → CrewAI API-Service

@@ -12,14 +12,14 @@ Monorepo für **Automation+KI / AIOS**: Orchestrierung, Admin-UI, APIs und Landi
 | **Admin-Dashboard** | `services/admin-dashboard` — Next.js 14, App Router, Operations-UI (Agentic OS), API-Integrationen (Supabase, n8n, …) |
 | **Landing Page** | `services/landing-page` — Öffentliche Website |
 | **Crew API** | `services/crew-api` — Python-API (siehe CI-/Docker-Context) |
-| **AIOS Core** | `services/aios-core` — Python-Kern-API, DB-Migrationen (Alembic im Deploy-Workflow) |
+| **nexus-core** | `services/nexus-core` — Python-Kern-API, DB-Migrationen (Alembic im Deploy-Workflow) |
 
 Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/services.json`.
 
 ## Deployment-Pipeline
 
 1. **Push** nach `main` auf `git@github.com:timo-goetz-ai/core-platform.git` (ehem. `TimoGoetz1988/aios`)
-2. **GitHub Actions** — Workflow **Build & Push – Docker Images** (`.github/workflows/build-and-push.yml`): baut u. a. Images für `admin-dashboard`, `aios-core`, `crew-api`, `landing-page` → **ghcr.io** (`ghcr.io/timo-goetz-ai/…`).
+2. **GitHub Actions** — Workflow **Build & Push – Docker Images** (`.github/workflows/build-and-push.yml`): baut u. a. Images für `admin-dashboard`, `nexus-core`, `crew-api`, `landing-page` → **ghcr.io** (`ghcr.io/timo-goetz-ai/…`).
 3. **Coolify** zieht die neuen Images und rollt die Anwendungen auf dem **Hetzner**-Host aus.
 4. **Einzel-Deploys / Checks**: zusätzliche Workflows unter `.github/workflows/` (z. B. `deploy-prod.yml`, `ci.yml`).
 
@@ -37,7 +37,7 @@ Weitere Infrastruktur- und MCP-Details: `infra/`, `infrastructure/`, `infra/serv
 Secrets und env-spezifische Werte werden **in Coolify** pro Anwendung/Stack gesetzt (nicht im Repo committen). Typische Kategorien:
 
 - **Next.js / Admin-Dashboard**: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY`, n8n, Authentik-OIDC, interne Service-URLs (Grafana/Prometheus über Docker-Hostnamen) — jeweils in der Coolify-Ressource für `infra-dashboard` konfigurieren.
-- **Python-Services** (`aios-core`, `crew-api`): DB-URLs, API-Keys, CORS, Service-Discovery — analog in den jeweiligen Coolify-Services.
+- **Python-Services** (`nexus-core`, `crew-api`): DB-URLs, API-Keys, CORS, Service-Discovery — analog in den jeweiligen Coolify-Services.
 
 Für lokale Entwicklung: `.env.example`-Dateien im Repo beachten (falls vorhanden) und nur **nicht-sensible** Defaults dokumentieren.
 

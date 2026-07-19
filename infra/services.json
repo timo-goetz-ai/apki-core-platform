@@ -37,15 +37,15 @@
     },
     {
       "name": "AIOS-Core API",
-      "id": "aios-core",
+      "id": "nexus-core",
       "url": "https://api.automation-plus-ki.de",
-      "internal": "aios-core:8000",
-      "image": "aios-core",
+      "internal": "nexus-core:8000",
+      "image": "nexus-core",
       "deployment": "homestack",
       "category": "core",
       "status": "active",
       "port": 8000,
-      "source": "github:TimoGoetz1988/aios services/aios-core"
+      "source": "github:TimoGoetz1988/aios services/nexus-core"
     },
     {
       "name": "Crew API",

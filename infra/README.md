@@ -53,7 +53,7 @@ Traefik (reverse proxy, managed by Coolify)
 | Service | Deployment | URL | Image / Container |
 |---------|-----------|-----|-------------------|
 | Admin Dashboard | Coolify App (Docker Image) | https://admin.automation-plus-ki.de | ghcr.io/timogoetz1988/aios-admin-dashboard:latest |
-| AIOS-Core API | homestack Docker Compose | https://api.automation-plus-ki.de | aios-core |
+| AIOS-Core API | homestack Docker Compose | https://api.automation-plus-ki.de | nexus-core |
 | Crew API | homestack Docker Compose | internal | aios-crew-api |
 
 ### Automation & Data

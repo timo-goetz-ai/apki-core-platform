@@ -172,7 +172,7 @@ jobs:
           curl -s -X PATCH "${COOLIFY_URL}/api/v1/applications/${COOLIFY_NEXUS_CORE_UUID}" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"docker_image":"ghcr.io/timo-goetz-ai/core-platform-core:latest"}'
+            -d '{"docker_image":"ghcr.io/timo-goetz-ai/nexus-core:latest"}'
           echo "✓ Coolify Image nexus-core aktualisiert"
 
       - name: Update Coolify Image – admin-dashboard
@@ -181,7 +181,7 @@ jobs:
           curl -s -X PATCH "${COOLIFY_URL}/api/v1/applications/${COOLIFY_DASHBOARD_UUID}" \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"docker_image":"ghcr.io/timo-goetz-ai/core-platform-admin-dashboard:latest"}'
+            -d '{"docker_image":"ghcr.io/timo-goetz-ai/nexus-admin-dashboard:latest"}'
           echo "✓ Coolify Image admin-dashboard aktualisiert"
 
       - name: Deploy nexus-core
@@ -220,12 +220,12 @@ jobs:
     needs: [deploy]
 
     steps:
-      - name: Check aios-core
+      - name: Check nexus-core
         run: |
           for i in {1..5}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.aios.automation-plus-ki.de/health)
             if [[ "$STATUS" == "200" ]]; then
-              echo "aios-core: OK (HTTP $STATUS)"
+              echo "nexus-core: OK (HTTP $STATUS)"
               break
             fi
             echo "Versuch $i/5 fehlgeschlagen (HTTP $STATUS) – warte 15s..."
