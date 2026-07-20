@@ -32,7 +32,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - name: Build & Push nexus-core (staging tag)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/nexus-core
           push: true
@@ -43,7 +43,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push admin-dashboard (staging tag)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/admin-dashboard
           push: true
