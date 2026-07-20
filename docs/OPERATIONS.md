@@ -56,3 +56,40 @@ Prod: git tag v* && git push origin v*
 ```
 
 Siehe auch: [infrastructure/RUNBOOK.md](../infrastructure/RUNBOOK.md)
+
+## Token-Rotation (nach .mcp.json-Leak)
+
+**Auslöser:** Echte Tokens in Git-Historie → rotieren, auch nach Entfernung aus dem aktuellen Stand.
+
+### Voraussetzungen
+
+1. Hetzner-Server online (`hetzner-automation-1`, Tailscale: `hetzner-automation-1`)
+2. Gültiger `HCLOUD_TOKEN` in 1Password (`Homestack - Infrastructure` oder `Hetzner` in 06_PRODUCTION)
+3. `op`, `jq`, `curl`, `hcloud` installiert
+
+### Automatisch (empfohlen)
+
+```bash
+# Server starten (falls aus) + warten + Authentik/Directus rotieren
+./scripts/wake-hetzner-and-rotate.sh
+
+# Coolify manuell: UI → Keys & Tokens → neuen API-Token
+NEW_COOLIFY_TOKEN='...' ./scripts/rotate-exposed-tokens.sh
+```
+
+### Lokal `.mcp.json` aus 1Password (ohne Rotation)
+
+```bash
+./scripts/generate-mcp-json.sh   # liest .mcp.json.op → .mcp.json (gitignored)
+```
+
+### Dateien
+
+| Datei | Zweck |
+|-------|--------|
+| `.mcp.json.op` | op://-Template (commitbar) |
+| `.mcp.json` | Injizierte Secrets (gitignored, mode 600) |
+| `scripts/rotate-exposed-tokens.sh` | Rotiert Authentik + Directus, schreibt `.mcp.json` |
+| `scripts/wake-hetzner-and-rotate.sh` | Power-on + Health-Wait + Rotation |
+
+**Coolify:** API kann keine neuen Tokens erzeugen — nur manuell in der UI.
