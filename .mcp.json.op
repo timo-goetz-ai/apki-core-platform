@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "directus": {
+      "command": "npx",
+      "args": ["-y", "directus-mcp-server@latest"],
+      "env": {
+        "DIRECTUS_URL": "https://directus.automation-plus-ki.de",
+        "DIRECTUS_TOKEN": "op://fwl7qdu7q3nvqqjbrljzcdhita/DIRECTIS/password"
+      }
+    },
+    "mcp-anythingllm": {
+      "type": "url",
+      "url": "https://mcp-anythingllm.automation-plus-ki.de/mcp",
+      "headers": {
+        "Authorization": "Bearer op://fwl7qdu7q3nvqqjbrljzcdhita/API_ANYTHING_LLM/password"
+      }
+    },
+    "mcp-aios-ops": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "./infrastructure/mcp-servers/mcp-aios-ops", "mcp-aios-ops"],
+      "env": {
+        "COOLIFY_URL": "https://coolify.automation-plus-ki.de",
+        "COOLIFY_TOKEN": "op://fwl7qdu7q3nvqqjbrljzcdhita/Homestack - Infrastructure/COOLIFY_API_KEY",
+        "AUTHENTIK_URL": "https://auth.automation-plus-ki.de",
+        "AUTHENTIK_TOKEN": "op://fwl7qdu7q3nvqqjbrljzcdhita/Homestack - Service Credentials/AUTHENTIK_API_TOKEN",
+        "BASE_DOMAIN": "automation-plus-ki.de"
+      }
+    }
+  }
+}
